@@ -88,8 +88,8 @@ Deleted:
       `harness.tsx`. In `e2e/viewport.spec.ts`, set `STATE_COUNT` to the new
       count, the number of entries `states.tsx` exports.
 - [ ] **Check:**
-      `grep -rnE "face|Face" src --include=*.ts --include=*.tsx | grep -v "interface\|surface\|typeface"`
-      prints nothing about tiles. (In zsh, quote the globs.)
+      `grep -rnE "face|Face" src --include='*.ts' --include='*.tsx' | grep -v "interface\|surface\|typeface"`
+      prints nothing about tiles.
 - [ ] **Gates:** all five green.
 - [ ] **Commit:** `refactor(tiles): remove face tiles`, with `Task: T96`.
 

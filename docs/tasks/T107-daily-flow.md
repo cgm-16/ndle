@@ -41,10 +41,15 @@ paths:
     `{ version: 1, number, moves: [], outcome: null }`. A failed replay of
     today's record is a corrupt record: it starts fresh and overwrites.
   - Set `play = { kind: "daily", number }`.
-- **Recording** happens only in event handlers, never in effects or the
+- **Recording** happens only in event context, never in effects or the
   reducer:
-  - submit appends `{ spend: selectedTiles.map((t) => t.digit) }` and saves;
-  - a discard in `overflow` sets the last move's `discard` and saves.
+  - `onSubmit`, which both the button and the keyboard call, appends
+    `{ spend: selectedTiles.map((t) => t.digit) }` and saves.
+  - A discard is recorded in a wrapper around `dispatch` that App passes to
+    `GameScreen`. When the action is `TOGGLE_DISCARD` in `overflow`, it sets
+    the last move's `discard` to that tile's digit, saves, and then
+    dispatches. `TileInventory` clicks and `useGameKeyboard`'s digit keys
+    both dispatch that action directly, so both are covered.
 - **Outcome:**
   - An effect on `phase === "gameOver"` while `play.kind === "daily"` saves
     `outcome = { score, par, longestStreak }`.
@@ -68,12 +73,15 @@ paths:
     - unmount, then render a new App over the same store;
     - press Daily: row 4 is current and the hand is `1 2 6 7 8`;
     - answering row 4 correctly scores, which pins Review Focus 1.
+  - `it("records a Daily played by keyboard alone")`. Play the par line's
+    first four moves using only keys, including row 4's discard by digit; the
+    stored `moves` equal `PUZZLE_SAMPLE_PAR_LINE.slice(0, 4)`.
   - `it("resumes into the discard after a reload between submit and discard")`.
   - `it("shows the result after a finished Daily, and the next table the next day")`:
     - finish the par line, remount, and press `Today's result #1`: the game
       over shows;
-    - move `now` a day on: the title shows `Daily #2` or `No table today`,
-      depending on the stub's length.
+    - move `now` a day on: the title shows `No table today`, because the
+      stub holds one table.
   - `it("cannot restart a Daily")`. At the Daily game over:
     - pressing `R` changes nothing;
     - `dealPuzzle` was never called;
@@ -92,5 +100,5 @@ paths:
 
 ## Acceptance gate
 
-- All nine tests are green under StrictMode.
+- All ten tests are green under StrictMode.
 - The Vitest output shows no `act()` warning.

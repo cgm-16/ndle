@@ -98,7 +98,7 @@ default.
 
 ## Acceptance gate
 
-- `grep -rn "INVENTORY_CAPACITY\|createInitialInventory" src --include=*.test.ts --include=*.test.tsx`
+- `grep -rn "INVENTORY_CAPACITY\|createInitialInventory" src --include='*.test.ts' --include='*.test.tsx'`
   shows only the Endless smoke test.
 - The gallery has no Endless state.
 - `npm run test:e2e` is green.

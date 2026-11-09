@@ -41,8 +41,9 @@ Until these are rewritten, every later task would be refused.
 
 - [ ] **Branch check.** `git branch --show-current` prints
       `feat/M11-ndle-rules`.
-- [ ] **The design, verbatim:**
-      `git show ozterisk/main:docs/superpowers/specs/2026-11-09-puzzle-spin-off-design.md > docs/superpowers/specs/2026-11-09-puzzle-spin-off-design.md`.
+- [ ] **The design, verbatim, pinned to its commit:** check
+      `git cat-file -e c212fcd`, then
+      `git show c212fcd:docs/superpowers/specs/2026-11-09-puzzle-spin-off-design.md > docs/superpowers/specs/2026-11-09-puzzle-spin-off-design.md`.
       Don't edit it. The name and the source commit go in the journal.
 - [ ] **AGENTS.md.** Rewrite it for ndle and keep its structure, with these
       decisions:
@@ -91,6 +92,6 @@ Until these are rewritten, every later task would be refused.
 
 ## Acceptance gate
 
-- `diff <(git show ozterisk/main:docs/superpowers/specs/2026-11-09-puzzle-spin-off-design.md) docs/superpowers/specs/2026-11-09-puzzle-spin-off-design.md`
+- `diff <(git show c212fcd:docs/superpowers/specs/2026-11-09-puzzle-spin-off-design.md) docs/superpowers/specs/2026-11-09-puzzle-spin-off-design.md`
   prints nothing.
 - AGENTS.md's three replaced lines read exactly as above.
