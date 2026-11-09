@@ -1,45 +1,52 @@
-# ozterisk Product Specification
+# 9dle Product Specification
 
 Canonical game rules (§1.1–§1.11, §1.17). The visual, language, copy, sharing,
 and persistence contracts (§1.12–§1.16) live in `docs/spec/ui-i18n.md`.
 
 ### 1.1 Product thesis
 
-`ozterisk` is an arithmetic inventory game with two modes. **Endless** runs at a fixed capacity until the player runs out of tiles. **Classic** starts at a larger capacity that closes one socket at a time on a fixed schedule, and ends when it reaches its floor. A digit tile is simultaneously:
+9dle is a planning puzzle. Every table is face up, nothing is random after the deal, and the run is judged against par. A digit tile is simultaneously:
 
 1. a resource required to construct an answer;
 2. a consumable spent on every submission; and
 3. an inventory-management choice because correct play returns one net tile before capacity resolution.
 
-The PoC validates whether this loop is understandable and engaging. It does not validate competition, retention, monetization, anti-cheat, or online services.
+It has two modes: **Daily**, one shared table a day, and **Practice**, a table dealt live on demand. The PoC validates whether this loop is understandable and engaging. It does not validate competition, retention, monetization, anti-cheat, or online services.
 
-### 1.2 Equation pool and randomness
+### 1.2 The table
 
-- Operands are integers `1` through `9`, inclusive.
-- The sampling pool contains the 45 unordered pairs `(a, b)` where `1 <= a <= b <= 9`.
-- Every new equation draws a gate sample first. At or above the kind-equation rate (a tuning dial; see § Tuning surface in the technical contract) the pair is drawn uniformly with replacement from the full pool; below it, the pair is drawn uniformly from only those pairs whose product the current inventory can spell. A face tile spells any digit in its set (§1.4a).
-- If the inventory can spell no product at all, the kind draw falls back to the uniform draw.
-- The bias is a generosity dial, not a difficulty curve: it never adapts to player skill, and its rate is fixed for the run. `docs/superpowers/specs/2026-08-09-endless-mode-polish-design.md` §1.1 derives why the rate must stay below the economy cliff.
+- A table is five distinct opening digits and eight rows.
+- Each row is an equation drawn from the 45 unordered pairs `(a, b)` where `1 <= a <= b <= 9`, shown in either order. `3 × 7` and `7 × 3` are presentations of one pool entry.
+- Operands are integers `1` through `9`, inclusive. Products range from `1` through `81`; an answer therefore has exactly one or two decimal digits.
+- Each row has a pay of `getRewardCount` printed digits: 2 for a one-digit product and 3 for a two-digit product. The pay is printed on the table, so nothing is random after the deal.
 - Immediate repetition is legal.
-- After drawing the unordered pair, independently randomize display order.
-- `3 × 7` and `7 × 3` are presentations of one sampling entry, not two entries.
-- Products range from `1` through `81`; an answer therefore has exactly one or two decimal digits.
-- Rewards are independent uniformly distributed digits `0` through `9`; each digit has probability `10%`. In Classic, each reward is first a face tile with a probability that ramps linearly with the run's submissions, from `FACE_RATE_START` on the first submission to `FACE_RATE_END` on the last, one equal step per submission (both tuning dials; `getClassicFaceRate`). The face is drawn as §1.4a sets out; otherwise it is a digit as above. Endless rewards are digits only.
-- Production uses `Math.random()`.
+
+### 1.2a Practice deals
+
+- A Practice table is dealt live with `dealPuzzle(Math.random)`: a table is planted, solved, and accepted when it is in band (`par ≥ PUZZLE_MIN_PAR`, the myopic bot scoring below par, and `onlyMoves ≥ PUZZLE_MIN_ONLY_MOVES`), with at most `PUZZLE_DEAL_ATTEMPTS` tries.
+- **Play Again** deals a new table.
+- A Practice table is never replayed or shared: there is no way to replay it, and no share text gives its rows. Its run still has a share text with the score against par (`ui-i18n.md` §1.15).
 - Tests provide deterministic `RandomSource` functions.
+
+### 1.2b The daily list
+
+- Daily tables are numbered from launch day, which is #1. The player's local date picks the number.
+- Each table is in the same band as a Practice deal and has `sacrificeRequired`.
+- The list is chosen offline by `scripts/daily/generate.ts`. The generator's review file, `scripts/daily/review.md`, is committed.
+- **Freeze rule.** A slot freezes once its date arrives. A **veto** touches only future slots, and the generator refills the vetoed slot.
+- **Launch-date rule.** The launch date is set once and never changed after launch.
+- More tables are generated before the list runs out. Before launch, or past the list's end, there is no Daily that day.
+- **Known limit** (Ori, 2026-11-09): the shipped bundle holds every future table, and the solver ships with Practice, so anyone can read ahead and solve. The committed review file adds convenience, not information. Seeding would not change this, because the generator would ship too. Only a server releasing each day's table would hide it, and the game is client-only.
 
 ### 1.3 Initial run state
 
-- The player chooses the mode on the title screen. Endless is the default; the choice is not persisted.
-- Initial inventory capacity: `10` in Endless; `20` in Classic (tuning dials; see § Tuning surface).
-- Initial inventory: fills the capacity, dealing digits round-robin (`i % 10`): one of each digit `[0…9]` in Endless, two of each in Classic. The opening deal holds no face tiles.
-- Inventory display order: digit tiles in ascending digit, then face tiles in the order §1.4a gives; duplicates are ordered deterministically by tile ID.
+- The hand opens full at the capacity of `5` (a tuning dial; see § Tuning surface), holding the table's five digits, sorted ascending.
 - Score: `0`.
 - Current streak: `0`.
 - Longest streak: `0`.
 - Submitted rounds: `0`.
-- Current equation ordinal: `1`.
-- A run begins only after the player presses **Start Run**.
+- Current row ordinal: `1`.
+- Inventory display order: ascending digit; duplicates are ordered deterministically by tile ID.
 
 ### 1.4 Answer construction
 
@@ -47,7 +54,7 @@ The PoC validates whether this loop is understandable and engaging. It does not 
 - One-digit products show one answer slot.
 - Two-digit products show two ordered answer slots.
 - Clicking or tapping an inventory tile moves that exact tile into the leftmost empty slot.
-- Pressing a digit key selects a tile that holds the digit: a digit tile first, in sorted inventory order; with none, the narrowest face tile holding it (§1.4a).
+- Pressing a digit key selects the first tile that holds the digit, in sorted inventory order.
 - Duplicate digit tiles have no strategic distinction.
 - A selected tile leaves the inventory row and appears in its answer slot.
 - Clicking or tapping a filled slot returns that tile to the inventory.
@@ -56,30 +63,12 @@ The PoC validates whether this loop is understandable and engaging. It does not 
 - The player cannot select more tiles than there are answer slots.
 - **Submit** and `Enter` are enabled only when all slots are filled.
 - Slot order is answer order: selecting `5` then `6` constructs `56`; selecting `6` then `5` constructs `65`.
-- Every equation allows exactly one submission.
-- An answer is correct when every slot's tile holds the digit that slot needs: a digit tile holds its own digit, a face tile every digit in its set.
+- Every row allows exactly one submission.
+- An answer is correct when every slot's tile holds the digit that slot needs.
 
 ### 1.4a Face tiles
 
-Face tiles exist in Classic only. A face tile stands for a set of digits:
-
-| Kind | Set | Face |
-|---|---|---|
-| `wild` | `0`–`9` | ✳ |
-| `odd` | `1 3 5 7 9` | `O` |
-| `even` | `0 2 4 6 8` | `E` |
-| `low` | `0`–`4` | `0–4` |
-| `high` | `5`–`9` | `5–9` |
-| `nbr` | `c − 1`, `c`, `c + 1`, for a centre `c` in `1`–`8` | e.g. `3–5` |
-
-- Even includes `0`. Neighbours never wraps: its centre is `1`–`8`, so its set is three consecutive digits within `0`–`9`.
-- **Placement.** A face tile in an answer slot counts as the digit that slot needs if that digit is in its set. Otherwise the answer is incorrect and costs its tiles like any incorrect answer (§1.6). The player never chooses which digit a face stands for, and nothing asks them to.
-- **Constructibility.** A product is constructible when some assignment of distinct inventory tiles to its slots puts, in each slot, a tile holding that slot's digit. A greedy pass is not enough: with the product `34` and the hand {`nbr` 2–4, `odd`}, handing the `3` to Neighbours leaves nothing for the `4`, yet `odd` as `3` and Neighbours as `4` spells it.
-- **Arrival.** Face tiles arrive only as correct-answer rewards (§1.2), each kind weighted by `1 / set size`: Wildcard `1/10`, each five-digit set `1/5`, Neighbours `1/3`, with its centre uniform over `1`–`8`.
-- **Order.** Face tiles sort after every digit tile: ✳, then `O`, then `E`, then the ranges by their lowest digit, then their highest.
-- **Narrowest.** A face is narrower than another when its set is smaller. Among equally narrow faces, the leftmost in inventory order counts as narrowest.
-- **Discard.** A face tile is marked and discarded like any tile.
-- Share text (§1.15) does not mention face tiles.
+Removed with Classic (T97).
 
 ### 1.5 Correct submission
 
@@ -90,10 +79,10 @@ Given `N` submitted tiles:
 3. Increment current streak by `1`.
 4. Set longest streak to `max(previous longest streak, current streak)`.
 5. Increment submitted rounds by `1`.
-6. Generate exactly `N + 1` random reward tiles.
-7. Append all rewards simultaneously. Sort only the tiles that fit within the live capacity (§1.7a). The tiles past capacity are the newest arrivals, kept in arrival order, and sit on the rail.
-8. Mark every reward as new for feedback presentation.
-9. If inventory size exceeds the live capacity, enter overflow resolution immediately.
+6. Take the row's pay: its printed digits, in printed order (§1.2).
+7. Append the pay. Sort only the tiles that fit within the capacity (§1.7). The tiles past capacity are the newest arrivals, kept in arrival order, and sit on the rail.
+8. Mark every pay tile as new for feedback presentation.
+9. If inventory size exceeds the capacity, enter overflow resolution immediately.
 10. Otherwise enter feedback with **Next Round** enabled.
 
 The score is the number of correct submissions, not a product-, speed-, streak-, or difficulty-weighted value.
@@ -107,59 +96,52 @@ Given `N` submitted tiles:
 3. Reset current streak to `0`.
 4. Preserve longest streak.
 5. Increment submitted rounds by `1`.
-6. Generate no rewards.
-7. Show the submitted answer and correct answer. A submitted face tile is printed as its face (`ui-i18n.md` §1.14).
+6. Take no pay.
+7. Show the submitted answer and correct answer.
 8. Enter feedback with **Next Round** enabled.
 
-An incorrect answer is legal even when the correct answer cannot be constructed from current tiles. The game never performs an exact-answer-constructibility loss check. Intentional incorrect submissions are therefore a costly survival mechanism.
+An incorrect answer is legal even when the correct answer cannot be constructed from current tiles. The game never performs an exact-answer-constructibility loss check. A deliberate miss is the sacrifice: it is an ordinary incorrect submission, with no control of its own.
 
-### 1.7 Overflow resolution
+### 1.7 Overflow
 
-- Capacity is checked only after all correct-answer rewards have been inserted, and against the live capacity (§1.7a), which already includes a seal made by this submission.
-- `excess = inventory.length - capacity`.
-- If `excess > 0`, the player must discard exactly `excess` tiles. Endless always overflows by exactly one; Classic can overflow by two when a seal and a correct answer share a submission.
+- Capacity is `5` and is checked only after the pay has been inserted.
+- A correct answer at a full hand leaves the hand one over capacity, so `excess = inventory.length - capacity` is `1`.
+- The newest arrival waits on the rail, and one discard completes it and advances the round.
 - The player may mark any owned tile: a seated tile, or a tile on the rail.
 - A mark can be taken back until the discard completes.
-- **The mark that reaches `excess` completes the discard**, at any count. No confirmation control is rendered. The collapse is driven by the player's action, never by a render.
-- Completing the discard removes the marked tiles. Rail tiles that survive take the sockets the discard freed; the rest of the rack neither compacts nor re-sorts.
-- The round then advances on its own once the discard and the verdict's celebration have both visibly finished (§1.8); there is no **Next Round** after a discard.
-- The next equation cannot be drawn while overflow remains unresolved.
+- **The mark that reaches `excess` completes the discard.** No confirmation control is rendered. The collapse is driven by the player's action, never by a render.
+- Completing the discard removes the marked tile. A rail tile that survives takes the socket the discard freed; the rest of the rack neither compacts nor re-sorts.
+- Sort only what fits: the next round re-sorts the whole hand (§1.8).
+- The round then advances on its own once the discard and the verdict's celebration have both visibly finished; there is no **Next Round** after a discard.
+- The next row cannot begin while overflow remains unresolved.
 
 ### 1.7a Classic capacity
 
-- Capacity is a function of mode and submissions, never stored:
-  `getCapacity(endless, n) = 10`;
-  `getCapacity(classic, n) = max(floor, 20 − ⌊n / 2⌋)`, where `n` is `totalRounds`
-  and the start (`20`), the floor (`5`) and the step (`2` submissions) are tuning dials.
-- A socket seals on the submission that crosses a step, **correct or not**. The descent is positional: it never watches how well the player is doing.
-- An incorrect submission cannot overflow: it spends at least one tile and a seal takes at most one socket.
-- The rack is *drawn* at the capacity of the displayed round, `getCapacity(mode, round − 1)`, so its size changes only at the round change, never during feedback.
+Removed with Classic (T97).
 
-### 1.8 Next-round loss detection
+### 1.8 End and par
+
+The run ends after row 8, or earlier when the hand holds **fewer tiles than the next answer needs**. A hand with enough tiles but the wrong digits plays on.
 
 When the player advances:
 
-0. In Classic, if capacity has reached the floor, enter `gameOver` and draw no equation. The run is a **win** if the player holds at least one tile, and a **loss** if the hand is empty: a miss that spends the last tile on the final submission is still a failure.
-1. Generate the next equation outside the reducer.
+1. If row 8 has been submitted, enter `gameOver`.
 2. Clear `isNew` on surviving inventory tiles, and sort the whole inventory — the one re-sort per round.
 3. Clear the previous answer selection, pending discards, and prior result.
-4. Increment the equation ordinal.
-5. Compare `inventory.length` with the new equation's answer-slot count.
-6. If inventory has enough tiles, enter `answering`.
-7. If inventory has fewer tiles than required slots, enter `gameOver` as a **loss**.
+4. Increment the row ordinal.
+5. Compare `inventory.length` with the next row's answer-slot count.
+6. If the hand has enough tiles, enter `answering`.
+7. If the hand holds fewer tiles than the answer needs, enter `gameOver`.
 
 The player advances with **Next Round** or `Enter` from feedback, or automatically when a discard finishes (§1.7).
 
-Loss is based only on tile count versus answer-slot count:
+The loss check compares tile count with the answer-slot count only:
 
 ```ts
 inventory.length < getAnswerLength(equation)
 ```
 
-The terminal equation remains visible to explain why the run ended, alongside a
-stated reason. The equation on its own reads as a question still awaiting an
-answer, so it explains nothing without the accompanying line. It is not counted
-as a submitted round.
+**Par** is the solver's best score for the table, shown before the first move. **Made par** is a game over with a score equal to par. The terminal row remains visible to explain an early end. It is not counted as a submitted round.
 
 ### 1.9 Statistics semantics
 
@@ -167,78 +149,34 @@ as a submitted round.
 |---|---|
 | `score` | Number of correct submissions |
 | `currentStreak` | Consecutive correct submissions ending at the latest submitted round |
-| `longestStreak` | Maximum `currentStreak` observed during the run |
-| `totalRounds` | Number of submitted equations, correct or incorrect |
-| `round` | One-based ordinal of the currently displayed equation; in game over it is `totalRounds + 1` |
+| `longestStreak` | Maximum `currentStreak` observed during the run, within one table; there is no daily streak |
+| `totalRounds` | Number of submitted rows, correct or incorrect |
+| `round` | One-based ordinal of the currently displayed row; in game over it is `totalRounds + 1` |
 
-### 1.10 Screen phases
+### 1.10 Screens
 
-#### `title`
-
-- Wordmark `ozterisk`.
-- One-paragraph pitch.
-- A mode select, **Endless** or **Classic**, each with a one-line description. Endless is selected by default.
-- Four always-visible rules, each preceded by the material swatch it concerns —
-  socket, tile, gold, vermilion. Between them they cover capacity, both outcomes,
-  and overflow.
-- Expandable **More**, holding the required topics the four rules do not: keyboard
-  controls first, then selecting and returning tiles, ordered answer slots, and
-  the score/streak/round/loss rules.
-- Visible `English / 한국어` language selector.
-- One primary **Start Run** button.
-
-#### `answering`
-
-- HUD order: round, score, current streak. Round carries primary emphasis — Endless is a survival mode, so rounds survived is the headline figure.
-- Endless: a capacity meter states tiles held against the ten-tile capacity. Classic: the HUD states the live capacity as a number and has no pip meter; the plugs in the rack show the descent. Endless's meter sits below the three HUD figures; Classic's figure follows them as a fourth HUD entry. Neither displaces round's primary emphasis or reorders the three.
-- Equation and exact answer-slot count.
-- Submit and Clear actions. Clear is disabled while nothing is selected.
-- Filled answer slots are clickable to return a single tile, and show a hover/focus affordance.
-- Sorted digit inventory.
-- Selecting a tile leaves its socket in place, marked as on loan rather than empty. The rack neither compacts nor re-sorts until the round resolves.
-- Mouse, touch, and keyboard input.
-
-#### `feedback`
-
-- **Correct** or **Incorrect** text.
-- Subtle visual emphasis on equation and submitted tiles.
-- Correct feedback shows inserted rewards highlighted.
-- Incorrect feedback shows submitted and correct answers.
-- Feedback persists until **Next Round** or `Enter`, except after a discard, when it advances on its own once the discard has finished.
-
-#### `overflow`
-
-- Preserve the correctness feedback context.
-- State how many tiles must be removed.
-- Allow reversible tile marking, of seated and rail tiles alike.
-- The mark that reaches the required count completes the discard; render no confirmation control.
-- After the discard, advance to the next round once its motion has finished (§1.7).
-
-#### `gameOver`
-
-- A Classic win states **Run Complete** and its reason. In place of the equation it shows the final hand: the floor's sockets, holding the tiles still in hand. Everything else below applies to a loss in either mode.
-- Keep the terminal equation visible.
-- Print the product on the board. `gameOver` is the only phase that does: during
-  play the answer slots complete the equation, and the feedback text is the only
-  place the real value is stated.
-- State why the run ended, grouped with the terminal equation rather than with the statistics, so it reads as a caption on the equation instead of a result.
-- Show total submitted rounds first, then score and longest streak. Rounds carries the same primary emphasis it holds in the HUD.
-- Show **Play Again**, **Share**, and **Copy Result**.
-- **Play Again** starts a fresh Round 1 immediately without returning to title.
+- The title offers **Daily** and **Practice**.
+- The game screen has the HUD (round, score, streak, par), the ledger, the slots, the actions and the rack.
+- Two game-over variants follow, one for Daily and one for Practice; their content is T108's.
+- A Daily resumes when opened again that day, and once finished it shows its result until the next table.
+- Every game and game-over screen has **Back** at the top, which returns to the title (Ori, 2026-11-09). Back is not a move: a Daily keeps its record and resumes, and a Practice run is dropped.
+- Round, score, streak and par are never shown by colour alone.
 
 ### 1.11 Keyboard contract
 
 | Phase | Key | Effect |
 |---|---|---|
-| `answering` | `0`–`9` | If a slot is empty, select a tile holding the digit: the first matching digit tile; with none, the narrowest face tile holding it (§1.4a) |
+| `answering` | `0`–`9` | If a slot is empty, select the first matching digit tile |
 | `answering` | `Backspace` | Return most recently selected answer tile |
 | `answering` | `Escape` | Return every selected tile at once; no-op at zero selection |
 | `answering` | `Enter` | Submit only if all answer slots are filled; a focused button retains normal browser behavior |
-| `overflow` | `0`–`9` | Mark the first matching digit tile not already marked; face tiles are never marked by a digit key. The mark that reaches the required count completes the discard |
-| `feedback` | `Enter` | Draw and advance to the next equation. Inert after a discard, which advances on its own |
-| `gameOver` | `R` | Start a fresh run, equivalent to **Play Again**. Accepts the key by either its value or its physical position, so neither a Korean IME nor a Dvorak layout can make it unreachable |
+| `overflow` | `0`–`9` | Mark the first matching digit tile not already marked. The mark that reaches the required count completes the discard |
+| `feedback` | `Enter` | Advance to the next row. Inert after a discard, which advances on its own |
+| `gameOver` | `R` | Deal a new table, at a Practice game over only. It does nothing at a Daily game over. Accepts the key by either its value or its physical position, so neither a Korean IME nor a Dvorak layout can make it unreachable |
 | `gameOver` | `Enter` | No global shortcut; a focused button retains normal browser behavior |
-| `title` | `Enter` | No global shortcut; the focused **Start Run** button retains normal browser behavior |
+| `title` | `Enter` | No global shortcut; a focused button retains normal browser behavior |
+
+Back has no key, because `Escape` already clears the selection.
 
 Disabled keyboard actions are no-ops. Language changes are available in every phase and never reset game state.
 
@@ -267,17 +205,17 @@ back.
 
 ### 1.17 Explicitly out of scope
 
-- A digit picker: any control that asks the player which digit a face tile stands for (§1.4a).
 - Operand `0`.
 - Division, addition, or subtraction modes.
-- Difficulty curves — any weighting that adapts to player skill or escalates over a run. The fixed-rate constructibility bias in §1.2 is in scope and shipped; it is a generosity dial, not a curve. Classic's descent (§1.7a) is in scope: it is a fixed schedule counted in submissions, identical for every player and blind to their play, and it is the mode's definite arc rather than a weighting.
+- Difficulty curves — any weighting that adapts to player skill or escalates over a run.
 - Timers.
 - Multiple attempts.
 - Skip buttons or a separate manual-discard action during answering.
 - Exact-answer-constructibility loss detection.
-- Saved best score or history.
-- Seeded/replayable runs.
-- Result pages or result parameters.
+- A daily streak or history across days.
+- Replaying or sharing a Practice table. Its share text, the score against par, is in scope (§1.2a).
+- Starting a Daily over.
+- Result pages or result parameters: the table number travels only inside the share text.
 - Leaderboards, authentication, backend APIs, databases, and server authority.
 - Audio and haptics.
 - End-to-end tests of game behavior. A browser suite is in scope only for
