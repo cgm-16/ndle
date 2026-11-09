@@ -1,256 +1,177 @@
-# ozterisk UI, Language, and Sharing Contract
+# 9dle UI, Language, and Sharing Contract
 
 Visual, language, copy, sharing, and persistence contracts (§1.12–§1.16).
 The game rules live in `docs/spec/product.md`.
 
 ### 1.12 Responsive and visual contract
 
-The visual and motion language is the **Tile House** system in
-`docs/design-system/`. That directory is the normative source for material rules
-and the motion inventory. Token values live in `src/styles/tokens/`;
-`docs/design-system/tokens/` is a frozen M5.5b snapshot that the design
-references load, and it is not kept in step. This section states the contract
-those values must satisfy. Where a design document and this section disagree, this
-section wins.
+Token values live in `src/styles/tokens/`. The palette and type are
+placeholders until the identity replaces them (the second plan); this section
+states the contract any values must satisfy.
 
 **Layout and information architecture**
 
+- **Every screen fits `393 × 660` with no page scroll, and `375` wide.** 393 × 660
+  is a common phone's viewport less its browser chrome. The geometry specs in
+  `e2e/` assert it.
 - Use one centered vertical arena on desktop and mobile.
-- Preserve order across breakpoints: HUD → equation/slots → phase action → rail (while tiles are past capacity, and until a dropping tile lands) → inventory. The rail sits directly above the rack, because a perched tile drops from it into a socket.
+- Preserve order across breakpoints: Back → HUD → ledger → equation/slots → phase action → rail (while a tile is past capacity, and until a dropping tile lands) → rack. The rail sits directly above the rack, because a perched tile drops from it into a socket.
 - Mobile changes spacing, wrapping, and control size, not information architecture.
-- **Endless:** the inventory rack is ten fixed sockets in a `5 × 2` grid at every
-  breakpoint. The grid never resizes as tiles are lost, because the empty sockets are
-  the score.
-- **Classic (stepped rack):** the tile size steps with the rack's drawn capacity
-  (`product.md` §1.7a), so every size holds about `180px` of height and the rack never
-  scrolls vertically:
-  - capacity `16–20`: `7` columns, tiles `44 × 55`, gap `4px`, radius `--radius-sm`; footprint `21` cells;
-  - capacity `11–15`: `5` columns, tiles `48 × 60`, gap `6px`; footprint `15` cells;
-  - capacity `≤ 10`: the Endless rack itself — `5` columns at Endless's tiers above, scaling
-    with its container; footprint `10` cells. From ten sockets on, Classic's rack is Endless's.
-  The thresholds (`15`, `10`) are whole rows of five, so neither the mid size nor the
-  home rack starts with a plug, and from a `350px` container up no row is ever all
-  plugs (played on an iPhone 13 mini, #159). **Narrow cap:** where the rack's
-  container cannot hold the small size's natural width, it draws at `6` columns of
-  `44 × 55` (`44px` is the target minimum and may not be undercut), and its footprint
-  is `24` cells, so it holds a row of plugs at `18`–`16` sockets; that is accepted.
-  The mid size needs no fallback: its tray is `282px`, and its tracks absorb the
-  missing pixel within the target minimum.
-  The budget is the `320px` gate *with* a `15px` scrollbar, as above: a `305px`
-  content box less the arena's `24px` padding leaves `281px`. `7 × 44` needs `332px`
-  of tiles, so it does not fit; `6 × 44` needs `264px`, which
-  leaves `17px` for five gaps, the panel's side padding and its `1px` border on both
-  sides — so the narrow size uses a `2px` gap and `2px` of side padding (`280px`). Only
-  the width binds, so the panel keeps its `8px` top and bottom.
-  "Narrow" is a property of the container, not the viewport: a `min-width` query
-  fires about `15px` early wherever scrollbars take layout width (see above), so it
-  cannot choose the column count. The small size's footprint is whole rows of `6`.
-- **Two capacities.** The rack is *drawn* at the displayed round's capacity
-  (`product.md` §1.7a), which picks the size and the footprint. The *live* capacity
-  decides which tiles are seated and which are on the rail. Between a seal and the
-  next round they differ by one: the socket at the live capacity is closing (`M6`)
-  and takes no tile.
-- **Sealed plugs.** Each Classic size draws its whole-row footprint; cells past the
-  drawn capacity are sealed plugs: `--surface-table`, `--rim-socket` plus
-  `inset 0 -1px 0 var(--hair-100)`, no well and no tile. The rack is always a full
-  rectangle and the plug count shows the descent. A plug is not an empty socket: an
-  empty socket is a debt the run can repay, a plug is gone.
-- **The rail.** Tiles past capacity (the newest arrivals, `product.md` §1.5) perch on a
-  band one tile high above the rack with a `1px` `--border-accent` top rule,
-  right-aligned and drawn at the tier's tile size (where the rack's tracks shrink below
-  it, a dropping tile narrows by a few pixels as it lands). The rail exists while tiles
-  are past capacity, and until a tile it held has landed in a freed socket (8a·2), in
-  both modes. It never adds a row to the rack.
-- **Discard scroll.** When a discard starts, the rack scrolls into view once, with
-  `scrollIntoView({ block: "nearest", behavior: "instant" })`. That is the smallest
-  jump that puts the rack's bottom on screen. The prompt and the rail sit directly
-  above the rack, and the three together (≤ `379px`) fit a `548px` viewport, so they
-  come with it. If the rack is already in view, it does nothing. It is a jump, not a
-  motion moment, so it adds nothing to the inventory and has nothing for reduced
-  motion to neutralise.
-- Answer slots stay `64 × 80` (at the arena's tier) in every Classic rack size.
-- Rack sizing has three tiers: below `408px`, tiles are `52 × 64` with an `8px` gap;
-  from `408px`, `66 × 64` with a `12px` gap; from `48rem`, `64 × 80` with a `12px`
-  gap. A tier's rack width — five tiles plus four gaps — must leave room for the
-  arena's horizontal padding at that tier's lower bound. The arena spends `24px` of
-  that width on its own padding below `40rem`, so the narrow tier needs `292px` of
-  `296px` and the middle tier needs `378px` of the `384px` a `408px` viewport leaves.
-  (The design document draws this tier at `390px`. The boundary is `408px` rather
-  than the `402px` the arithmetic bottoms out at, for a little slack; it stays below
-  `412px` so that phone tier keeps the larger tile.)
-- **A tier's figures are the tile's maximum size, not a fixed size.** The rack is
-  sized from its container rather than from the viewport, and scales down toward the
-  `44 × 44` target minimum when the container is narrower than the tier's natural
-  width. At every width where the tier already fits, the rendered size is exactly the
-  figure above.
-- **The target minimum is a floor, and it outranks the layout.** A tile is a control,
-  so below the content width where five tiles at `44` plus their gaps no longer fit —
-  about `276px` once the arena's padding is counted — the rack stops shrinking and the
-  page scrolls instead. The `320px` rule below is silent under `320px`, while the
-  target minimum has no lower bound, so that is the order they resolve in. Browser
-  zoom is the realistic way to reach those widths, and a reader at high zoom is
-  exactly who the minimum protects.
-- **This is what the `320px` no-horizontal-scroll rule requires, because a boundary
-  cannot carry it.** A `min-width` query matches the scrollbar-*inclusive* viewport
-  while the content box excludes it, so wherever scrollbars take layout width every
-  tier fires about `15px` early and the tier's natural width exceeds the room
-  available. No choice of boundary corrects this — the same query answers both cases
-  identically. Scaling within the tier does, and the target minimum bounds how far:
-  at the `320px` gate with a `15px` scrollbar the tiles land near `50 × 64`.
+- **Back** (`action.back`, `Back` / `뒤로`) is the first focusable element of the game screen and of the game-over screen, for Daily and Practice alike. It is at least `44 px` tall and carries an `aria-hidden` inline-SVG arrow. It has no key binding, because `Escape` already clears the selection. It dispatches `RETURN_TO_TITLE`, with no confirmation. Back is not a move: a Daily keeps its record and resumes from the title, and a Practice run is dropped.
+- **The ledger** lists the table's 8 rows. Each row shows its equation and the tiles it pays, and a mark once answered: correct or missed, in text or shape as well as colour. The current row is marked by more than colour. Each row is one accessible string (`ledger.row`).
+- **The rack** is five fixed sockets in a single row at every breakpoint (`PUZZLE_CAPACITY`). The grid never resizes; an empty socket is a tile spent.
+- **The rail.** The tile past capacity (the newest arrival, `product.md` §1.7) perches on a band one tile high above the rack with a `1px` `--border-accent` top rule, right-aligned and drawn at the rack's tile size (where the rack's tracks shrink below it, a dropping tile narrows by a few pixels as it lands). The rail exists while a tile is past capacity, and until the tile it held has landed in a freed socket (`8a·2`). It never adds a row to the rack.
+- **Discard scroll.** When a discard starts, the rack scrolls into view once, with `scrollIntoView({ block: "nearest", behavior: "instant" })`. If the rack is already in view, it does nothing. It is a jump, not a motion moment, so it has nothing for reduced motion to neutralise.
+- Answer slots are `64 × 80` at the arena's widest tier.
+- Rack sizing has three tiers: below `408px`, tiles are `52 × 64` with an `8px` gap; from `408px`, `66 × 64` with a `12px` gap; from `48rem`, `64 × 80` with a `12px` gap. A tier's rack width — five tiles plus four gaps — must leave room for the arena's horizontal padding at that tier's lower bound. The arena spends `24px` of that width on its own padding below `40rem`, so the narrow tier needs `292px` of `296px` and the middle tier needs `378px` of the `384px` a `408px` viewport leaves.
+- **A tier's figures are the tile's maximum size, not a fixed size.** The rack is sized from its container rather than from the viewport, and scales down toward the `44 × 44` target minimum when the container is narrower than the tier's natural width. At every width where the tier already fits, the rendered size is exactly the figure above.
+- **The target minimum is a floor, and it outranks the layout.** A tile is a control, so below the content width where five tiles at `44` plus their gaps no longer fit — about `276px` once the arena's padding is counted — the rack stops shrinking and the page scrolls instead. The `320px` rule below is silent under `320px`, while the target minimum has no lower bound, so that is the order they resolve in.
+- **This is what the `320px` no-horizontal-scroll rule requires, because a boundary cannot carry it.** A `min-width` query matches the scrollbar-*inclusive* viewport while the content box excludes it, so wherever scrollbars take layout width every tier fires about `15px` early. Scaling within the tier fixes it, and the target minimum bounds how far.
+- **Two known misses, owned by the second plan (M16):** the Next Round action sits below `660` after a miss, and the overflow page reaches `859 px`. Until then these two states are the only exceptions to the first rule of this list.
+
+**Phases**
+
+- **Answering.** Selecting a tile moves it into the leftmost empty slot; a filled slot returns its tile. Submit is enabled only when every slot is filled (`product.md` §1.4). The remaining rows stay visible in the ledger.
+- **Feedback.** The verdict reads **Correct** or **Incorrect** in text. A correct answer shows the tiles received (`result.rewards`); an incorrect answer shows the submitted and the correct answer (`result.submitted`, `result.answer`). **Next Round** advances; `Enter` does the same.
+- **Overflow.** A correct answer at a full hand leaves one tile on the rail, and the prompt reads `overflow.instructionOne`. Any owned tile can be marked, by click or by digit key, and a mark can be taken back until the discard completes. The mark completes the discard, and no confirmation control is rendered. The marked tile leaves the rack, the rail tile takes the freed socket, and the round advances on its own once the discard and the verdict's celebration have both visibly finished.
+- **Game over.** The verdict is **Made par** (`gameOver.parTitle`) or `{short} short of par` (`gameOver.shortTitle`), in text. The screen shows the score as `7 / 8`, Par, and Longest streak (within the table), then Share and Copy Result. After an early end the terminal row stays visible with `gameOver.reason`; after row 8 the line is `gameOver.tableReason`.
+  - **Daily** also shows `gameOver.dailyNumber`, `gameOver.nextTable`, and a **Practice** button. It has no Play Again, and `R` does nothing.
+  - **Practice** shows **Play Again** with its `R` hint, which deals a new table.
 
 **Material and colour**
 
-- The field is dark. At most two field values appear in one view.
-- Tiles carry the only light values in the system: a ceramic face with a hard bottom
-  edge that reads as the tile's thickness, never a blurred all-round shadow.
-- Tiles resemble simple physical pieces.
-- One meaning per hue. Gold marks brand, capacity, and reward; jade means correct;
-  vermilion means a tile is leaving — incorrect, discard, or overflow.
-- The game-over verdict follows the hue rule. A loss is `--verm-400`; a Classic win
-  (**Run Complete**) is `--gold-500`, because the run kept its tiles. In place of the
-  loss's terminal equation, a win shows its **final hand**: `CLASSIC_FLOOR` sockets at
-  the compact tile size on a `--surface-panel` strip, holding the tiles still in hand,
-  with the accessible name `gameOver.finalHand`.
-- **Face tiles** (`product.md` §1.4a) are clay like a digit tile, with one addition: a
-  gold inlay rule, `1px` `--gold-700`, inset `5px` with a `4px` radius (`3px` and `3px`
-  at the compact size). Size, gradient, edge, shadow and radius are the digit tile's.
-  The face is set in the digit's serif in `--clay-900`: ✳ (in `--gold-500`), `O` and
-  `E` at `36px`; the ranges, with an en dash, at `25px`. At the compact size, letters are
-  `18px` and ranges `11px` semibold. Resting, lifted, marked, reward and disabled states
-  are the digit tile's exactly: reward means *new*, the inlay means *special*. The tile
-  clips its contents, so a crack stays inside it.
-- Semantic colour appears only at the moment of the event and only on the object
-  concerned. There is no full-screen colour wash.
+- Tiles carry the light values of the system, with a hard bottom edge that reads as the tile's thickness, never a blurred all-round shadow.
+- One meaning per hue: one accent for focus and the current row, one for correct, one for wrong or a tile leaving.
+- Semantic colour appears only at the moment of the event and only on the object concerned. There is no full-screen colour wash.
 - Transparency is used only for ink and hairlines. No backdrop blur.
-- Use color plus text or shape; never color alone for correctness, selection, or discard state.
+- **State is never shown by colour alone.** Use colour plus text or shape for correctness, selection, the current row, and discard state.
 
 **Typography**
 
-- A serif sets every number and headline; interface text and meta labels use their
-  own faces.
 - Interface text is never below `11px`.
-- Each locale must render in a face that covers its script. A face that does not
-  cover Hangul may not be the sole `ko` interface face.
+- Each locale must render in a face that covers its script. A face that does not cover Hangul may not be the sole `ko` interface face. The Latin interface and the digits use the system stack; the placeholder Hangul face is self-hosted and loaded on Korean.
+- Fonts are self-hosted, and the app makes zero non-origin requests.
 
 **Accessibility**
 
 - Interactive targets are at least `44 × 44` CSS pixels.
+- Text contrast is at least `4.5:1`.
 - All controls use semantic HTML buttons.
-- Visible focus styles are required. The focus indicator must reach at least `3:1`
-  contrast against **every** surface it can appear on, including the ceramic tile
-  face — a single-tone indicator that clears the field but not the tile does not
-  satisfy this.
+- Visible focus styles are required. The focus indicator must reach at least `3:1` contrast against **every** surface it can appear on, including the tile face.
 - Status changes use an appropriate `aria-live` region.
 - No horizontal scroll at `320px`.
 
 **Motion**
 
-- Motion is budgeted by frequency: what happens every round is fastest and quietest;
-  what happens once a run may be theatrical.
-- Permitted motion is the **named inventory** in `docs/design-system/decisions.md`
-  — the fifteen named storyboard moments, plus Classic's four: `M6` (a socket seals,
-  `oz-seal` + `oz-seal-rim`), `8a·2` (the perched tile takes the freed seat,
-  `oz-perch-drop`), `M6·0` (the house takes a seat) and `M6·1` (the rack re-seats,
-  `oz-reseat`). `M6·2` (new plugs close) is retired: no size below twenty starts
-  with a plug. `8c` is drawn with `oz-slide-off`, which
-  supersedes `oz-tip-off`. A moment whose duration and easing are
-  not yet assigned in `src/styles/tokens/motion.css` gets them assigned by
-  the milestone that implements it, and that assignment is not an amendment. Motion
-  outside that inventory is not permitted; extending the inventory amends this
-  section.
-- Respect `prefers-reduced-motion` by removing nonessential motion wholesale,
-  including press offsets.
+- Motion is budgeted by frequency: what happens every round is fastest and quietest; what happens once a run may be theatrical.
+- Permitted motion is the inventory below. Motion outside it is not permitted; extending it amends this section. There is no animation library.
+- **Provisional; the identity's keyframe list replaces it.** Each keyframe lives in `src/styles/tokens/keyframes.css`, and its timing in `src/styles/tokens/motion.css`.
+
+| Keyframe | Animates |
+|---|---|
+| `oz-bloom` | Answer tiles rise and settle on a correct answer (`2a`) |
+| `oz-ring` | The streak rings on the answer tiles, one to three by streak (`7a`–`7c`) |
+| `oz-fan` | The six-chip burst at streak tier 3 (`2d`) |
+| `oz-crack` | The crack across the answer tiles on a wrong answer (`9f`) |
+| `oz-dust` | The dust from a wrong answer's crack (`9f`) |
+| `oz-fire` | Pay tiles firing in place in the rack (`9i`) |
+| `oz-round-rise` | The next equation rising into place (`10b`) |
+| `oz-counter-fall` | The streak counter falling when the streak breaks (`10e`) |
+| `oz-counter-zero` | The `0` fading in after the streak counter falls (`10e`) |
+| `oz-rim-reject` | The tile past capacity rim-rejecting onto the rail (`8a`) |
+| `oz-slide-off` | The marked tile sliding off the table on a discard (`8c`) |
+| `oz-perch-drop` | The perched tile dropping into the freed socket (`8a·2`) |
+| `oz-slot-arrive` | A tile arriving in its answer slot (`9b`) |
+| `oz-rise-ready` | A resting offset on a disabled action; defined and unused, because the rise is a transition (`11d`) |
+
+- Respect `prefers-reduced-motion` by removing nonessential motion wholesale, including press offsets.
 - No audio.
 
 ### 1.13 Language behavior
 
 - Supported languages: `en` and `ko`.
 - On first visit, choose Korean if `navigator.language` or the first matching `navigator.languages` entry begins with `ko`; otherwise choose English.
-- Persist the manual selection under `localStorage["one-zero.language"]`.
+- Persist the manual selection under `localStorage["ndle.language"]`.
 - A valid saved preference overrides browser detection.
 - An invalid saved value is ignored.
 - Language changes take effect immediately in every phase.
 - Language changes do not reset the run.
-- Only the language preference persists across refresh.
-- Refresh always returns the game to `title`.
+- Only the language preference and today's daily persist across a refresh. A refresh returns to `title`; opening Daily that day resumes or shows its result.
 
 ### 1.14 Required copy
 
 The implementation may improve punctuation but may not change rule meaning.
+Every string lives in `src/i18n/messages.ts`, in both languages. The copy is
+placeholder until the identity.
 
 | Key | English | Korean |
 |---|---|---|
-| `title.name` | `ozterisk` | `ozterisk` |
-| `title.summary` | `Solve multiplication problems using limited digit tiles. Correct answers replace the tiles you spend and grant one extra tile. Incorrect answers consume your tiles without a reward. Keep your inventory balanced and survive as long as possible.` | `제한된 숫자 타일로 곱셈 문제를 푸세요. 정답을 맞히면 사용한 타일을 보충하고 타일 한 개를 추가로 받습니다. 오답에 사용한 타일은 보상 없이 사라집니다. 타일 구성을 관리하며 최대한 오래 살아남으세요.` |
+| `title.name` | `9dle` | `구들` |
 | `title.more` | `More` | `더 보기` |
-| `action.start` | `Start Run` | `게임 시작` |
+| `title.daily` | `Daily #{number}` | `오늘의 판 #{number}` |
+| `title.dailyPlayed` | `Today's result #{number}` | `오늘의 결과 #{number}` |
+| `title.dailyNone` | `No table today` | `오늘은 판이 없습니다` |
+| `title.practice` | `Practice` | `연습` |
+| `action.back` | `Back` | `뒤로` |
 | `action.submit` | `Submit` | `제출` |
 | `action.clear` | `Clear` | `지우기` |
 | `action.next` | `Next Round` | `다음 라운드` |
 | `action.playAgain` | `Play Again` | `다시 하기` |
 | `action.share` | `Share` | `공유` |
 | `action.copy` | `Copy Result` | `결과 복사` |
+| `language.groupLabel` | `Language` | `언어` |
 | `hud.score` | `Score` | `점수` |
 | `hud.streak` | `Streak` | `연속 정답` |
 | `hud.round` | `Round` | `라운드` |
-| `hud.capacity` | `Capacity` | `용량` |
-| `title.mode` | `Mode` | `모드` |
-| `mode.endless` | `Endless` | `엔드리스` |
-| `mode.endlessHint` | `Ten sockets, no end` | `열 칸, 끝없이` |
-| `mode.classic` | `Classic` | `클래식` |
-| `mode.classicHint` | `Twenty closing to five` | `스물에서 다섯까지` |
+| `hud.par` | `Par` | `목표` |
+| `ledger.label` | `Table` | `판` |
+| `ledger.row` | `Row {row}, {left} × {right}, pays {pay}` | `{row}번째 줄, {left} × {right}, 보상 {pay}` |
+| `ledger.answered` | `answered` | `정답` |
+| `ledger.missed` | `missed` | `오답` |
 | `result.correct` | `Correct` | `정답` |
 | `result.incorrect` | `Incorrect` | `오답` |
 | `result.submitted` | `Your answer: {value}` | `제출한 답: {value}` |
-| `tile.face.wild` | `Wildcard: any digit` | `와일드카드: 모든 숫자` |
-| `tile.face.odd` | `Odd tile: 1, 3, 5, 7, or 9` | `홀수 타일: 1, 3, 5, 7, 9` |
-| `tile.face.even` | `Even tile: 0, 2, 4, 6, or 8` | `짝수 타일: 0, 2, 4, 6, 8` |
-| `tile.face.low` | `Digits 0 to 4` | `숫자 0–4` |
-| `tile.face.high` | `Digits 5 to 9` | `숫자 5–9` |
-| `tile.face.nbr` | `Digits {low} to {high}` | `숫자 {low}–{high}` |
 | `result.answer` | `Correct answer: {value}` | `정답: {value}` |
 | `result.rewards` | `Received {count} tiles` | `타일 {count}개 획득` |
 | `overflow.instructionOne` | `Choose a tile to discard.` | `버릴 타일 1개를 선택하세요.` |
-| `overflow.instruction` | `Choose {count} tiles to discard.` | `버릴 타일 {count}개를 선택하세요.` |
-| `gameOver.title` | `Game Over` | `게임 종료` |
 | `gameOver.reason` | `Not enough tiles left to answer.` | `답을 만들 타일이 부족합니다.` |
-| `gameOver.winTitle` | `Run Complete` | `완주` |
-| `gameOver.winReason` | `You reached the floor with tiles in hand.` | `타일을 남긴 채 바닥에 도달했습니다.` |
-| `gameOver.finalHand` | `Finished with {held} tiles in {floor} sockets` | `{floor}칸 중 타일 {held}개로 완주` |
-| `gameOver.rounds` | `Rounds played` | `진행한 라운드` |
 | `gameOver.longestStreak` | `Longest streak` | `최장 연속 정답` |
 | `gameOver.restartHint` | `Press R to play again` | `R 키를 눌러 다시 하기` |
+| `gameOver.parTitle` | `Made par` | `목표 달성` |
+| `gameOver.shortTitle` | `{short} short of par` | `목표까지 {short}점 부족` |
+| `gameOver.tableReason` | `All eight rows played.` | `여덟 줄을 모두 풀었습니다.` |
+| `gameOver.dailyNumber` | `Table #{number}` | `{number}번째 판` |
+| `gameOver.nextTable` | `The next table opens at midnight.` | `다음 판은 자정에 열립니다.` |
 | `share.copied` | `Result copied.` | `결과를 복사했습니다.` |
 | `share.failed` | `Could not share or copy the result.` | `결과를 공유하거나 복사하지 못했습니다.` |
+| `share.puzzleAsk` | `Can you make par?` | `목표를 달성할 수 있나요?` |
+| `answerSlot.filled` | `Answer slot {position}: {digit}` | `정답 칸 {position}: {digit}` |
+| `answerSlot.empty` | `Answer slot {position}: empty` | `정답 칸 {position}: 비어 있음` |
+| `tile.digitLabel` | `Digit {digit}` | `숫자 {digit}` |
+| `tile.newLabel` | `New tile` | `새 타일` |
+| `tile.discardLabel` | `Marked for discard` | `버릴 타일로 표시됨` |
 
-`result.submitted` prints a correct answer's product. An incorrect answer holding a
-face tile prints each slot as engraved — ✳, `O`, `E`, or its range — with the slots
-joined by a middle dot: `O·3`, `0–4·3`, never `0–43`. An incorrect all-digit answer
-prints its number. There is no line explaining why a face missed. A face tile's
-spoken label, wherever a digit tile's `Digit {digit}` would be read, including a
-filled answer slot, is its `tile.face.*` key.
-
-The title screen shows **four material rules** on the felt, always visible. They
-cover **three** of these topics — capacity, outcomes, overflow — because outcomes
-takes two rules, one per material: a tile for the correct half, a vermilion pip
-for the incorrect one. `title.more` labels the disclosure holding the remaining
-four. All seven are still explained, which is what this section requires.
-
-The expanded rules must explain:
+The title's rule copy (`title.summary` and the `howToPlay.*` keys) states
+Puzzle's rules in both languages, and covers:
 
 - selecting and returning tiles;
 - ordered answer slots;
-- correct and incorrect outcomes;
-- the ten-tile capacity, and Classic's twenty closing to five;
-- overflow discarding;
-- score, streak, round, and loss rules;
+- the printed pay, and correct and incorrect outcomes;
+- the five-tile capacity and overflow discarding;
+- par, score, streak, round, and the end of a table;
 - keyboard controls.
+
+`title.more` labels the disclosure holding the rules beyond the always-visible
+ones.
+
+`ledger.row` joins its pay with `Intl.ListFormat` in the current language, so
+no "and" is written in the dictionary.
 
 ### 1.15 Sharing contract
 
 - Sharing exists only on `gameOver`.
 - Text uses the current interface language at the moment the action is invoked.
-- Include the normal game URL.
+- The text gives the score against par and the game's link, and a Daily's table number. It never gives the table's rows.
 - Do not encode result state in the URL.
 - Do not claim a shared result is verified.
 - **Share** calls `navigator.share({ text, url })` when available.
@@ -259,51 +180,35 @@ The expanded rules must explain:
 - **Copy Result** always calls the clipboard writer.
 - Clipboard failure shows an inline failure status; do not open a modal.
 
-English format:
+`url` stands for the game's link, and `\n` for a line break.
 
-```text
-ozterisk — Rounds: {totalRounds}
-Score: {score}
-Longest streak: {longestStreak}
+| Case | Text |
+|---|---|
+| Daily en, made | `9dle #12 — Made par — 7/8 · par 7\n{url}` |
+| Daily en, short | `9dle #12 — 1 short of par — 6/8 · par 7\n{url}` |
+| Daily ko, made | `구들 #12 — 목표 달성 — 7/8 · 목표 7\n{url}` |
+| Daily ko, short | `구들 #12 — 목표까지 1점 부족 — 6/8 · 목표 7\n{url}` |
+| Practice en | `9dle Practice — Made par — Score: 7/8 · par 7\nLongest streak: 7\n\nCan you make par?\n{url}` |
+| Practice ko | `구들 연습 — 목표 달성 — 점수: 7/8 · 목표 7\n최장 연속 정답: 7\n\n목표를 달성할 수 있나요?\n{url}` |
 
-Can you beat it?
-{url}
-```
-
-Korean format:
-
-```text
-ozterisk — 라운드: {totalRounds}
-점수: {score}
-최장 연속 정답: {longestStreak}
-
-이 기록을 넘을 수 있나요?
-{url}
-```
-
-The formats above are Endless's. Classic prefixes the first line with the mode and
-its outcome, and keeps the rest unchanged:
-
-```text
-ozterisk Classic — Run Complete — Rounds: {totalRounds}
-```
-
-```text
-ozterisk Classic — Game Over — Rounds: {totalRounds}
-```
-
-```text
-ozterisk 클래식 — 완주 — 라운드: {totalRounds}
-```
-
-```text
-ozterisk 클래식 — 게임 종료 — 라운드: {totalRounds}
-```
+The name comes from `title.name`, and "Practice" / "연습" from `title.practice`.
+The other words are the existing keys: the outcome words are `gameOver.parTitle`
+and `gameOver.shortTitle`, and a Practice run that falls short uses
+`gameOver.shortTitle` in the same place.
 
 ### 1.16 Persistence and reload
 
 - Persist language on every valid language change.
 - Read language once during i18n initialization.
-- Do not write any game field to storage.
-- A page reload constructs a fresh `title` state.
+- Storage holds the language and today's daily, and nothing else.
+- The daily is one record under `localStorage["ndle.daily"]`, which each save overwrites:
+
+  ```ts
+  export interface DailyOutcome { score: number; par: number; longestStreak: number }
+  export interface DailyRecord { version: 1; number: number; moves: PuzzleMove[]; outcome: DailyOutcome | null }
+  ```
+
+  Its table number, moves so far and outcome are the whole of it (`docs/spec/architecture.md` §2.4 gives the `DailyStore` that reads and writes it). A record that fails validation is ignored, and storage errors are swallowed.
+- A Practice run writes no record.
+- A reload constructs a fresh `title` state; the daily is restored only through Daily.
 - No unload warning or recovery prompt.
