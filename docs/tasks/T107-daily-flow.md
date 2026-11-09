@@ -57,6 +57,8 @@ paths:
     harmless.
 - **The run keeps its number** if the clock passes midnight mid-run. The next
   opening after midnight gets the new table.
+- **Back is not a move.** It dispatches `RETURN_TO_TITLE` (T106) and
+  leaves the record as it is. Opening Daily again replays the record.
 - **No restart path:** in Daily, the game-over `R` listener is off and
   `RESTART_RUN` is never dispatched. Play Again's absence from the screen is
   T108's.
@@ -88,6 +90,14 @@ paths:
     - there is no button named Play Again.
   - `it("ignores a corrupt record and starts fresh")`.
   - `it("keeps the run's number when the clock passes midnight")`.
+  - `it("resumes after Back mid-Daily")`:
+    - play the par line's first three moves, then press Back;
+    - the title shows `Daily #1`, and the stored `moves` are still three;
+    - press it: row 4 is current with the hand `1 2 6 7 8`, and answering
+      row 4 correctly scores, which pins Review Focus 1 again.
+  - `it("writes no record when Practice is left by Back")`. With an empty
+    store, play two Practice rows and press Back: `getItem("ndle.daily")`
+    is `null`.
   - `it("stores only the language and today's daily")`. After a full Daily
     with the real jsdom `localStorage`, `Object.keys(localStorage)` is a
     subset of `["ndle.language", "ndle.daily"]`.
@@ -100,5 +110,5 @@ paths:
 
 ## Acceptance gate
 
-- All ten tests are green under StrictMode.
+- All twelve tests are green under StrictMode.
 - The Vitest output shows no `act()` warning.

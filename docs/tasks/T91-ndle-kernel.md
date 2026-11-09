@@ -79,6 +79,14 @@ Until these are rewritten, every later task would be refused.
     - ozterisk's process kept;
     - `prod` as the production branch;
     - two plans, with the restyle second;
+    - subagent-driven execution, with Claude filing the GitHub queue;
+    - the review file committed, and the spoiler limit accepted
+      (`docs/spec/product.md` §1.2b): no seeding scheme hides future
+      tables without a server;
+    - Gothic A1 as the placeholder Hangul face;
+    - a Back button at the top of the game and game-over screens (T106);
+    - identity direction B, Chalkboard, with a prototype before the
+      identity board;
   - links to ozterisk's 2026-10-19, 2026-10-26 and 2026-11-09 entries on
     GitHub.
 - [ ] **Tracker files:** in `docs/agents/issue-tracker.md` and the issue

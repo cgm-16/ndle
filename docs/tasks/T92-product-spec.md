@@ -39,7 +39,7 @@ apply, so cross-references keep resolving.
 | 1.1 | Product thesis | 9dle is a planning puzzle. Every table is face up, nothing is random after the deal, and the run is judged against par. Keep the tile triad (resource, consumable, inventory). |
 | 1.2 | The table | Five distinct digits and eight rows, each a pair from the 45-pair pool, shown in either order, with a pay of `getRewardCount` printed digits. |
 | 1.2a | Practice deals | `dealPuzzle(Math.random)`: planted, solved and accepted in band (`par ≥ PUZZLE_MIN_PAR`, the myopic bot below par, `onlyMoves ≥ PUZZLE_MIN_ONLY_MOVES`), with at most `PUZZLE_DEAL_ATTEMPTS` tries. Play Again deals a new table. A Practice table is never replayed or shared. |
-| 1.2b | The daily list | Numbered from launch day, which is #1. The local date picks the number. Each table is in the band and has `sacrificeRequired`. The list is chosen offline by `scripts/daily/generate.ts`. A slot freezes once its date arrives, a veto touches only future slots and the generator refills it. The review file is local and git-ignored. More tables are generated before the list runs out. Before launch or past the list's end there is no Daily that day. The launch date is set once and never changed after launch. |
+| 1.2b | The daily list | Numbered from launch day, which is #1. The local date picks the number. Each table is in the band and has `sacrificeRequired`. The list is chosen offline by `scripts/daily/generate.ts`. A slot freezes once its date arrives, a veto touches only future slots and the generator refills it. The generator's review file, `scripts/daily/review.md`, is committed. **Known limit** (Ori, 2026-11-09): the shipped bundle holds every future table, and the solver ships with Practice, so anyone can read ahead and solve; the committed review file adds convenience, not information. Seeding would not change this, because the generator would ship too. Only a server releasing each day's table would hide it, and the game is client-only. More tables are generated before the list runs out. Before launch or past the list's end there is no Daily that day. The launch date is set once and never changed after launch. |
 | 1.3 | Initial run state | The hand opens full at five, sorted. Row 1 is current. Score, streaks and rounds start at 0. |
 | 1.4 | Answer construction | Keep. |
 | 1.5 | Correct submission | Spend the tiles and take the row's pay in printed order. Score +1. |
@@ -63,4 +63,5 @@ apply, so cross-references keep resolving.
 
 - §1.8's end rule contains the exact words "fewer tiles than the next answer
   needs".
-- §1.2b names the freeze rule, the veto rule and the launch-date rule.
+- §1.2b names the freeze rule, the veto rule, the launch-date rule and the
+  spoiler limit.

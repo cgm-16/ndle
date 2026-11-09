@@ -30,8 +30,8 @@ paths:
   - scripts/run.mjs
   - scripts/daily/generate.ts
   - scripts/daily/vetoes.json
+  - scripts/daily/review.md
   - tsconfig.node.json
-  - .gitignore
 ```
 
 ## Why
@@ -89,8 +89,9 @@ candidate after `attemptsPerSlot` plants.
   itself is committed.
 - **It writes:**
   - `dailyTables.json` in the T103 format;
-  - `scripts/daily/out/review.md`, one `describeDaily` block per table. This
-    file is git-ignored (Open for Ori);
+  - `scripts/daily/review.md`, one `describeDaily` block per table. It is
+    committed, so it is public: a known limit (`docs/spec/product.md`
+    §1.2b; Ori, 2026-11-09);
   - `vetoes.json`, moving the pending vetoes it handled into `done`, each with
     the run's date.
 - **It prints** the slots kept, replaced and added, the plants tried and the
@@ -133,11 +134,10 @@ with `root` set to the repo root.
   - `dailyPicker.ts`;
   - the CLI and `scripts/run.mjs`.
 
-  Add `"scripts"` to `tsconfig.node.json`'s `include`, and
-  `scripts/daily/out/` to `.gitignore`.
+  Add `"scripts"` to `tsconfig.node.json`'s `include`.
 - [ ] **Smoke:** run `node scripts/run.mjs scripts/daily/generate.ts --count 2`
-      and check that the json and review file appear. Delete the json
-      afterwards, because T103 makes the real one.
+      and check that the json and review file appear. Delete both
+      afterwards, because T103 makes the real ones.
 - [ ] **Gates.** `npm run typecheck` now covers `scripts/`.
 - [ ] **Commit:** `feat(daily): offline picker and generator for daily tables`,
       with `Task: T102`.
@@ -146,4 +146,5 @@ with `root` set to the repo root.
 
 - The picker tests are green.
 - `tsc -b` type-checks `scripts/daily/generate.ts`.
-- `git status` shows no file under `scripts/daily/out/`.
+- After the smoke run, `git status` shows neither `src/game/dailyTables.json`
+  nor `scripts/daily/review.md`.

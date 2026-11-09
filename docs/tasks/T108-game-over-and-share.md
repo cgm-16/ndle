@@ -88,7 +88,8 @@ The name comes from `title.name`, and "Practice" / "연습" from
   - in en and ko, the Daily variant shows the number, the next-table line
     and Practice, and no Play Again;
   - the Practice variant shows Play Again and the `R` hint, and no number or
-    next-table line.
+    next-table line;
+  - both variants show Back (T106) as their first focusable element.
 - [ ] **Gallery:** add `game-over-daily-par` (the sample's par line),
       `game-over-daily-short` and `game-over-practice`. Raise `STATE_COUNT`
       by 3.

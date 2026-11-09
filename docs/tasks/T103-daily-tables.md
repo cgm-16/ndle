@@ -21,6 +21,7 @@ paths:
   - src/game/dailyTables.json
   - src/game/dailyTables.ts
   - src/game/dailyTables.test.ts
+  - scripts/daily/review.md
   - tsconfig.app.json
 ```
 
@@ -84,8 +85,9 @@ export function todaysDaily(now: Date, tables?: readonly PuzzleTable[]): // defa
 - [ ] **Commit:** `feat(daily): ship a year of daily tables`, with
       `Task: T103` and the timing lines.
 - [ ] **Open the PR** `[M13] Ship a year of daily tables`, with a `Closes #`
-      line for each of T101–T103. Tell Ori that the review file is at
-      `scripts/daily/out/review.md` locally.
+      line for each of T101–T103. The commit carries
+      `scripts/daily/review.md` beside the json; link it in the PR body for
+      Ori's review.
 
 ## Acceptance gate
 
