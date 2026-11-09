@@ -2,7 +2,6 @@ import { useEffect, useRef, type AnimationEvent, type CSSProperties } from "reac
 import type { RoundResult, Tile as TileModel } from "../../game/types";
 import { useI18n } from "../../i18n/I18nContext";
 import { Tile } from "../Tile/Tile";
-import { tileLabel } from "../Tile/tileFace";
 import styles from "./AnswerSlots.module.css";
 
 /* The streak ladder accumulates, never swaps: streak 3 adds the jade ring, 5 a
@@ -184,7 +183,7 @@ export function AnswerSlots({
                 state={disabled ? "disabled" : "resting"}
                 label={t("answerSlot.filled", {
                   position,
-                  digit: "digit" in tile ? tile.digit : tileLabel(tile, t),
+                  digit: tile.digit,
                 })}
                 onClick={onReturn && (() => onReturn(tile.id))}
               />

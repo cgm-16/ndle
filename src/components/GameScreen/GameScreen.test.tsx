@@ -9,10 +9,8 @@ import { I18nProvider } from "../../i18n/I18nContext";
 import {
   makeAnsweringState,
   makeEquation,
-  makeFaceTile,
   makeFeedbackState,
   makeGameOverState,
-  makeNbrTile,
   makeOverflowInventory,
   makeOverflowState,
   makePuzzleRow,
@@ -82,41 +80,12 @@ describe("GameScreen interactions", () => {
     expect(dispatch).not.toHaveBeenCalled();
   });
 
-  describe("digit keys and face tiles (§1.4a)", () => {
-    const equation = makeEquation(2, 2); // product 4, one slot
-    const answering = (inventory: GameState["inventory"]) =>
-      makeAnsweringState(equation, { mode: "classic", inventory, selectedTiles: [] });
-
-    it("takes a digit tile over any face holding the digit", async () => {
-      const { dispatch } = renderScreen(answering([makeTile(4, "four"), makeFaceTile("wild")]));
-      await userEvent.keyboard("4");
-      expect(dispatch).toHaveBeenCalledWith({ type: "SELECT_TILE", tileId: "four" });
-    });
-
-    it("takes the narrowest face when no digit tile holds it", async () => {
-      const { dispatch } = renderScreen(answering([makeFaceTile("low"), makeNbrTile(4)]));
-      await userEvent.keyboard("4");
-      expect(dispatch).toHaveBeenCalledWith({ type: "SELECT_TILE", tileId: "nbr-4" });
-    });
-
-    it("breaks a tie between equally narrow faces by rack order", async () => {
-      const { dispatch } = renderScreen(answering([makeFaceTile("even"), makeFaceTile("low")]));
-      await userEvent.keyboard("4");
-      expect(dispatch).toHaveBeenCalledWith({ type: "SELECT_TILE", tileId: "face-even" });
-    });
-
-    it("never marks a face in overflow", async () => {
-      // Only the wildcard holds a 7: makeOverflowInventory's lone 7 is dropped.
-      const inventory = [
-        makeFaceTile("wild"),
-        ...makeOverflowInventory(10).filter((tile) => !("digit" in tile) || tile.digit !== 7),
-      ];
-      const { dispatch } = renderScreen(
-        makeOverflowState(equation, { mode: "classic", inventory, totalRounds: 30 }),
-      );
-      await userEvent.keyboard("7");
-      expect(dispatch).not.toHaveBeenCalled();
-    });
+  it("selects the tile holding the pressed digit", async () => {
+    const { dispatch } = renderScreen(
+      makeAnsweringState(makeEquation(2, 2), { mode: "classic", inventory: [makeTile(4, "four")], selectedTiles: [] }),
+    );
+    await userEvent.keyboard("4");
+    expect(dispatch).toHaveBeenCalledWith({ type: "SELECT_TILE", tileId: "four" });
   });
 
   // 4. Backspace returns the most recent selected tile

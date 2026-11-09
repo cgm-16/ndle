@@ -10,7 +10,6 @@ import {
   getRewardCount,
   isClassicWin,
   isParMade,
-  tileDigits,
 } from "./selectors";
 import { CLASSIC_FLOOR, CLASSIC_SEAL_EVERY, CLASSIC_START_CAPACITY } from "./balance";
 import {
@@ -19,7 +18,6 @@ import {
   type PuzzleMove,
   makeAnsweringState,
   makeEquation,
-  makeFaceTile,
   makeFeedbackState,
   makeOverflowState,
   makeTile,
@@ -69,7 +67,7 @@ describe("START_RUN", () => {
 describe("SELECT_TILE", () => {
   it("moves an exact tile into the next ordered answer slot", () => {
     const state = makeAnsweringState(makeEquation(7, 8));
-    const tile = state.inventory.find((item) => tileDigits(item)[0] === 5)!;
+    const tile = state.inventory.find((item) => item.digit === 5)!;
     const next = gameReducer(state, { type: "SELECT_TILE", tileId: tile.id });
     expect(next.selectedTiles).toEqual([tile]);
     expect(next.inventory).not.toContainEqual(tile);
@@ -279,28 +277,6 @@ describe("SUBMIT_CORRECT", () => {
     const second = gameReducer(first, { type: "SUBMIT_CORRECT", rewardTiles });
 
     expect(second).toBe(first);
-  });
-
-  it("is a no-op when an Endless run is offered a face reward (§2.5)", () => {
-    const equation = makeEquation(3, 3); // product 9
-    const selected = makeTile(9, "tile-selected");
-    const state = makeAnsweringState(equation, { mode: "endless", inventory: [], selectedTiles: [selected] });
-    const rewardTiles = [makeTile(1, "reward-0", true), makeFaceTile("wild", "reward-1", true)];
-
-    const next = gameReducer(state, { type: "SUBMIT_CORRECT", rewardTiles });
-
-    expect(next).toBe(state);
-  });
-
-  it("accepts a face reward in Classic", () => {
-    const equation = makeEquation(3, 3); // product 9
-    const selected = makeTile(9, "tile-selected");
-    const state = makeAnsweringState(equation, { mode: "classic", inventory: [], selectedTiles: [selected] });
-    const rewardTiles = [makeTile(1, "reward-0", true), makeFaceTile("wild", "reward-1", true)];
-
-    const next = gameReducer(state, { type: "SUBMIT_CORRECT", rewardTiles });
-
-    expect(next.inventory.map((tile) => tile.id)).toContain("reward-1");
   });
 
   it("is a no-op outside the answering phase", () => {
@@ -631,7 +607,7 @@ describe("NEXT_ROUND", () => {
 
     const next = gameReducer(withMarker, { type: "NEXT_ROUND", equation: makeEquation(2, 3) });
 
-    expect(next.inventory.flatMap(tileDigits)).toEqual([2, 5, 7]);
+    expect(next.inventory.map((tile) => tile.digit)).toEqual([2, 5, 7]);
     expect(next.lastResult).toBeNull();
   });
 
@@ -802,7 +778,7 @@ describe("CLEAR_SELECTION", () => {
     const next = gameReducer(state, { type: "CLEAR_SELECTION" });
 
     expect(next.selectedTiles).toEqual([]);
-    expect(next.inventory.flatMap(tileDigits)).toEqual([0, 1, 3]);
+    expect(next.inventory.map((tile) => tile.digit)).toEqual([0, 1, 3]);
   });
 
   it("is a no-op when nothing is selected", () => {
@@ -850,8 +826,8 @@ describe("Classic", () => {
     // Submission 2 seals a socket: capacity 20 -> 19. A full rack spending two
     // tiles on 4 x 5 = 20 gets three back, 21 tiles against 19 sockets.
     const inventory = classicInventory();
-    const two = inventory.find((tile) => tileDigits(tile)[0] === 2)!;
-    const zero = inventory.find((tile) => tileDigits(tile)[0] === 0)!;
+    const two = inventory.find((tile) => tile.digit === 2)!;
+    const zero = inventory.find((tile) => tile.digit === 0)!;
     const state = makeAnsweringState(makeEquation(4, 5), {
       mode: "classic",
       totalRounds: CLASSIC_SEAL_EVERY - 1,
@@ -872,7 +848,7 @@ describe("Classic", () => {
 
   it("never overflows on an incorrect answer, even on a sealing submission", () => {
     const inventory = classicInventory();
-    const nine = inventory.find((tile) => tileDigits(tile)[0] === 9)!;
+    const nine = inventory.find((tile) => tile.digit === 9)!;
     const state = makeAnsweringState(makeEquation(2, 3), {
       mode: "classic",
       totalRounds: CLASSIC_SEAL_EVERY - 1,
@@ -954,7 +930,7 @@ describe("reducer lifecycle invariants (§2.5)", () => {
         label: "select the tile that constructs the correct answer",
         getAction: (s) => ({
           type: "SELECT_TILE",
-          tileId: s.inventory.find((tile) => tileDigits(tile)[0] === 9)!.id,
+          tileId: s.inventory.find((tile) => tile.digit === 9)!.id,
         }),
         expectedPhase: "answering",
       },
@@ -1053,8 +1029,8 @@ describe("Classic lifecycle", () => {
     const ids = sequentialIds("reward");
     const rewardDigits: Digit[] = [1, 2, 3, 4, 5, 6, 7, 8, 9];
     const nextEquation = (s: GameState) => {
-      const tile = s.inventory.find((candidate) => (tileDigits(candidate)[0] ?? 0) > 0);
-      return makeEquation(1, (tile && tileDigits(tile)[0]) || 9);
+      const tile = s.inventory.find((candidate) => candidate.digit > 0);
+      return makeEquation(1, tile?.digit || 9);
     };
     const step = (s: GameState, action: GameAction): GameState => {
       const next = gameReducer(s, action);
@@ -1073,7 +1049,7 @@ describe("Classic lifecycle", () => {
     while (state.phase === "answering") {
       const product = state.equation!.product;
       const miss = state.round % 3 === 0;
-      const tile = state.inventory.find((candidate) => (tileDigits(candidate)[0] === product) !== miss)!;
+      const tile = state.inventory.find((candidate) => (candidate.digit === product) !== miss)!;
       state = step(state, { type: "SELECT_TILE", tileId: tile.id });
       if (miss) {
         state = step(state, { type: "SUBMIT_INCORRECT" });
@@ -1096,39 +1072,6 @@ describe("Classic lifecycle", () => {
   });
 });
 
-describe("face tiles in a submission", () => {
-  const equation = makeEquation(7, 9); // product 63
-  const classic = { mode: "classic" as const, inventory: [makeTile(1, "tile-spare")] };
-
-  it("accepts SUBMIT_CORRECT when each face holds its slot's digit, recording the product", () => {
-    const state = makeAnsweringState(equation, {
-      ...classic,
-      selectedTiles: [makeFaceTile("even"), makeTile(3)],
-    });
-    const rewardTiles = [makeTile(2, "r1"), makeTile(4, "r2"), makeTile(6, "r3")];
-
-    const next = gameReducer(state, { type: "SUBMIT_CORRECT", rewardTiles });
-
-    expect(next.phase).toBe("feedback");
-    expect(next.lastResult).toMatchObject({ kind: "correct", submittedValue: 63 });
-    expect(gameReducer(state, { type: "SUBMIT_INCORRECT" })).toBe(state);
-  });
-
-  it("takes SUBMIT_INCORRECT when a face misses its slot, with no submitted value", () => {
-    const state = makeAnsweringState(equation, {
-      ...classic,
-      selectedTiles: [makeFaceTile("odd"), makeTile(3)],
-    });
-
-    const next = gameReducer(state, { type: "SUBMIT_INCORRECT" });
-
-    expect(next.lastResult).toMatchObject({ kind: "incorrect", submittedValue: null, correctValue: 63 });
-    expect(
-      gameReducer(state, { type: "SUBMIT_CORRECT", rewardTiles: [makeTile(2, "r1"), makeTile(4, "r2"), makeTile(6, "r3")] }),
-    ).toBe(state);
-  });
-});
-
 const puzzleStart = (table = PUZZLE_SAMPLE, ids = sequentialIds()): GameState =>
   gameReducer(createTitleState(), {
     type: "START_RUN",
@@ -1139,7 +1082,7 @@ const puzzleStart = (table = PUZZLE_SAMPLE, ids = sequentialIds()): GameState =>
   });
 
 const tileWith = (state: GameState, digit: Digit): Tile =>
-  state.inventory.find((tile) => "digit" in tile && tile.digit === digit)!;
+  state.inventory.find((tile) => tile.digit === digit)!;
 
 // Plays rows through the reducer exactly as App does: select, submit with the
 // row's pay, discard if asked, advance to the next row's equation.
@@ -1162,7 +1105,7 @@ function play(state: GameState, line: PuzzleMove[], ids: TileIdFactory): GameSta
   return state;
 }
 
-const digitsOf = (tiles: readonly Tile[]) => tiles.map((tile) => ("digit" in tile ? tile.digit : -1));
+const digitsOf = (tiles: readonly Tile[]) => tiles.map((tile) => tile.digit);
 
 describe("Puzzle", () => {
   it("starts with the table, its hand and row 1", () => {
@@ -1199,7 +1142,7 @@ describe("Puzzle", () => {
     expect(next).toBe(title);
   });
 
-  it("accepts the row's pay and refuses other digits, another order or a face", () => {
+  it("accepts the row's pay and refuses other digits, or another order", () => {
     const ids = sequentialIds();
     let state = puzzleStart(PUZZLE_SAMPLE, ids);
     // Row 1 is 3 × 5: answer 15 and offer row 1's pay, 9 5 5.
@@ -1208,7 +1151,6 @@ describe("Puzzle", () => {
     for (const wrong of [
       createTiles([9, 5, 6], ids),
       createTiles([5, 9, 5], ids),
-      [...createTiles([9, 5], ids), makeFaceTile("wild", "face-pay")],
     ]) {
       expect(gameReducer(state, { type: "SUBMIT_CORRECT", rewardTiles: wrong })).toBe(state);
     }

@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import type { TileValue } from "../../game/types";
+import type { Tile as TileModel } from "../../game/types";
 import { useI18n } from "../../i18n/I18nContext";
 import { tileGlyph, tileLabel } from "./tileFace";
 import styles from "./Tile.module.css";
@@ -9,8 +9,7 @@ export type TileSize = "lg" | "sm";
 export type TileState = "resting" | "lifted" | "reward" | "marked" | "disabled";
 
 export interface TileProps {
-  /** A digit, or a face tile's set (§1.4a). */
-  value: TileValue;
+  value: Pick<TileModel, "digit">;
   /** lg = rack/slot tile. sm = compact, non-interactive tile. */
   size?: TileSize;
   state?: TileState;
@@ -28,7 +27,7 @@ export interface TileProps {
 }
 
 /**
- * The single fired-ceramic tile, digit or face. Every ceramic face in the game
+ * The single fired-ceramic tile. Every ceramic face in the game
  * is one of these: the rack tile, the filled answer slot, and the reward tile.
  *
  * The empty answer slot is not one — it is a socket cut into the felt, and its
@@ -37,10 +36,7 @@ export interface TileProps {
 export function Tile({ value, size = "lg", state = "resting", onClick, label, pressed, style }: TileProps) {
   const { t } = useI18n();
   const glyph = tileGlyph(value);
-  // A range engraves three characters and a letter one, and they set at different sizes.
-  const faceClasses =
-    "digit" in value ? [] : [styles.face, glyph.length > 1 && styles.range, value.face === "wild" && styles.wild];
-  const className = [styles.tile, styles[size], styles[state], ...faceClasses].filter(Boolean).join(" ");
+  const className = [styles.tile, styles[size], styles[state]].join(" ");
 
   // Without onClick the tile is decorative: no button element and no button
   // role, so a later phase can mount answer slots inside feedback without

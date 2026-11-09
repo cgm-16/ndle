@@ -6,21 +6,17 @@ import {
   constructAnswer,
   getAnswerLength,
   getCapacity,
-  getClassicFaceRate,
   getOverflowCount,
   getRewardCount,
   isClassicWin,
   isParMade,
   isRunComplete,
   isSubmissionReady,
-  tileDigits,
 } from "./selectors";
 import {
   CLASSIC_FLOOR,
   CLASSIC_SEAL_EVERY,
   CLASSIC_START_CAPACITY,
-  FACE_RATE_END,
-  FACE_RATE_START,
   INVENTORY_CAPACITY,
   PUZZLE_CAPACITY,
   REWARD_BONUS,
@@ -30,9 +26,7 @@ import {
   PUZZLE_SAMPLE,
   makeAnsweringState,
   makeEquation,
-  makeFaceTile,
   makeFeedbackState,
-  makeNbrTile,
   makeTile,
 } from "../test/fixtures";
 
@@ -76,10 +70,6 @@ describe("constructAnswer", () => {
 
   it("constructs a single-digit answer from one selected tile", () => {
     expect(constructAnswer([makeTile(7)])).toBe(7);
-  });
-
-  it("returns null when any selected tile is a face", () => {
-    expect(constructAnswer([makeFaceTile("odd"), makeTile(3)])).toBeNull();
   });
 
   it("collapses a leading zero: [0, 9] constructs 9, not 09", () => {
@@ -133,53 +123,9 @@ describe("canConstruct", () => {
   it("rejects everything from an empty hand", () => {
     expect(canConstruct([], 4)).toBe(false);
   });
-
-  // Greedy "narrowest first" hands the 3 to Neighbours and has nothing for
-  // the 4; Odd as 3 and Neighbours as 4 spells it (product.md §1.4a).
-  it("finds an assignment a greedy pass misses", () => {
-    expect(canConstruct([makeNbrTile(3), makeFaceTile("odd")], 34)).toBe(true);
-  });
-
-  it("spends one tile per slot, face or digit", () => {
-    expect(canConstruct([makeFaceTile("wild")], 44)).toBe(false);
-    expect(canConstruct([makeFaceTile("wild"), makeTile(4)], 44)).toBe(true);
-  });
-
-  it("rejects a face whose set misses the digit", () => {
-    expect(canConstruct([makeFaceTile("odd")], 6)).toBe(false);
-  });
-});
-
-describe("tileDigits", () => {
-  it("gives a digit tile its own digit", () => {
-    expect(tileDigits(makeTile(7))).toEqual([7]);
-  });
-
-  it.each([
-    ["wild", [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]],
-    ["odd", [1, 3, 5, 7, 9]],
-    ["even", [0, 2, 4, 6, 8]],
-    ["low", [0, 1, 2, 3, 4]],
-    ["high", [5, 6, 7, 8, 9]],
-  ] as const)("gives %s its set", (face, digits) => {
-    expect(tileDigits(makeFaceTile(face))).toEqual(digits);
-  });
-
-  it("gives Neighbours its centre and both sides, without wrapping", () => {
-    expect(tileDigits(makeNbrTile(1))).toEqual([0, 1, 2]);
-    expect(tileDigits(makeNbrTile(8))).toEqual([7, 8, 9]);
-  });
 });
 
 describe("answerMatches", () => {
-  it("accepts a face whose set holds its slot's digit", () => {
-    expect(answerMatches([makeFaceTile("high"), makeTile(3)], 53)).toBe(true);
-  });
-
-  it("rejects a face whose set misses its slot's digit", () => {
-    expect(answerMatches([makeFaceTile("odd"), makeTile(3)], 63)).toBe(false);
-  });
-
   it("reads slots in order", () => {
     expect(answerMatches([makeTile(5), makeTile(6)], 56)).toBe(true);
     expect(answerMatches([makeTile(6), makeTile(5)], 56)).toBe(false);
@@ -188,27 +134,6 @@ describe("answerMatches", () => {
   it("rejects a selection that does not fill the product's slots", () => {
     expect(answerMatches([makeTile(0), makeTile(9)], 9)).toBe(false);
     expect(answerMatches([makeTile(5)], 56)).toBe(false);
-  });
-});
-
-describe("getClassicFaceRate", () => {
-  // The last submission of a run is the one that seals the floor's socket.
-  const lastSubmission = (CLASSIC_START_CAPACITY - CLASSIC_FLOOR) * CLASSIC_SEAL_EVERY - 1;
-
-  it("starts at the start rate and reaches the end rate on the run's last submission", () => {
-    expect(getClassicFaceRate(0)).toBe(FACE_RATE_START);
-    expect(getClassicFaceRate(lastSubmission)).toBeCloseTo(FACE_RATE_END, 12);
-  });
-
-  it("rises by the same step every submission", () => {
-    const step = (FACE_RATE_END - FACE_RATE_START) / lastSubmission;
-    for (let submission = 1; submission <= lastSubmission; submission++) {
-      expect(getClassicFaceRate(submission) - getClassicFaceRate(submission - 1)).toBeCloseTo(step, 12);
-    }
-  });
-
-  it("holds the end rate past the last submission", () => {
-    expect(getClassicFaceRate(lastSubmission + 5)).toBeCloseTo(FACE_RATE_END, 12);
   });
 });
 

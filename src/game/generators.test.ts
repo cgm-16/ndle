@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { FACE_RATE_END, FACE_RATE_START, KIND_EQUATION_RATE } from "./balance";
+import { KIND_EQUATION_RATE } from "./balance";
 import { generateEquation, generateKindEquation, generateRewardTiles } from "./generators";
-import { canConstruct, tileDigits } from "./selectors";
+import { canConstruct } from "./selectors";
 import { makeTile, sequenceRandom, sequentialIds } from "../test/fixtures";
 
 describe("generateEquation", () => {
@@ -145,7 +145,7 @@ describe("generateRewardTiles", () => {
     [0.1, 1],
     [0.999999, 9],
   ])("maps random value %s to digit %s", (value, digit) => {
-    const [tile] = generateRewardTiles(1, () => value, sequentialIds(), "endless", 0);
+    const [tile] = generateRewardTiles(1, () => value, sequentialIds());
     expect(tile).toMatchObject({ digit, isNew: true });
   });
 
@@ -160,7 +160,7 @@ describe("generateRewardTiles", () => {
       idCalls += 1;
       return `tile-${idCalls}`;
     };
-    const tiles = generateRewardTiles(3, random, idFactory, "endless", 0);
+    const tiles = generateRewardTiles(3, random, idFactory);
     expect(tiles).toHaveLength(3);
     expect(randomCalls).toBe(3);
     expect(idCalls).toBe(3);
@@ -179,8 +179,6 @@ describe("generateRewardTiles", () => {
         idCalls += 1;
         return "tile";
       },
-      "endless",
-      0,
     );
     expect(tiles).toEqual([]);
     expect(randomCalls).toBe(0);
@@ -188,102 +186,15 @@ describe("generateRewardTiles", () => {
   });
 
   it("throws RangeError for a negative count", () => {
-    expect(() => generateRewardTiles(-1, () => 0.5, sequentialIds(), "endless", 0)).toThrow(RangeError);
+    expect(() => generateRewardTiles(-1, () => 0.5, sequentialIds())).toThrow(RangeError);
   });
 
   it("throws RangeError for a non-integer count", () => {
-    expect(() => generateRewardTiles(1.5, () => 0.5, sequentialIds(), "endless", 0)).toThrow(RangeError);
+    expect(() => generateRewardTiles(1.5, () => 0.5, sequentialIds())).toThrow(RangeError);
   });
 
   it("throws RangeError when a reward sample is out of [0, 1)", () => {
-    expect(() => generateRewardTiles(1, () => 1, sequentialIds(), "endless", 0)).toThrow(RangeError);
-    expect(() => generateRewardTiles(1, () => -0.1, sequentialIds(), "endless", 0)).toThrow(RangeError);
-  });
-});
-
-describe("generateRewardTiles in Classic", () => {
-  it("draws a digit from the second sample when the face gate misses", () => {
-    const [tile] = generateRewardTiles(1, sequenceRandom(FACE_RATE_START, 0.1), sequentialIds(), "classic", 0);
-    expect(tile).toMatchObject({ digit: 1, isNew: true });
-  });
-
-  it("draws a face when the face gate hits", () => {
-    const [first, last] = generateRewardTiles(
-      2,
-      sequenceRandom(0, 0, FACE_RATE_START - 1e-9, 0.999999),
-      sequentialIds(),
-      "classic",
-      0,
-    );
-    expect(first).toMatchObject({ face: "wild", isNew: true });
-    expect(last).toMatchObject({ face: "nbr", centre: 8, isNew: true });
-  });
-
-  // Weights are 1 / set size: Wildcard 1/10, each five-set 1/5, Neighbours 1/3
-  // split across its eight centres — 8.1%, 16.2% and 27.0% of faces.
-  it("weights the kinds by 1 / set size", () => {
-    const samples = 100_000;
-    const counts = new Map<string, number>();
-    for (let index = 0; index < samples; index++) {
-      const [tile] = generateRewardTiles(
-        1,
-        sequenceRandom(0, index / samples),
-        sequentialIds(),
-        "classic",
-        0,
-      );
-      const kind = tile && "face" in tile ? tile.face : "digit";
-      counts.set(kind, (counts.get(kind) ?? 0) + 1);
-    }
-    const share = (kind: string) => (counts.get(kind) ?? 0) / samples;
-    expect(share("wild")).toBeCloseTo(0.1 / (0.9 + 1 / 3), 3);
-    for (const kind of ["odd", "even", "low", "high"]) {
-      expect(share(kind)).toBeCloseTo(0.2 / (0.9 + 1 / 3), 3);
-    }
-    expect(share("nbr")).toBeCloseTo(1 / 3 / (0.9 + 1 / 3), 3);
-  });
-
-  it("spreads Neighbours evenly over centres 1 to 8", () => {
-    const samples = 80_000;
-    const centres = new Map<number, number>();
-    for (let index = 0; index < samples; index++) {
-      const [tile] = generateRewardTiles(
-        1,
-        sequenceRandom(0, index / samples),
-        sequentialIds(),
-        "classic",
-        0,
-      );
-      if (tile && "centre" in tile) centres.set(tile.centre, (centres.get(tile.centre) ?? 0) + 1);
-    }
-    expect([...centres.keys()].sort()).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
-    const counts = [...centres.values()];
-    expect(Math.max(...counts) - Math.min(...counts)).toBeLessThanOrEqual(1);
-  });
-
-  // The same gate sample misses on the first submission and hits on the last,
-  // because the rate ramps from FACE_RATE_START to FACE_RATE_END.
-  it("draws faces more often as the run goes on", () => {
-    const gate = (FACE_RATE_START + FACE_RATE_END) / 2;
-    const [early] = generateRewardTiles(1, sequenceRandom(gate, 0.1), sequentialIds(), "classic", 0);
-    const [late] = generateRewardTiles(1, sequenceRandom(gate, 0), sequentialIds(), "classic", 29);
-    expect(early).toMatchObject({ digit: 1 });
-    expect(late).toMatchObject({ face: "wild" });
-  });
-
-  it("never draws a face in Endless, and takes one sample per tile", () => {
-    let calls = 0;
-    const tiles = generateRewardTiles(
-      5,
-      () => {
-        calls += 1;
-        return 0;
-      },
-      sequentialIds(),
-      "endless",
-      0,
-    );
-    expect(tiles.every((tile) => tileDigits(tile).length === 1 && "digit" in tile)).toBe(true);
-    expect(calls).toBe(5);
+    expect(() => generateRewardTiles(1, () => 1, sequentialIds())).toThrow(RangeError);
+    expect(() => generateRewardTiles(1, () => -0.1, sequentialIds())).toThrow(RangeError);
   });
 });

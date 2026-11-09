@@ -1,8 +1,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { ActionButton } from "../components/ActionButton/ActionButton";
 import { AnswerSlots } from "../components/AnswerSlots/AnswerSlots";
-import { Tile, type TileState } from "../components/Tile/Tile";
-import type { TileValue } from "../game/types";
+import { Tile } from "../components/Tile/Tile";
 import { useI18n } from "../i18n/I18nContext";
 import { makeTile } from "../test/fixtures";
 import styles from "./Gallery.module.css";
@@ -110,41 +109,6 @@ export function ReducedMotionBoard({ note }: { note: string }) {
       <div className={styles.boardRow}>
         <ActionButton onClick={noop}>{t("action.next")}</ActionButton>
         <Tile value={{ digit: 4 }} onClick={noop} />
-      </div>
-    </div>
-  );
-}
-
-// Every face kind, in rack order, beside the digit tile it is set against.
-const FACE_BOARD_VALUES: readonly TileValue[] = [
-  { digit: 4 },
-  { face: "wild" },
-  { face: "odd" },
-  { face: "even" },
-  { face: "low" },
-  { face: "nbr", centre: 4 },
-  { face: "high" },
-];
-const FACE_BOARD_STATES: readonly TileState[] = ["resting", "lifted", "reward", "marked", "disabled"];
-
-// §1.12: a face tile's states are the digit tile's exactly, so each row sets
-// one state across every kind, and the last row is the compact size the reward
-// strip and the final hand draw.
-export function FaceBoard({ note }: { note: string }) {
-  return (
-    <div className={styles.board}>
-      <p className={styles.boardNote}>{note}</p>
-      {FACE_BOARD_STATES.map((state) => (
-        <div key={state} className={styles.boardRow}>
-          {FACE_BOARD_VALUES.map((value, index) => (
-            <Tile key={index} value={value} state={state} onClick={noop} />
-          ))}
-        </div>
-      ))}
-      <div className={styles.boardRow}>
-        {FACE_BOARD_VALUES.map((value, index) => (
-          <Tile key={index} value={value} size="sm" />
-        ))}
       </div>
     </div>
   );

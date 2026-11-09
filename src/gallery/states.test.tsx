@@ -110,59 +110,6 @@ describe("gallery catalogue", () => {
   // jsdom — which performs no layout. One of the two tiles this hand must
   // shed is marked, which is the half-made decision: the discard stays open
   // until the second mark completes it.
-  describe("face tiles (M7)", () => {
-    const FACE_NAMES = [
-      "Wildcard: any digit",
-      "Odd tile: 1, 3, 5, 7, or 9",
-      "Even tile: 0, 2, 4, 6, or 8",
-      "Digits 3 to 5",
-      "Digits 0 to 4",
-      "Digits 5 to 9",
-    ];
-
-    it("draws every kind in every state, at both sizes", async () => {
-      await renderEntry(entryById("interaction-face-tiles"));
-      for (const name of FACE_NAMES) {
-        // resting, lifted, reward, marked and disabled, as buttons
-        expect(screen.getAllByRole("button", { name }), name).toHaveLength(5);
-      }
-      expect(screen.getAllByText("✳")).toHaveLength(6); // five buttons and one compact
-    });
-
-    it("seats all six kinds in a Classic rack, after the digits, in rack order", async () => {
-      await renderEntry(entryById("answering-classic-faces"));
-      const names = screen
-        .getAllByRole("button", { name: /^(Digit \d|Wildcard|Odd|Even|Digits)/ })
-        .map((button) => button.getAttribute("aria-label"));
-      const firstFace = names.findIndex((name) => !name?.startsWith("Digit "));
-      expect(names.slice(0, firstFace).every((name) => name?.startsWith("Digit "))).toBe(true);
-      expect(names.slice(firstFace)).toEqual([
-        "Wildcard: any digit",
-        "Odd tile: 1, 3, 5, 7, or 9",
-        "Even tile: 0, 2, 4, 6, or 8",
-        "Digits 0 to 4",
-        "Digits 3 to 5",
-        "Digits 5 to 9",
-      ]);
-    });
-
-    it("states the product a face counted as, in feedback-correct-face", async () => {
-      await renderEntry(entryById("feedback-correct-face"));
-      expect(screen.getByRole("status")).toHaveTextContent("Your answer: 56");
-    });
-
-    it("engraves a missed face, in feedback-incorrect-face", async () => {
-      await renderEntry(entryById("feedback-incorrect-face"));
-      expect(screen.getByRole("status")).toHaveTextContent("Your answer: O·3");
-      expect(screen.getByRole("status")).toHaveTextContent("Correct answer: 63");
-    });
-
-    it("holds a face in the Classic win's final hand", async () => {
-      const { container } = await renderEntry(entryById("game-over-classic-win"));
-      expect(container.querySelector(`.${gameOverStyles.finalHand}`)).toHaveTextContent("✳");
-    });
-  });
-
   it("marks one tile for discard in overflow-marked, with the discard still open", () => {
     render(
       <I18nProvider initialLanguage="en">{entryById("overflow-marked").render()}</I18nProvider>,

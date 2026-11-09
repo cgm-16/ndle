@@ -1,7 +1,7 @@
-import type { Digit, Equation, FaceSet, GameMode, RandomSource, Tile, TileIdFactory } from "./types";
+import type { Digit, Equation, RandomSource, Tile, TileIdFactory } from "./types";
 import { KIND_EQUATION_RATE } from "./balance";
 import { OPERAND_MAX, OPERAND_MIN, REWARD_DIGIT_COUNT } from "./constants";
-import { canConstruct, getClassicFaceRate } from "./selectors";
+import { canConstruct } from "./selectors";
 
 // The canonical 45-entry pool of unordered operand pairs (1 <= left <= right <= 9).
 export const EQUATION_PAIRS: ReadonlyArray<readonly [number, number]> = (() => {
@@ -69,47 +69,17 @@ export function generateKindEquation(random: RandomSource, inventory: readonly T
   return orientPair(pair, readRandomSample(random));
 }
 
-// Each face weighted 1 / set size (§1.4a), in 120ths so the table stays whole:
-// Wildcard 12, each five-set 24, each of Neighbours' eight centres 5.
-const FACE_TABLE: ReadonlyArray<readonly [FaceSet, number]> = [
-  [{ face: "wild" }, 12],
-  [{ face: "odd" }, 24],
-  [{ face: "even" }, 24],
-  [{ face: "low" }, 24],
-  [{ face: "high" }, 24],
-  ...([1, 2, 3, 4, 5, 6, 7, 8] as const).map(
-    (centre) => [{ face: "nbr" as const, centre }, 5] as const,
-  ),
-];
-const FACE_TABLE_TOTAL = FACE_TABLE.reduce((sum, [, weight]) => sum + weight, 0);
-
-function drawFace(sample: number): FaceSet {
-  let remaining = sampleBinIndex(sample, FACE_TABLE_TOTAL);
-  for (const [face, weight] of FACE_TABLE) {
-    if (remaining < weight) return face;
-    remaining -= weight;
-  }
-  throw new RangeError(`No face at sample ${sample}`);
-}
-
-// Classic draws a face gate sample per tile, against the rate for the run's
-// submission count; Endless draws none, so its reward sequence is exactly the
-// digit draw.
+// Reward tiles are digits, drawn uniformly.
 export function generateRewardTiles(
   count: number,
   random: RandomSource,
   idFactory: TileIdFactory,
-  mode: GameMode,
-  totalRounds: number,
 ): Tile[] {
   if (!Number.isInteger(count) || count < 0) {
     throw new RangeError(`Reward count must be a non-negative integer; received ${count}`);
   }
 
   return Array.from({ length: count }, (): Tile => {
-    if (mode === "classic" && readRandomSample(random) < getClassicFaceRate(totalRounds)) {
-      return { ...drawFace(readRandomSample(random)), id: idFactory(), isNew: true };
-    }
     const sample = readRandomSample(random);
     const digit = sampleBinIndex(sample, REWARD_DIGIT_COUNT) as Digit;
     return { id: idFactory(), digit, isNew: true };

@@ -73,11 +73,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (state.selectedTiles.length !== getAnswerLength(state.equation)) return state;
       if (!answerMatches(state.selectedTiles, state.equation.product)) return state;
       if (action.rewardTiles.length !== getRewardCount(state.selectedTiles.length)) return state;
-      if (state.mode !== "classic" && action.rewardTiles.some((tile) => !("digit" in tile))) return state;
       // A Puzzle row pays the digits printed on it, in order.
       if (state.table) {
         const pay = state.table.rows[state.round - 1]?.pay;
-        if (!pay || action.rewardTiles.some((tile, index) => !("digit" in tile) || tile.digit !== pay[index])) {
+        if (!pay || action.rewardTiles.some((tile, index) => tile.digit !== pay[index])) {
           return state;
         }
       }
@@ -126,6 +125,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (state.selectedTiles.length !== getAnswerLength(state.equation)) return state;
       if (answerMatches(state.selectedTiles, state.equation.product)) return state;
       const submittedValue = constructAnswer(state.selectedTiles);
+      if (submittedValue === null) return state;
 
       return {
         ...state,

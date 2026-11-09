@@ -8,14 +8,7 @@ export type GamePhase =
   | "overflow"
   | "gameOver";
 
-export type FaceKind = "wild" | "odd" | "even" | "low" | "high";
-
-// A digit tile, or a face tile standing for a set of digits (product.md §1.4a).
-// Face tiles exist in Classic only.
-export type FaceSet = { face: FaceKind } | { face: "nbr"; centre: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 };
-// What a tile shows and stands for, apart from its identity.
-export type TileValue = { digit: Digit } | FaceSet;
-export type Tile = { id: string; isNew: boolean } & TileValue;
+export type Tile = { id: string; digit: Digit; isNew: boolean };
 
 export interface Equation {
   left: number;
@@ -25,8 +18,8 @@ export interface Equation {
 
 export interface RoundResult {
   kind: "correct" | "incorrect";
-  /** The product on a correct answer; the spelled number on an incorrect all-digit answer; null when an incorrect answer holds a face tile. */
-  submittedValue: number | null;
+  /** The product on a correct answer; the spelled number on an incorrect answer. */
+  submittedValue: number;
   correctValue: number;
   submittedTiles: Tile[];
   rewardTileIds: string[];

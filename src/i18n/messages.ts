@@ -113,14 +113,6 @@ const en = {
     digitLabel: "Digit {digit}",
     newLabel: "New tile",
     discardLabel: "Marked for discard",
-    face: {
-      wild: "Wildcard: any digit",
-      odd: "Odd tile: 1, 3, 5, 7, or 9",
-      even: "Even tile: 0, 2, 4, 6, or 8",
-      low: "Digits 0 to 4",
-      high: "Digits 5 to 9",
-      nbr: "Digits {low} to {high}",
-    },
   },
 } as const;
 
@@ -221,14 +213,6 @@ const ko = {
     digitLabel: "숫자 {digit}",
     newLabel: "새 타일",
     discardLabel: "버릴 타일로 표시됨",
-    face: {
-      wild: "와일드카드: 모든 숫자",
-      odd: "홀수 타일: 1, 3, 5, 7, 9",
-      even: "짝수 타일: 0, 2, 4, 6, 8",
-      low: "숫자 0–4",
-      high: "숫자 5–9",
-      nbr: "숫자 {low}–{high}",
-    },
   },
 } as const satisfies MessageShape<typeof en>;
 

@@ -69,8 +69,6 @@ export function App({ dependencies, shareDependencies }: AppProps) {
             getRewardCount(state.selectedTiles.length),
             dependencies.random,
             dependencies.nextTileId,
-            state.mode,
-            state.totalRounds,
           );
       dispatch({ type: "SUBMIT_CORRECT", rewardTiles });
     } else {
@@ -79,8 +77,6 @@ export function App({ dependencies, shareDependencies }: AppProps) {
   }, [
     state.equation,
     state.selectedTiles,
-    state.mode,
-    state.totalRounds,
     state.table,
     state.round,
     dependencies,
