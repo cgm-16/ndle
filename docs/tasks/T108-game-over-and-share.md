@@ -62,6 +62,10 @@ export type ShareStats = { score: number; rows: number; par: number; longestStre
     `다음 판은 자정에 열립니다.`;
   - a Practice button, `title.practice`.
 - **Practice only:** Play Again, with its `R` hint.
+- **`howToPlay.keyboard`** ends, in en, "…Enter to submit or continue, and R
+  to deal a new table after a Practice run ends." In ko it ends "…Enter 키로
+  제출하거나 다음으로 진행하고, 연습 게임이 끝나면 R 키로 새 판을
+  시작합니다." The rest of the string is unchanged.
 
 **Exact share texts.** `url` stands for the game's link.
 

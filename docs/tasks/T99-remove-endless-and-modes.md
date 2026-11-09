@@ -101,7 +101,18 @@ Deleted:
 - the title's mode picker, so `onStart()` takes no mode;
 - the message keys `mode.endless`, `mode.endlessHint`, `title.mode`,
   `hud.capacity`, `hud.capacityStatus`, `overflow.instruction`,
-  `gameOver.title` and `gameOver.rounds`.
+  `gameOver.title` and `gameOver.rounds`, and the whole `mode` group
+  (`mode.puzzle`, `mode.puzzleHint`).
+
+**Copy rewritten for Puzzle** (en / ko), because these strings state
+Endless's rules:
+
+| Key | en | ko |
+|---|---|---|
+| `title.summary` | `A daily multiplication puzzle. Spell each row's answer with tiles from your hand. A correct answer pays the digits printed on its row, and your hand holds five. Par is the best score the table allows.` | `매일 한 판, 곱셈 퍼즐. 손에 든 숫자 타일로 각 줄의 답을 만드세요. 정답이면 그 줄에 적힌 숫자 타일을 받고, 손에는 다섯 개까지 들 수 있습니다. 목표는 이 판에서 낼 수 있는 최고 점수입니다.` |
+| `howToPlay.correct` | `A correct answer spends its tiles and pays the digits printed on its row.` | `정답이면 사용한 타일이 빠지고 그 줄에 적힌 숫자 타일을 받습니다.` |
+| `howToPlay.capacity` | `Your hand holds at most five tiles.` | `손에는 타일을 최대 다섯 개까지 들 수 있습니다.` |
+| `howToPlay.overflow` | `If a pay would push your hand past five tiles, choose one tile to discard before play continues.` | `받은 타일로 손이 다섯 개를 넘으면, 계속하기 전에 버릴 타일 1개를 선택해야 합니다.` |
 
 `REWARD_BONUS` stays. Its comment is rewritten for Puzzle's pay, and its
 value is unchanged.
