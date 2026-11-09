@@ -38,17 +38,16 @@ Both files are rewritten to the target that this plan's tasks build.
 
 - [ ] **Rewrite `architecture.md`.**
   - **§2.1 file map:** the tree after T108. Each module that doesn't exist
-    yet is tagged with its owning task: `src/game/daily.ts` (T103),
-    `src/game/dailyTables.ts` and `dailyTables.json` (T102),
-    `src/game/dailyPicker.ts` (T101), `src/game/replay.ts` (T104),
-    `src/services/dailyStorage.ts` (T105), `scripts/run.mjs` and
-    `scripts/daily/` (T101).
+    yet is tagged with its owning task: `src/game/daily.ts` (T101),
+    `src/game/dailyPicker.ts` (T102), `scripts/run.mjs` and `scripts/daily/`
+    (T102), `src/game/dailyTables.ts` and `dailyTables.json` (T103),
+    `src/game/replay.ts` (T104), `src/services/dailyStorage.ts` (T105).
   - **§2.2 types:**
     - `Tile = { id; digit; isNew }`;
     - `GameState`, with no `mode` and with a required `table` and
       `rowResults` (T99);
-    - `PuzzleMove = { spend: Digit[]; discard?: Digit }` (T101).
-  - **§2.3 pure interfaces:** copy the signatures from T101, T103 and T104's
+    - `PuzzleMove = { spend: Digit[]; discard?: Digit }` (T102).
+  - **§2.3 pure interfaces:** copy the signatures from T101–T104's
     Interfaces blocks.
   - **§2.4 browser-bound:** the `AppDependencies` from T107, and the
     `DailyStore` from T105.

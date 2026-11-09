@@ -56,9 +56,9 @@ Git keeps the history, and the ozterisk repo stays public for citing.
   - R-01 M8's rules (T99, `gameReducer.test.ts`);
   - R-02 the end rule (T99);
   - R-03 Practice band (T106, `puzzle.test.ts`);
-  - R-04 the daily list in band with a sacrifice (T102, `dailyTables.test.ts`);
-  - R-05 the same date gives the same number (T103);
-  - R-06 freeze and veto (T101);
+  - R-04 the daily list in band with a sacrifice (T103, `dailyTables.test.ts`);
+  - R-05 the same date gives the same number (T101, `daily.test.ts`);
+  - R-06 freeze and veto (T102, `dailyPicker.test.ts`);
   - R-07 replay rebuilds the state (T104);
   - R-08 storage holds only its contract (T105);
   - R-09 one attempt and resume (T107);
@@ -79,7 +79,8 @@ Git keeps the history, and the ozterisk repo stays public for citing.
   - every `docs/tasks/T01`–`T90` file;
   - every `docs/journal/journal-*.md` dated before 2026-11-09;
   - every `docs/research/game-modes/*` folder **except** `_runner/` and
-    `03-puzzle/`. T101 moves the runner, and `puzzle.ts` cites `03-puzzle`.
+    `03-puzzle/`. `03-puzzle`'s sims run through `_runner/`, T102 copies its
+    `run.mjs` to `scripts/`, and `puzzle.ts` cites `03-puzzle`.
 
   Keep:
   - `docs/superpowers/specs/2026-10-19-puzzle-prototype-design.md` and its

@@ -67,7 +67,7 @@ Until these are rewritten, every later task would be refused.
   - **Agent skills:** the issue tracker is `cgm-16/ndle`.
 - [ ] **README.md:** what 9dle is (design §1–§2, one paragraph each for Daily
       and Practice), the commands (all seven npm scripts plus
-      `node scripts/run.mjs scripts/daily/generate.ts`, marked "from T101"),
+      `node scripts/run.mjs scripts/daily/generate.ts`, marked "from T102"),
       the deployment (`main` previews, `prod` production) and a credit line
       for `cgm-16`. Endless, Classic and Tile House don't appear.
 - [ ] **Journal** `docs/journal/journal-2026-11-09.md`. Record:

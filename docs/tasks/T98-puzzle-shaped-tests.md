@@ -66,8 +66,9 @@ default.
 
 ## Steps
 
-- [ ] **Fixtures first:** move `play` and `tileWith` from `gameReducer.test.ts`
-      into `fixtures.ts`, then rebuild the four state factories as above. Run
+- [ ] **Fixtures first:** move `play`, `puzzleStart` and `tileWith` from
+      `gameReducer.test.ts` into `fixtures.ts` and export them. Then rebuild
+      the four state factories as above. Run
       `npx vitest run`, and record the tests that now fail because they
       assumed ten tiles.
 - [ ] **Rebase or delete each failing test.**
