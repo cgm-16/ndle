@@ -1,7 +1,10 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useReducer, useRef, type ReactNode } from "react";
 import { ActionButton } from "../components/ActionButton/ActionButton";
 import { AnswerSlots } from "../components/AnswerSlots/AnswerSlots";
+import { GameScreen } from "../components/GameScreen/GameScreen";
 import { Tile } from "../components/Tile/Tile";
+import { gameReducer } from "../game/gameReducer";
+import type { GameState } from "../game/types";
 import { useI18n } from "../i18n/I18nContext";
 import { makeTile } from "../test/fixtures";
 import styles from "./Gallery.module.css";
@@ -38,6 +41,16 @@ export function CopyPressedOnMount({ children }: { children: ReactNode }) {
   }, [t]);
 
   return <div ref={stage}>{children}</div>;
+}
+
+// The slide-off (8c) exists only once a discard completes, and only the
+// reducer completes one, so the overflow entry runs a real reducer: a tap on a
+// tile plays the discard the way a player reaches it. It rests on the overflow
+// itself, and nothing advances past the discard's feedback, so the round never
+// moves on.
+export function LiveGameScreen({ initial }: { initial: GameState }) {
+  const [state, dispatch] = useReducer(gameReducer, initial);
+  return <GameScreen state={state} dispatch={dispatch} onSubmit={noop} onNextRound={noop} />;
 }
 
 // Hover, focus-visible and the press are pseudo-class states: no fixture can

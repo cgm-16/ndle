@@ -12,11 +12,7 @@ import {
   isRunComplete,
   isSubmissionReady,
 } from "./selectors";
-import {
-  INVENTORY_CAPACITY,
-  PUZZLE_CAPACITY,
-  REWARD_BONUS,
-} from "./balance";
+import { PUZZLE_CAPACITY, REWARD_BONUS } from "./balance";
 import { createTitleState } from "./factories";
 import {
   PUZZLE_SAMPLE,
@@ -24,6 +20,7 @@ import {
   makeEquation,
   makeFeedbackState,
   makeTile,
+  parLineAt,
 } from "../test/fixtures";
 
 describe("getRewardCount", () => {
@@ -134,63 +131,56 @@ describe("answerMatches", () => {
 });
 
 describe("getCapacity", () => {
-  it("is Endless's fixed capacity for Endless and five for Puzzle", () => {
-    expect(getCapacity({ mode: "endless" })).toBe(INVENTORY_CAPACITY);
+  it("is five for Puzzle", () => {
     expect(getCapacity({ mode: "puzzle" })).toBe(PUZZLE_CAPACITY);
   });
 });
 
 describe("getOverflowCount", () => {
   it("returns 0 when inventory is under capacity", () => {
-    const inventory = Array.from({ length: 8 }, (_, index) => makeTile(0, `tile-${index}`));
+    const inventory = Array.from({ length: 4 }, (_, index) => makeTile(0, `tile-${index}`));
     expect(getOverflowCount({ ...createTitleState(), inventory })).toBe(0);
   });
 
   it("returns 0 when inventory is exactly at capacity", () => {
-    const inventory = Array.from({ length: 10 }, (_, index) => makeTile(0, `tile-${index}`));
+    const inventory = Array.from({ length: 5 }, (_, index) => makeTile(0, `tile-${index}`));
     expect(getOverflowCount({ ...createTitleState(), inventory })).toBe(0);
   });
 
   it("returns 1 when inventory has one tile over capacity", () => {
-    const inventory = Array.from({ length: 11 }, (_, index) => makeTile(0, `tile-${index}`));
+    const inventory = Array.from({ length: 6 }, (_, index) => makeTile(0, `tile-${index}`));
     expect(getOverflowCount({ ...createTitleState(), inventory })).toBe(1);
   });
 
   it("returns 3 when inventory has three tiles over capacity", () => {
-    const inventory = Array.from({ length: 13 }, (_, index) => makeTile(0, `tile-${index}`));
+    const inventory = Array.from({ length: 8 }, (_, index) => makeTile(0, `tile-${index}`));
     expect(getOverflowCount({ ...createTitleState(), inventory })).toBe(3);
   });
 });
 
 describe("isSubmissionReady", () => {
   it("is true in answering phase when selected tiles fill a one-digit answer", () => {
-    const state = makeAnsweringState(makeEquation(3, 3), {
-      selectedTiles: [makeTile(9)],
-    });
+    const state = { ...parLineAt(3), selectedTiles: [makeTile(9)] }; // row 3, 9
     expect(isSubmissionReady(state)).toBe(true);
   });
 
   it("is true in answering phase when selected tiles fill a two-digit answer", () => {
-    const state = makeAnsweringState(makeEquation(2, 5), {
-      selectedTiles: [makeTile(1), makeTile(0)],
-    });
+    const state = makeAnsweringState({ selectedTiles: [makeTile(1), makeTile(5)] }); // row 1, 15
     expect(isSubmissionReady(state)).toBe(true);
   });
 
   it("is false in answering phase when fewer tiles are selected than required", () => {
-    const state = makeAnsweringState(makeEquation(2, 5), {
-      selectedTiles: [makeTile(1)],
-    });
+    const state = makeAnsweringState({ selectedTiles: [makeTile(1)] });
     expect(isSubmissionReady(state)).toBe(false);
   });
 
   it("is false when no tiles are selected", () => {
-    const state = makeAnsweringState(makeEquation(3, 3), { selectedTiles: [] });
+    const state = makeAnsweringState();
     expect(isSubmissionReady(state)).toBe(false);
   });
 
   it("is false outside the answering phase even with a full selection", () => {
-    const state = makeFeedbackState(makeEquation(3, 3), { selectedTiles: [makeTile(9)] });
+    const state = makeFeedbackState({ selectedTiles: [makeTile(1), makeTile(5)] });
     expect(isSubmissionReady(state)).toBe(false);
   });
 });

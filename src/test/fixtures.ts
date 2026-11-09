@@ -1,4 +1,6 @@
-import { createInitialInventory, createTitleState } from "../game/factories";
+import { createTiles, createTitleState, sortTiles } from "../game/factories";
+import { gameReducer } from "../game/gameReducer";
+import { answerMatches } from "../game/selectors";
 import type {
   Digit,
   Equation,
@@ -49,66 +51,6 @@ export const makeTile = (
   isNew = false,
 ): Tile => ({ id, digit, isNew });
 
-export const makeAnsweringState = (
-  equation: Equation,
-  overrides: Partial<GameState> = {},
-): GameState => ({
-  ...createTitleState(),
-  phase: "answering",
-  equation,
-  inventory: createInitialInventory(sequentialIds()),
-  round: 1,
-  ...overrides,
-});
-
-// A §2.5-legal feedback-phase state: lastResult is non-null and round === totalRounds.
-export const makeFeedbackState = (
-  equation: Equation,
-  overrides: Partial<GameState> = {},
-): GameState => ({
-  ...makeAnsweringState(equation, { round: 1, totalRounds: 1 }),
-  phase: "feedback",
-  lastResult: {
-    kind: "incorrect",
-    // Operands are 1..9, so no product is ever 0: this cannot collide with
-    // correctValue the way a literal 1 does against the equation 1 x 1.
-    submittedValue: 0,
-    correctValue: equation.product,
-    submittedTiles: [],
-    rewardTileIds: [],
-  },
-  ...overrides,
-});
-
-// Overflow inventories are defined by size alone; the digits only need to
-// exist. `size - INVENTORY_CAPACITY` is the excess the player must discard.
-export const makeOverflowInventory = (size: number): Tile[] =>
-  Array.from({ length: size }, (_, index) => makeTile((index % 9) as Digit, `tile-${index}`));
-
-// A §2.5-legal overflow-phase state: inventory exceeds capacity (excess 1 by
-// default), lastResult is non-null, and round === totalRounds.
-export const makeOverflowState = (
-  equation: Equation,
-  overrides: Partial<GameState> = {},
-): GameState => ({
-  ...makeFeedbackState(equation, { inventory: makeOverflowInventory(11) }),
-  phase: "overflow",
-  ...overrides,
-});
-
-// A §2.5-legal gameOver state: round === totalRounds + 1 and the terminal
-// equation is still on screen (§1.8).
-export const makeGameOverState = (
-  equation: Equation,
-  overrides: Partial<GameState> = {},
-): GameState => ({
-  ...makeAnsweringState(equation, { round: 13, totalRounds: 12 }),
-  phase: "gameOver",
-  score: 7,
-  longestStreak: 4,
-  ...overrides,
-});
-
 export const makePuzzleRow = (left: number, right: number, pay: Digit[]): PuzzleRow => ({
   equation: makeEquation(left, right),
   pay,
@@ -148,3 +90,78 @@ export const PUZZLE_SAMPLE_PAR_LINE: PuzzleMove[] = [
   { spend: [6], discard: 7 },
   { spend: [1, 2], discard: 0 },
 ];
+
+export const puzzleStart = (table = PUZZLE_SAMPLE, ids = sequentialIds()): GameState =>
+  gameReducer(createTitleState(), {
+    type: "START_RUN",
+    mode: "puzzle",
+    equation: table.rows[0]!.equation,
+    inventory: sortTiles(createTiles(table.hand, ids)),
+    table,
+  });
+
+export const tileWith = (state: GameState, digit: Digit): Tile =>
+  state.inventory.find((tile) => tile.digit === digit)!;
+
+/** Selects a held tile of each digit, in order. */
+export const selectDigits = (state: GameState, ...digits: Digit[]): GameState =>
+  digits.reduce(
+    (next, digit) => gameReducer(next, { type: "SELECT_TILE", tileId: tileWith(next, digit).id }),
+    state,
+  );
+
+// One row through the reducer exactly as App plays it: select, submit with the
+// current row's pay, and discard if asked. It stops before the advance.
+export function playRow(state: GameState, move: PuzzleMove, ids: TileIdFactory): GameState {
+  const row = state.table!.rows[state.round - 1]!;
+  state = selectDigits(state, ...move.spend);
+  state = answerMatches(state.selectedTiles, row.equation.product)
+    ? gameReducer(state, { type: "SUBMIT_CORRECT", rewardTiles: createTiles(row.pay, ids) })
+    : gameReducer(state, { type: "SUBMIT_INCORRECT" });
+  if (move.discard !== undefined) {
+    state = gameReducer(state, { type: "TOGGLE_DISCARD", tileId: tileWith(state, move.discard).id });
+  }
+  return state;
+}
+
+// Plays rows, each advanced to the next row's equation as App does.
+export function play(state: GameState, line: PuzzleMove[], ids: TileIdFactory): GameState {
+  for (const move of line) {
+    state = playRow(state, move, ids);
+    const next = state.table!.rows[state.round]?.equation ?? state.equation!;
+    state = gameReducer(state, { type: "NEXT_ROUND", equation: next });
+  }
+  return state;
+}
+
+// The sample's par line, played through the reducer. Each state deals its own
+// ids unless given some, so the hand is tile-0 to tile-4 in deal order and the
+// pays follow.
+
+/** The par line played up to `row`, which is then answering. */
+export const parLineAt = (row: number, ids = sequentialIds()): GameState =>
+  play(puzzleStart(PUZZLE_SAMPLE, ids), PUZZLE_SAMPLE_PAR_LINE.slice(0, row - 1), ids);
+
+/** Row 1 of the sample, its hand 1 4 5 7 9 dealt. */
+export const makeAnsweringState = (overrides: Partial<GameState> = {}): GameState => ({
+  ...puzzleStart(),
+  ...overrides,
+});
+
+/** Row 1's sacrifice judged: 57 for 15, incorrect, leaving 1 4 9. */
+export const makeFeedbackState = (overrides: Partial<GameState> = {}): GameState => {
+  const ids = sequentialIds();
+  return { ...playRow(puzzleStart(PUZZLE_SAMPLE, ids), PUZZLE_SAMPLE_PAR_LINE[0]!, ids), ...overrides };
+};
+
+/** Row 4's 7 answered: six tiles, 1 2 4 6 8 seated and the second 4 on the rail. */
+export const makeOverflowState = (overrides: Partial<GameState> = {}): GameState => {
+  const ids = sequentialIds();
+  return { ...playRow(parLineAt(4, ids), { spend: PUZZLE_SAMPLE_PAR_LINE[3]!.spend }, ids), ...overrides };
+};
+
+/** The whole par line: score 7 against par 7, longest streak 7. */
+export const makeGameOverState = (overrides: Partial<GameState> = {}): GameState => {
+  const ids = sequentialIds();
+  return { ...play(puzzleStart(PUZZLE_SAMPLE, ids), PUZZLE_SAMPLE_PAR_LINE, ids), ...overrides };
+};

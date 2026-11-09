@@ -32,8 +32,8 @@ const MORE_TOPICS = ["keyboard", "selecting", "slots", "progress", "puzzle"] as 
 
 export function TitleScreen({ onStart }: TitleScreenProps) {
   const { t } = useI18n();
-  // Not persisted (§1.16): a reload is a fresh title with Endless chosen.
-  const [mode, setMode] = useState<GameMode>("endless");
+  // Not persisted (§1.16): a reload is a fresh title with Puzzle chosen.
+  const [mode, setMode] = useState<GameMode>("puzzle");
 
   return (
     <main className={styles.screen}>

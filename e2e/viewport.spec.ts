@@ -33,7 +33,7 @@ import { START_LABEL } from "./labels.js";
    the three #85 attempts that reported `clean` and counted for nothing. */
 const CONTENT_WIDTHS = [305, 320, 407, 408] as const;
 const LOCALES = ["en", "ko"] as const;
-const STATE_COUNT = 21;
+const STATE_COUNT = 19;
 
 /* `spacing.css` — the narrow tier's tile, the middle tier's, and the boundary
    between them. The 48rem tier is out of range for every width swept here. */
@@ -200,11 +200,11 @@ for (const width of CONTENT_WIDTHS) {
         ).toBeGreaterThan(viewport / 2);
       }
 
-      // The states differ from each other by tens of elements — 10 on the
-      // sparsest interaction board against 85 at streak 8 — so one figure
-      // repeated nineteen times means the walk never left the first state.
+      // The states differ from each other by tens of elements, from the
+      // sparsest interaction board to the streak 8 burst, so one figure
+      // repeated for every state means the walk never left the first state.
       // T62 asked for a figure per state precisely because a range cannot tell
-      // nineteen states measured once from one state measured nineteen times.
+      // every state measured once from one state measured every time.
       const distinctCounts = new Set(readings.map((r) => r.elements));
       expect(
         distinctCounts.size,
@@ -361,14 +361,16 @@ test("the rack holds the target minimum below the 320px gate", async ({
   ).toBeGreaterThanOrEqual(reading.targetMin);
 });
 
-/* §8.5 through an overflow, in the app. A correct answer in Endless's first
-   round always overflows — a one-digit answer spends one tile and earns two, a
-   two-digit one spends two and earns three — so the newest arrival perches on
-   the rail. The rail is right-aligned and 8a pivots the perched tile on its
-   lower-left edge, so its rest pose reaches right of its own cell; 8c then
-   tips a discarded tile further right still. Both are read here: the perch
-   after its frame has finished, and the slide-off at every tenth of its
-   frame, paused, because a reading straight after a click sees neither.
+/* §8.5 through an overflow. The gallery's overflow-required-1 entry is row 4
+   of the sample's par line answered: six tiles in five sockets, so the newest
+   arrival perches on the rail. A live deal is random and its first rows need
+   not overflow, so the fixed table is read from the gallery, whose overflow
+   entry runs the real reducer and so plays the discard. The rail is
+   right-aligned and 8a pivots the perched tile on its lower-left edge, so its
+   rest pose reaches right of its own cell; 8c then tips a discarded tile
+   further right still. Both are read here: the perch after its frame has
+   finished, and the slide-off at every tenth of its frame, paused, because a
+   reading straight after a click sees neither.
  *
  * 305 is the 320px gate with a layout-taking scrollbar; 375 a common phone.
  */
@@ -379,19 +381,12 @@ for (const width of OVERFLOW_WIDTHS) {
     page,
   }) => {
     await page.addInitScript(() => window.localStorage.setItem("one-zero.language", "en"));
-    await page.goto("/");
+    await page.goto("/gallery.html");
     await setContentWidth(page, width);
     await page.evaluate(() => document.fonts.ready);
-    await page.getByRole("button", { name: START_LABEL.en, exact: true }).click();
-
-    // Answer the first equation correctly: its digits are all in the opening
-    // hand of one of each.
-    const equation = await page.getByText(/^\d+ × \d+ =$/).textContent();
-    const [a, b] = equation!.match(/\d+/g)!.map(Number);
-    for (const digit of String(a! * b!)) {
-      await page.getByRole("button", { name: `Digit ${digit}`, exact: true }).click();
-    }
-    await page.getByRole("button", { name: "Submit" }).click();
+    await page
+      .locator("nav ul button[aria-pressed]", { hasText: /^Overflow — required 1$/ })
+      .click();
 
     const railTile = page.locator("[data-rail]");
     await expect(railTile).toBeVisible();
@@ -409,7 +404,8 @@ for (const width of OVERFLOW_WIDTHS) {
     expect(perch.tileRight, "perched tile's right edge").toBeLessThanOrEqual(perch.viewport);
     expect(perch.scrollWidth, "document scroll width with a tile perched").toBeLessThanOrEqual(perch.viewport);
     expect(perch.railInGrid, "the perched tile sits outside the rack's grid").toBe(false);
-    expect(perch.gridRows, "the rail adds no row to the rack").toBe(2);
+    // Five sockets are one row of the rack's five columns.
+    expect(perch.gridRows, "the rail adds no row to the rack").toBe(1);
 
     // Mark the perched tile: the one required mark completes the discard, and
     // the tile tips off the rack.

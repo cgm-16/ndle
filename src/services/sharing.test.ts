@@ -1,11 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-import { makeEquation, makeGameOverState, PUZZLE_SAMPLE } from "../test/fixtures";
+import { makeGameOverState } from "../test/fixtures";
 import { copyResult, formatShareText, getShareStats, shareResult } from "./sharing";
 import type { ShareDependencies, ShareStats } from "./sharing";
 
 describe("getShareStats", () => {
   it("never reports an Endless run as won", () => {
-    const state = makeGameOverState(makeEquation(3, 3), { mode: "endless", totalRounds: 28 });
+    // The par line's end, made par, read as Endless: the mode alone decides.
+    const state = makeGameOverState({ mode: "endless" });
     expect(getShareStats(state).won).toBe(false);
   });
 
@@ -53,19 +54,18 @@ describe("formatShareText", () => {
 });
 
 describe("Puzzle", () => {
-  const madePar = { ...makeGameOverState(PUZZLE_SAMPLE.rows[7]!.equation), mode: "puzzle" as const,
-    table: PUZZLE_SAMPLE, rowResults: [], score: 7, totalRounds: 8, longestStreak: 4 };
+  const madePar = makeGameOverState();
 
   it("reports made par as won, with the table's par and length", () => {
     expect(getShareStats(madePar)).toEqual({
-      mode: "puzzle", won: true, par: 7, rows: 8, score: 7, totalRounds: 8, longestStreak: 4,
+      mode: "puzzle", won: true, par: 7, rows: 8, score: 7, totalRounds: 8, longestStreak: 7,
     });
     expect(getShareStats({ ...madePar, score: 6 }).won).toBe(false);
   });
 
   it("formats the English Puzzle share text exactly", () => {
     expect(formatShareText(getShareStats(madePar), "en", "https://example.test/")).toBe(
-      "ozterisk Puzzle — Made par — Score: 7/8 · par 7\nLongest streak: 4\n\nCan you make par?\nhttps://example.test/",
+      "ozterisk Puzzle — Made par — Score: 7/8 · par 7\nLongest streak: 7\n\nCan you make par?\nhttps://example.test/",
     );
     expect(formatShareText(getShareStats({ ...madePar, score: 4 }), "en", "https://example.test/")).toMatch(
       /^ozterisk Puzzle — 3 short of par — Score: 4\/8 · par 7\n/,
@@ -74,7 +74,7 @@ describe("Puzzle", () => {
 
   it("formats the Korean Puzzle share text exactly", () => {
     expect(formatShareText(getShareStats(madePar), "ko", "https://example.test/")).toBe(
-      "ozterisk 묘수풀이 — 목표 달성 — 점수: 7/8 · 목표 7\n최장 연속 정답: 4\n\n목표를 달성할 수 있나요?\nhttps://example.test/",
+      "ozterisk 묘수풀이 — 목표 달성 — 점수: 7/8 · 목표 7\n최장 연속 정답: 7\n\n목표를 달성할 수 있나요?\nhttps://example.test/",
     );
     expect(formatShareText(getShareStats({ ...madePar, score: 4 }), "ko", "https://example.test/")).toMatch(
       /^ozterisk 묘수풀이 — 목표까지 3점 부족 — 점수: 4\/8 · 목표 7\n/,

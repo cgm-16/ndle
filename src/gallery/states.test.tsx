@@ -2,7 +2,7 @@ import { act, cleanup, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import slotStyles from "../components/AnswerSlots/AnswerSlots.module.css";
 import gameOverStyles from "../components/GameOverScreen/GameOverScreen.module.css";
-import { INVENTORY_CAPACITY } from "../game/balance";
+import { PUZZLE_CAPACITY } from "../game/balance";
 import type { Language } from "../game/types";
 import { I18nProvider } from "../i18n/I18nContext";
 import { GALLERY_STATES, type GalleryEntry } from "./states";
@@ -55,34 +55,32 @@ describe("gallery catalogue", () => {
 
   // SELECT_TILE moves a tile out of inventory into an answer slot; it never
   // adds one. So the live tile count (inventory buttons + filled answer-slot
-  // buttons) must stay at INVENTORY_CAPACITY once every slot is filled, not
+  // buttons) must stay at PUZZLE_CAPACITY once every slot is filled, not
   // grow past it the way an additively hand-assembled selection would.
-  it("conserves tile count in answering-full: inventory plus filled slots equals INVENTORY_CAPACITY", () => {
+  it("conserves tile count in answering-full: inventory plus filled slots equals PUZZLE_CAPACITY", () => {
     render(<I18nProvider initialLanguage="en">{entryById("answering-full").render()}</I18nProvider>);
 
     const inventoryTiles = screen.getAllByRole("button", { name: /^Digit \d$/ });
     const filledSlots = screen.getAllByRole("button", { name: /^Answer slot \d: \d$/ });
-    expect(inventoryTiles.length + filledSlots.length).toBe(INVENTORY_CAPACITY);
+    expect(inventoryTiles.length + filledSlots.length).toBe(PUZZLE_CAPACITY);
   });
 
   // The rack empties as a run goes on and §1.12 makes the empty sockets the
   // score, so a nearly-spent rack is a state in its own right — and it is the
   // one no fixture reached, which is how #84 survived a measurement pass.
-  it("renders a rack holding fewer than eight tiles", () => {
+  it("renders a rack holding fewer tiles than it has sockets", () => {
     render(
       <I18nProvider initialLanguage="en">{entryById("answering-depleted").render()}</I18nProvider>,
     );
-    expect(screen.getAllByRole("button", { name: /^Digit \d$/ }).length).toBeLessThan(8);
+    expect(screen.getAllByRole("button", { name: /^Digit \d$/ }).length).toBeLessThan(PUZZLE_CAPACITY);
   });
 
-  // makeOverflowInventory (src/test/fixtures.ts) is shared with the rest of
-  // the suite, so a future change to its id format or size handling could
-  // make rewardTileIds.includes(tile.id) match nothing inside
-  // makeOverflowInventoryWithRewards (states.tsx), silently dropping every
-  // tray New-tile badge while the render-without-throwing test below stays
-  // green. Expected counts are named here rather than derived from
-  // states.tsx, so a break in the stamping logic can't also break the value
-  // this test compares against.
+  // makeOverflowState (src/test/fixtures.ts) is shared with the rest of the
+  // suite, so a future change to how it plays row 4 could leave the overflow
+  // entry with no reward tiles, silently dropping every tray New-tile badge
+  // while the render-without-throwing test below stays green. Expected counts
+  // are named here rather than derived from states.tsx, so a break in the
+  // fixture can't also break the value this test compares against.
   const OVERFLOW_ENTRY_REWARD_COUNTS: Record<string, number> = {
     "overflow-required-1": 2,
   };

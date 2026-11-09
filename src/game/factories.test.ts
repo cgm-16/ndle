@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { Tile } from "./types";
-import { createInitialInventory, createTiles, createTitleState, sortTiles } from "./factories";
+import { createTiles, createTitleState, sortTiles } from "./factories";
 import { sequentialIds } from "../test/fixtures";
 
 describe("createTitleState", () => {
   it("returns empty arrays, null equation/result, zero statistics, round 0, and phase title", () => {
     expect(createTitleState()).toEqual({
       phase: "title",
-      mode: "endless",
+      mode: "puzzle",
       equation: null,
       inventory: [],
       selectedTiles: [],
@@ -26,25 +26,6 @@ describe("createTitleState", () => {
     const second = createTitleState();
     expect(first).not.toBe(second);
     expect(first.inventory).not.toBe(second.inventory);
-  });
-});
-
-describe("createInitialInventory", () => {
-  it("creates one sorted non-new tile for every digit", () => {
-    const inventory = createInitialInventory(sequentialIds());
-    expect(inventory.map((tile) => tile.digit)).toEqual([0,1,2,3,4,5,6,7,8,9]);
-    expect(new Set(inventory.map((tile) => tile.id)).size).toBe(10);
-    expect(inventory.every((tile) => tile.isNew === false)).toBe(true);
-  });
-});
-
-describe("createInitialInventory with a count", () => {
-  it("deals round-robin, two of each digit at twenty, sorted", () => {
-    const inventory = createInitialInventory(sequentialIds(), 20);
-    expect(inventory.map((tile) => tile.digit)).toEqual(
-      [0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9],
-    );
-    expect(new Set(inventory.map((tile) => tile.id)).size).toBe(20);
   });
 });
 

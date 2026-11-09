@@ -61,6 +61,12 @@
   min-width: 0;
   border-left: 1px solid var(--border-hairline);
   padding-left: var(--space-6);
+
+  /* The app's .app is the container GameScreen's arena reads to decide whether
+     it clips a departing tile's motion (GameScreen.module.css). Without it the
+     query never matches here, and a discard played in the gallery takes the
+     page past a narrow viewport where the app's own screen clips it. */
+  container: app / inline-size;
 }
 
 /* The interaction states are boards of controls rather than screens, and the

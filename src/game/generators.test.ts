@@ -66,7 +66,7 @@ describe("generateKindEquation", () => {
     // failure this guards: the dial in balance.ts must be the only threshold.
     // Self-referential by design — it pins the wiring, not the value, so
     // retuning the dial does not break it (AGENTS.md 4.5). It does assume a
-    // dial strictly between 0 and 1, which balance.test.ts already enforces.
+    // dial strictly between 0 and 1.
     const hand = [makeTile(1, "a"), makeTile(2, "b")];
     const pairSample = 2 / 45;
 

@@ -6,7 +6,7 @@ import { TitleScreen } from "./TitleScreen";
 import styles from "./TitleScreen.module.css";
 
 describe("TitleScreen", () => {
-  it("offers Endless and Puzzle, with Endless chosen by default", () => {
+  it("offers Endless and Puzzle, with Puzzle chosen by default", () => {
     render(
       <I18nProvider initialLanguage="en">
         <TitleScreen onStart={vi.fn()} />
@@ -14,8 +14,8 @@ describe("TitleScreen", () => {
     );
     const group = screen.getByRole("group", { name: "Mode" });
     expect(group).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^Endless/ })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: /^Puzzle/ })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: /^Puzzle/ })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: /^Endless/ })).toHaveAttribute("aria-pressed", "false");
   });
 
   it("offers two modes", () => {
@@ -26,7 +26,7 @@ describe("TitleScreen", () => {
     );
     const group = screen.getByRole("group", { name: "Mode" });
     expect(within(group).getAllByRole("button")).toHaveLength(2);
-    expect(within(group).getByRole("button", { name: /^Puzzle/ })).toHaveAttribute("aria-pressed", "false");
+    expect(within(group).getByRole("button", { name: /^Endless/ })).toHaveAttribute("aria-pressed", "false");
   });
 
   it("starts the run in the chosen mode", async () => {
@@ -37,7 +37,7 @@ describe("TitleScreen", () => {
       </I18nProvider>,
     );
     await userEvent.click(screen.getByRole("button", { name: "Start Run" }));
-    expect(onStart).toHaveBeenCalledWith("endless");
+    expect(onStart).toHaveBeenCalledWith("puzzle");
   });
 
   it("starts a Puzzle run when Puzzle is chosen", async () => {

@@ -3,20 +3,22 @@ import { GameOverScreen } from "../components/GameOverScreen/GameOverScreen";
 import { GameScreen } from "../components/GameScreen/GameScreen";
 import { LanguageToggle } from "../components/LanguageToggle/LanguageToggle";
 import { TitleScreen } from "../components/TitleScreen/TitleScreen";
-import { createTiles, sortTiles } from "../game/factories";
 import { gameReducer } from "../game/gameReducer";
-import type { GamePhase, GameState, Tile } from "../game/types";
+import type { GamePhase, GameState } from "../game/types";
 import { getShareStats, type ShareDependencies } from "../services/sharing";
 import {
   makeAnsweringState,
-  makeEquation,
   makeFeedbackState,
   makeGameOverState,
-  makeTile,
-  PUZZLE_SAMPLE,
+  makeOverflowState,
+  parLineAt,
+  PUZZLE_SAMPLE_PAR_LINE,
+  playRow,
+  selectDigits,
   sequentialIds,
+  tileWith,
 } from "../test/fixtures";
-import { ControlBoard, CopyPressedOnMount, ReducedMotionBoard } from "./harness";
+import { ControlBoard, CopyPressedOnMount, LiveGameScreen, ReducedMotionBoard } from "./harness";
 
 export interface GalleryEntry {
   /** Stable across renders; used as the picker's React key. */
@@ -26,8 +28,9 @@ export interface GalleryEntry {
   render: () => ReactNode;
 }
 
-// The gallery is for looking, not driving: every callback prop on every
-// entry below is this one no-op rather than an inline arrow function apiece.
+// The gallery is for looking, not driving: apart from the overflow entry's
+// discard (LiveGameScreen), every callback prop on every entry below is this
+// one no-op rather than an inline arrow function apiece.
 const noop = () => {};
 
 function renderGameScreen(state: GameState): ReactNode {
@@ -52,66 +55,32 @@ function renderGameOverScreen(state: GameState, dependencies: ShareDependencies)
   );
 }
 
-const ANSWERING_EQUATION = makeEquation(3, 4); // product 12: two answer slots
-const ANSWERING_BASE_STATE = makeAnsweringState(ANSWERING_EQUATION);
+// Every state below is the sample's par line (src/test/fixtures.ts) played
+// through the real reducer, so each one conserves its tiles, its ids and its
+// statistics the way the shipped game does at that moment. The one figure set
+// by hand is the streak 8 state's streak.
 
-// Built by running the real reducer rather than hand-assembling a
-// GameState: SELECT_TILE moves a tile out of inventory into selectedTiles,
-// so these conserve the fixed 10 live tiles the shipped game shows at this
-// moment. Selecting digit 1 then digit 2 spells 12, the correct answer,
-// matching what a player building this hand would actually do.
-const ANSWERING_PARTIAL_STATE = gameReducer(ANSWERING_BASE_STATE, {
-  type: "SELECT_TILE",
-  tileId: "tile-1",
-});
-const ANSWERING_FULL_STATE = gameReducer(ANSWERING_PARTIAL_STATE, {
-  type: "SELECT_TILE",
-  tileId: "tile-2",
-});
+// Row 1, 3 x 5 = 15, two answer slots. Selecting 1 then 5 spells the correct
+// answer, which is what a player building this hand would actually do.
+const ANSWERING_BASE_STATE = makeAnsweringState();
+const ANSWERING_PARTIAL_STATE = selectDigits(ANSWERING_BASE_STATE, 1);
+const ANSWERING_FULL_STATE = selectDigits(ANSWERING_PARTIAL_STATE, 5);
 
-// A rack late in a run, where §1.12's empty sockets are the score. Every
-// other state holds a nearly full hand, so the sockets have only ever been a
-// minority of the rack. Four tiles that can still spell 6, because a hand
-// that cannot answer its equation is gameOver rather than answering
-// (canAttemptEquation, NEXT_ROUND); round is one past totalRounds, as §2.5
-// requires of this phase.
-const ANSWERING_DEPLETED_STATE = makeAnsweringState(makeEquation(2, 3), {
-  inventory: [
-    makeTile(0, "tile-0"),
-    makeTile(3, "tile-3"),
-    makeTile(6, "tile-6"),
-    makeTile(9, "tile-9"),
-  ],
-  score: 5,
-  round: 9,
-  totalRounds: 8,
-  currentStreak: 2,
-  longestStreak: 3,
-});
+// A rack where §1.12's empty sockets are the score. Every other answering
+// state holds a full hand of five, so the sockets have only ever been a
+// minority of the rack there. Row 2, after the sacrifice spent two tiles:
+// 1 4 9 against 7 x 2 = 14.
+const ANSWERING_DEPLETED_STATE = parLineAt(2);
 
-// score and currentStreak/longestStreak reflect the round this correct
-// answer just won, matching what SUBMIT_CORRECT actually produces instead of
-// showing a reward next to a HUD that still reads zero.
-const FEEDBACK_CORRECT_STATE = makeFeedbackState(makeEquation(3, 3), {
-  inventory: [
-    makeTile(1, "tile-1"),
-    makeTile(2, "tile-2"),
-    makeTile(4, "tile-4"),
-    makeTile(5, "tile-5"),
-    makeTile(7, "reward-0", true),
-    makeTile(8, "reward-1", true),
-  ],
-  score: 1,
-  currentStreak: 1,
-  longestStreak: 1,
-  lastResult: {
-    kind: "correct",
-    submittedValue: 9,
-    correctValue: 9,
-    submittedTiles: [makeTile(9, "spent-0")],
-    rewardTileIds: ["reward-0", "reward-1"],
-  },
-});
+// A row of the par line played and judged, its discard made if it has one.
+function rowJudged(row: number): GameState {
+  const ids = sequentialIds();
+  return playRow(parLineAt(row, ids), PUZZLE_SAMPLE_PAR_LINE[row - 1]!, ids);
+}
+
+// Row 2 answered, 14 from 1 4 9, paid 8 1 6: the correct answer within
+// capacity, so feedback carries its rewards and a Next Round.
+const FEEDBACK_CORRECT_STATE = rowJudged(2);
 
 // 7b and 7c, the ladder above streak 3. The rings accumulate, so the streak 8
 // state draws jade, gold and bright together — but one element carries one
@@ -120,138 +89,41 @@ const FEEDBACK_CORRECT_STATE = makeFeedbackState(makeEquation(3, 3), {
 // (AnswerSlots). That exclusivity is why the ladder needs two states and not
 // one at the top.
 //
-// A two-digit product rather than the single slot 3 x 3 gives: a ring's peak
-// extent is 213x213 around a 64x80 tile, and two adjacent rings overlapping
-// is the case §8.5 has never been read against.
-const STREAK_EQUATION = makeEquation(3, 4); // product 12: two answer slots
-const STREAK_REWARD_TILE_IDS = ["reward-0", "reward-1", "reward-2"];
+// Two-digit products, because a ring's peak extent is 213x213 around a 64x80
+// tile, and two adjacent rings overlapping is the case §8.5 has never been
+// read against. Row 6, 8 x 3 = 24, is the par line's fifth answer in a row.
+// Row 8, 3 x 4 = 12, is its seventh, and par 7 caps any streak on this table
+// there, so streak 8 is set on it for display. Both rows overflow, so both are
+// shown after their discard, with no Next Round.
+const FEEDBACK_STREAK_5_STATE = rowJudged(6);
+const FEEDBACK_STREAK_8_STATE: GameState = { ...rowJudged(8), currentStreak: 8 };
 
-// Hand-assembled rather than run through the reducer, because SUBMIT_CORRECT
-// cannot land a two-digit answer in feedback from a full rack: two tiles
-// spent earn getRewardCount(2) = 3, and 10 - 2 + 3 overflows. Eight held at
-// submit is the largest hand that reaches feedback, and 8 - 2 + 3 = 9 is what
-// it leaves. An unbroken streak is also the run's whole history, so score,
-// round and totalRounds are the streak itself.
-function makeStreakState(streak: number): GameState {
-  return makeFeedbackState(STREAK_EQUATION, {
-    inventory: sortTiles([
-      makeTile(0, "tile-0"),
-      makeTile(3, "tile-3"),
-      makeTile(4, "tile-4"),
-      makeTile(5, "tile-5"),
-      makeTile(7, "tile-7"),
-      makeTile(8, "tile-8"),
-      makeTile(1, "reward-0", true),
-      makeTile(2, "reward-1", true),
-      makeTile(6, "reward-2", true),
-    ]),
-    score: streak,
-    round: streak,
-    totalRounds: streak,
-    currentStreak: streak,
-    longestStreak: streak,
-    lastResult: {
-      kind: "correct",
-      submittedValue: STREAK_EQUATION.product,
-      correctValue: STREAK_EQUATION.product,
-      submittedTiles: [makeTile(1, "spent-0"), makeTile(2, "spent-1")],
-      rewardTileIds: STREAK_REWARD_TILE_IDS,
-    },
-  });
-}
+// The sacrifice judged: 57 for 15. SUBMIT_INCORRECT is what puts the selected
+// tiles into lastResult.submittedTiles and keeps them out of the rack, so 9f —
+// the crack and its dust — has two tiles to play on.
+const FEEDBACK_INCORRECT_STATE = makeFeedbackState();
 
-const FEEDBACK_STREAK_5_STATE = makeStreakState(5);
-const FEEDBACK_STREAK_8_STATE = makeStreakState(8);
-
-// Built by running the real reducer for the same reason the answering states
-// are: SUBMIT_INCORRECT is what puts the selected tiles into
-// lastResult.submittedTiles and keeps them out of the rack. Taking
-// makeFeedbackState's default result instead left submittedTiles empty, so
-// the slots rendered as two empty sockets and 9f — the crack and its dust —
-// had nothing to play on. 6 x 7 is 42, and 21 is the wrong answer a player
-// who spelled the digits in the wrong order would submit.
-const INCORRECT_EQUATION = makeEquation(6, 7); // product 42: two answer slots
-const INCORRECT_PARTIAL_STATE = gameReducer(makeAnsweringState(INCORRECT_EQUATION), {
-  type: "SELECT_TILE",
-  tileId: "tile-2",
-});
-const INCORRECT_FULL_STATE = gameReducer(INCORRECT_PARTIAL_STATE, {
-  type: "SELECT_TILE",
-  tileId: "tile-1",
-});
-const FEEDBACK_INCORRECT_STATE = gameReducer(INCORRECT_FULL_STATE, { type: "SUBMIT_INCORRECT" });
-
-// Overflow always follows SUBMIT_CORRECT, so the overflow state is built by
-// running the real reducer: SUBMIT_CORRECT stamps every reward isNew, sorts
-// only the tiles that fit and perches the newest arrivals past capacity
-// (§1.5 step 7), and nothing hand-assembled could keep those rules in step.
-function submitCorrectly(state: GameState, spentIds: readonly string[], rewardTiles: Tile[]): GameState {
-  const selected = spentIds.reduce(
-    (next, tileId) => gameReducer(next, { type: "SELECT_TILE", tileId }),
-    state,
-  );
-  return gameReducer(selected, { type: "SUBMIT_CORRECT", rewardTiles });
-}
-
-// Endless's overflow case: 3 x 3 spends the 9 and getRewardCount(1) = 2
-// tiles come back, 10 - 1 + 2 = 11. The first reward is seated and sorted; the
-// second, the newest arrival, perches past capacity whatever its digit.
-const OVERFLOW_REQUIRED_1_STATE = submitCorrectly(
-  makeAnsweringState(makeEquation(3, 3)),
-  ["tile-9"],
-  [makeTile(0, "reward-0"), makeTile(1, "reward-1")],
-);
-
-// Puzzle (spec §7): the sample at row 1, its hand dealt, every row still to
-// play. e2e/puzzle-fit.spec.ts measures the same screen in the app, dealt from
-// the title screen.
-const ANSWERING_PUZZLE_STATE = makeAnsweringState(PUZZLE_SAMPLE.rows[0].equation, {
-  mode: "puzzle",
-  table: PUZZLE_SAMPLE,
-  rowResults: [],
-  inventory: sortTiles(createTiles(PUZZLE_SAMPLE.hand, sequentialIds())),
-});
+// Row 4, 1 x 7: the 7 spent from 1 2 6 7 8 and the row's 4 4 paid. The first 4
+// is seated and sorted; the second, the newest arrival, perches past capacity
+// whatever its digit (§1.5 step 7).
+const OVERFLOW_REQUIRED_1_STATE = makeOverflowState();
 
 // Row 4 of the sample's par line: the sacrifice missed, 14 and 9 answered, so
-// the ledger draws both marks beside the frame and the pays still to come. The
-// hand is what that line holds there, and the streak is the two answers since
-// the miss.
-const ANSWERING_PUZZLE_ROW_4_STATE = makeAnsweringState(PUZZLE_SAMPLE.rows[3].equation, {
-  mode: "puzzle",
-  table: PUZZLE_SAMPLE,
-  rowResults: ["incorrect", "correct", "correct"],
-  inventory: sortTiles(createTiles([1, 2, 6, 7, 8], sequentialIds())),
-  round: 4,
-  totalRounds: 3,
-  score: 2,
-  currentStreak: 2,
-  longestStreak: 2,
-});
+// the ledger draws both marks beside the frame and the pays still to come.
+const ANSWERING_ROW_4_STATE = parLineAt(4);
 
 // The feedback a discard leaves behind: no Next Round, because the round
 // advances on its own once the departing tile has played (§1.7). In the
-// gallery nothing departs, so this is the resting frame of that moment.
+// gallery nothing departs, so this is the resting frame of that moment. The
+// par line discards the 6 here.
 const FEEDBACK_AFTER_DISCARD_STATE = gameReducer(OVERFLOW_REQUIRED_1_STATE, {
   type: "TOGGLE_DISCARD",
-  tileId: "tile-5",
+  tileId: tileWith(OVERFLOW_REQUIRED_1_STATE, 6).id,
 });
 
-// Puzzle's game over (spec §7) after the sample's par line: the table played to
-// its end with par made, so the heading is gold and no equation is shown. The
-// hand is what that line holds after row 8, and the streak is the seven
-// answers since the sacrifice.
-const GAME_OVER_PUZZLE_STATE = makeGameOverState(PUZZLE_SAMPLE.rows[7].equation, {
-  mode: "puzzle",
-  table: PUZZLE_SAMPLE,
-  rowResults: ["incorrect", "correct", "correct", "correct", "correct", "correct", "correct", "correct"],
-  inventory: sortTiles(createTiles([2, 2, 7, 8, 8], sequentialIds())),
-  score: 7,
-  totalRounds: 8,
-  round: 9,
-  longestStreak: 7,
-});
-
-const GAME_OVER_STATE = makeGameOverState(makeEquation(7, 8));
+// The sample's par line played to its end with par made, so the heading is
+// gold and no equation is shown.
+const GAME_OVER_STATE = makeGameOverState();
 
 const RESOLVING_SHARE_DEPENDENCIES: ShareDependencies = {
   writeClipboard: async () => {},
@@ -309,14 +181,9 @@ export const GALLERY_STATES: Record<GamePhase | "interaction", GalleryEntry[]> =
       render: () => renderGameScreen(ANSWERING_DEPLETED_STATE),
     },
     {
-      id: "answering-puzzle",
-      label: "Answering — Puzzle, the sample at row 1",
-      render: () => renderGameScreen(ANSWERING_PUZZLE_STATE),
-    },
-    {
       id: "answering-puzzle-row-4",
       label: "Answering — Puzzle at row 4, three rows marked",
-      render: () => renderGameScreen(ANSWERING_PUZZLE_ROW_4_STATE),
+      render: () => renderGameScreen(ANSWERING_ROW_4_STATE),
     },
   ],
   feedback: [
@@ -349,8 +216,8 @@ export const GALLERY_STATES: Record<GamePhase | "interaction", GalleryEntry[]> =
   overflow: [
     {
       id: "overflow-required-1",
-      label: "Overflow — required 1 (Endless)",
-      render: () => renderGameScreen(OVERFLOW_REQUIRED_1_STATE),
+      label: "Overflow — required 1",
+      render: () => <LiveGameScreen initial={OVERFLOW_REQUIRED_1_STATE} />,
     },
   ],
   gameOver: [
@@ -358,11 +225,6 @@ export const GALLERY_STATES: Record<GamePhase | "interaction", GalleryEntry[]> =
       id: "game-over-idle",
       label: "Game over — idle",
       render: () => renderGameOverScreen(GAME_OVER_STATE, RESOLVING_SHARE_DEPENDENCIES),
-    },
-    {
-      id: "game-over-puzzle",
-      label: "Game over — Puzzle, made par",
-      render: () => renderGameOverScreen(GAME_OVER_PUZZLE_STATE, RESOLVING_SHARE_DEPENDENCIES),
     },
     {
       id: "game-over-copy-succeeded",
