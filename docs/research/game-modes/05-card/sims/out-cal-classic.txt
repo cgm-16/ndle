@@ -1,2 +1,0 @@
-REAL Classic 20>5/2 replace k0.2 naive: sub 27.6 (p10 23, p50 29, p90 30) | stamps 14.9 (p10 11, p50 15, p90 19) | eff b 0.682 | win 40.9% ±1.5 | tbl>=1 0.1%
-REAL Classic 20>5/2 replace k0.2 blind: sub 28.2 (p10 24, p50 30, p90 30) | stamps 15.5 (p10 12, p50 16, p90 19) | eff b 0.692 | win 50.2% ±1.5 | tbl>=1 0.1%

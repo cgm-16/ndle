@@ -1,6 +1,6 @@
 # Issue tracker: GitHub
 
-Issues for this repo live as GitHub issues in `cgm-16/ozterisk`. Use the `gh`
+Issues for this repo live as GitHub issues in `cgm-16/ndle`. Use the `gh`
 CLI for all operations; it infers the repo from `git remote -v` when run inside
 a clone.
 
@@ -39,12 +39,12 @@ GitHub sub-issues, labelled `wayfinder:<type>` (`research` / `prototype` /
 Blocking uses GitHub's native issue dependencies:
 
 ```
-gh api --method POST repos/cgm-16/ozterisk/issues/<child>/dependencies/blocked_by \
+gh api --method POST repos/cgm-16/ndle/issues/<child>/dependencies/blocked_by \
   -F issue_id=<blocker-database-id>
 ```
 
 `<blocker-database-id>` is the numeric **database id** — `gh api
-repos/cgm-16/ozterisk/issues/<n> --jq .id` — not the `#number` and not the
+repos/cgm-16/ndle/issues/<n> --jq .id` — not the `#number` and not the
 `node_id`. A ticket is unblocked when every blocker is closed
 (`issue_dependencies_summary.blocked_by` counts open blockers only).
 

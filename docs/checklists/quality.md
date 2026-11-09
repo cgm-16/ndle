@@ -5,21 +5,27 @@ Done (§9) live in `docs/checklists/release.md`.
 
 ### 8.1 Specification lock
 
-- [ ] Equation pool is 45 unordered pairs from `1..9`.
-- [ ] Pair sampling and display-order randomization are separate.
-- [ ] Rewards are uniform digits `0..9`.
-- [ ] Initial inventory is exactly one of each digit.
-- [ ] Capacity is exactly 10.
-- [ ] Answer slot count is canonical decimal product length.
-- [ ] Correct consumes `N`, rewards `N+1`, and scores exactly 1.
-- [ ] Incorrect consumes `N`, rewards nothing, and resets streak.
-- [ ] Every equation has one attempt.
-- [ ] Exact-answer constructibility is not a loss condition.
-- [ ] Overflow requires exact manual discard.
-- [ ] Loss uses only tile count versus newly drawn slot count.
-- [ ] Game over retains the terminal equation.
-- [ ] Total rounds excludes the terminal unsubmitted equation.
-- [ ] Play Again bypasses title.
+- [ ] A table opens with five distinct digits and has eight rows.
+- [ ] A one-digit product pays 2 tiles and a two-digit product pays 3.
+- [ ] Capacity is exactly 5.
+- [ ] A wrong answer is legal and pays nothing.
+- [ ] The run ends after row 8, or earlier when the hand holds fewer tiles
+      than the next answer needs. A hand with enough tiles but the wrong
+      digits plays on.
+- [ ] No dial changes value: `PUZZLE_MIN_PAR` is 7 and `PUZZLE_MIN_ONLY_MOVES`
+      is 2 for both Practice and the daily list.
+- [ ] Practice deals live with `dealPuzzle(Math.random)`. A Practice table is
+      never named or replayed, and its share text gives only the score against
+      par.
+- [ ] The same local date gives the same daily table number.
+- [ ] Every daily table is in band and needs a sacrifice.
+- [ ] A daily slot freezes two days before its date arrives, nothing freezes
+      before launch, and a veto touches only unfrozen slots.
+- [ ] A daily is one attempt that resumes after a reload.
+- [ ] The daily share text gives the table number, the score against par and
+      the game's link, and never the rows.
+- [ ] There is no backend, account, analytics, leaderboard, daily streak or
+      result URL.
 
 ### 8.2 Architecture lock
 
@@ -29,7 +35,8 @@ Done (§9) live in `docs/checklists/release.md`.
 - [ ] State contains canonical data only.
 - [ ] Invalid actions are reducer no-ops.
 - [ ] Language state is independent of game state.
-- [ ] Only language uses storage.
+- [ ] Storage holds only the language and today's daily (its table number, its
+      moves so far and its outcome).
 - [ ] Share/copy browser APIs are injected in tests.
 - [ ] No backend or external state library exists.
 
@@ -39,21 +46,24 @@ Done (§9) live in `docs/checklists/release.md`.
 - [ ] Duplicate click selects the exact tile.
 - [ ] Digit key selects the first sorted matching tile.
 - [ ] Backspace returns the latest selected tile.
-- [ ] Enter is correct in answering/overflow/feedback/game over.
+- [ ] Enter submits only when every slot is filled, and advances from
+      feedback (docs/spec/product.md §1.11).
 - [ ] Disabled keyboard actions are no-ops.
-- [ ] Correct feedback and new rewards remain visible.
-- [ ] Incorrect feedback reveals submitted and correct values.
-- [ ] Overflow selection is reversible.
+- [ ] The mark completes the overflow discard, and the next row starts on its
+      own afterwards.
+- [ ] Back mid-Daily returns to the title, and Daily resumes at the same row.
 - [ ] Language switches live without resetting the run.
 
 ### 8.4 Quality acceptance
 
 - [ ] Unit tests cover all legal reducer transitions.
 - [ ] Representative invalid transitions return identical state.
-- [ ] Generator boundary values are tested.
+- [ ] The par line of the sample table replays to Made par 7 / 8 on the real
+      reducer.
 - [ ] Component tests cover all requested interaction slices.
 - [ ] No browser test asserts a game rule, reducer transition, or interaction
       flow.
+- [ ] Share texts are exact-match tested in en and ko.
 - [ ] Lint passes with zero warnings.
 - [ ] Typecheck passes.
 - [ ] Production build passes.
@@ -64,7 +74,7 @@ Done (§9) live in `docs/checklists/release.md`.
 - [ ] Semantic buttons for all actions/tiles/slots.
 - [ ] Logical focus order follows visual hierarchy.
 - [ ] Visible focus on every control, at `3:1` or better against every surface the
-      indicator can appear on, including the ceramic tile face.
+      indicator can appear on, including the tile face.
 - [ ] Status feedback is announced.
 - [ ] State does not rely only on color.
 - [ ] Minimum target size is 44px.

@@ -1,3 +1,0 @@
-kanchan k2        b' 0.573 rounds mean 22.8 p90 39 capped 0.0% fired {"nbr":9546}
-kanchan + kan k2  b' 0.578 rounds mean 22.6 p90 39 capped 0.0% fired {"nbr":8716,"wild":764}
-kanchan + kan k0  b' 0.640 rounds mean 25.1 p90 43 capped 0.0% fired {"nbr":20492,"wild":2195}

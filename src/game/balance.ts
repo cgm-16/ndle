@@ -85,7 +85,7 @@ export const CLASSIC_SEAL_EVERY = 2;
  * equation, not the reward.
  * Economy: a face spells more products than a digit, so it raises b' where
  * the tray is small. Simulated on the real reducer and generator (T84; 3,000
- * runs a schedule, same seeds; docs/journal/journal-2026-09-27.md), wins and
+ * runs a schedule, same seeds; https://github.com/cgm-16/ndle/blob/3ccd37b/docs/journal/journal-2026-09-27.md), wins and
  * faces earned per run, skill 95% / 85%:
  * flat 0.08 (the shipped rate before T84) -> 52% / 42%, 4.1 faces, 0.8 of them
  * once capacity is <= 10; ramp 0.05 -> 0.20 -> 61% / 49%, 6.1 faces, 2.2 late;

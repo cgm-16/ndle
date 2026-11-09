@@ -1,7 +1,0 @@
-calib: 20,000 random 10-tile hands — real canConstruct b(10) = 0.478 (repo: 0.48); mine = 0.478; hands that disagree: 0
-calib: b(20) = 0.801 (repo 0.80); negative control b(0) = 0.000 (must be 0)
-calib: analytic drift at b = 0.48 with miss cost 1.711: -0.410 (repo −0.41)
-calib: Endless (rule none, cap 10, kind 0.2), 4000 runs: mean rounds 19.24 ± 0.28 (pool bots: 18.8–20.0 kind on; 13.1 kind off)
-calib: Endless (rule none, cap 10, kind 0), 4000 runs: mean rounds 13.37 ± 0.15 (pool bots: 18.8–20.0 kind on; 13.1 kind off)
-neg control: zero rewards, 1,000 runs: max rounds 8 (must be ≤ 10: each submission spends ≥ 1 of 10 tiles)
-null control: suits cosmetic, 2,000 paired seeds, every suit choice randomised: runs that changed length = 0 (must be 0)

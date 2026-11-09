@@ -1,5 +1,0 @@
-== Paired per-seed comparisons, Factor C10 kind .2 skill 1, 20000 seeds ==
-pair: greedy - anti                diff 0.41 +/- 0.06 SE rounds | decisions/run 0.91 | per decision 0.45 +/- 0.07
-pair: greedy - random              diff 0.20 +/- 0.05 SE rounds | decisions/run 0.91 | per decision 0.22 +/- 0.06
-discard: greedy - random           diff 1.53 +/- 0.07 SE rounds | decisions/run 4.65 | per decision 0.33 +/- 0.01
-miss: greedy - random              diff 3.91 +/- 0.07 SE rounds | decisions/run 7.49 | per decision 0.52 +/- 0.01

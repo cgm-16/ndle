@@ -1,3 +1,0 @@
-Endless, shipped draw, blind bot: submitted 18.4 | correct 9.8 | distinct 8.7 (p10 4, p50 8, p90 15) | >=1 table 0.3% | >=1 box 0.5% | full card 0 | win 0.0%
-Classic schedule, no faces, blind bot: submitted 28.2 | correct 18.6 | distinct 15.5 (p10 12, p50 16, p90 19) | >=1 table 0.1% | >=1 box 0.7% | full card 0 | win 50.2%
-Endless, deal of 45, aware bot: submitted 18.5 | correct 10.1 | distinct 10.1 (p10 4, p50 9, p90 18) | >=1 table 0.5% | >=1 box 1.1% | full card 0 | win 0.4%

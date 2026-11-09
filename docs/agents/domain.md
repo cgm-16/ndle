@@ -18,13 +18,11 @@ when terms or decisions actually get resolved.
 
 ## What already holds this repo's decisions
 
-Decisions here are recorded outside the ADR convention, and those records win
-until ADRs exist:
+Decisions here are recorded outside the ADR convention:
 
 | Kind | Where |
 |---|---|
 | Product and technical rules | `docs/spec/**` — **canonical**, per `AGENTS.md` §Document precedence |
-| Design system rulings | `docs/design-system/decisions.md` |
 | Decisions with their outcomes, and failed approaches | `docs/journal/journal-*.md` |
 | Requirement → owning task → evidence | `docs/plan/traceability.md` |
 

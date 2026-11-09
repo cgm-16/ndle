@@ -1,8 +1,0 @@
-== Calibration: real gameReducer vs multiset replica, shipped Endless (cap 10, kind 0.2), 2000 seeds ==
-skill 1: identical run length on 2000/2000 seeds; mean rounds reducer 18.93 vs replica 18.93
-skill 0.95: identical run length on 2000/2000 seeds; mean rounds reducer 17.73 vs replica 17.73
-
-== Controls ==
-NEG Factor C9, zero rewards                  | rounds mean    4.0 med    4 p10    4 p90    4 | capped   0.0% | b run  59.2% | b@ceil  92.3% | choice   7.8% (differs   4.2%)
-NEG Endless C10, zero rewards                | rounds mean    5.9 med    6 p10    5 p90    7 | capped   0.0% | b run  58.3% | b@ceil 100.0% | choice   0.0% (differs   0.0%)
-POS Factor C9, kind 1.0, skill 1             | rounds mean 1000.0 med 1000 p10 1000 p90 1000 | capped 100.0% | b run 100.0% | b@ceil 100.0% | choice   8.4% (differs   6.9%)

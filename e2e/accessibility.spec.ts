@@ -12,7 +12,7 @@ import { START_LABEL, type Locale } from "./labels.js";
  *
  * Every assertion below carries the count it swept. A sweep rooted at the wrong
  * node reports clean, which is the failure mode that let #85 survive three
- * measurement passes (docs/journal/journal-2026-09-15.md).
+ * measurement passes (https://github.com/cgm-16/ndle/blob/3ccd37b/docs/journal/journal-2026-09-15.md).
  */
 
 const VIEWPORT = { width: 320, height: 640 } as const;

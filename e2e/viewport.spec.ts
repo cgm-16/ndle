@@ -11,7 +11,7 @@ import { START_LABEL } from "./labels.js";
  * for the guards below — every one of them would have failed a guard, and none
  * of them would have failed on "did anything overflow".
  *
- * Method and the four attempts: docs/journal/journal-2026-09-15.md.
+ * Method and the four attempts: https://github.com/cgm-16/ndle/blob/3ccd37b/docs/journal/journal-2026-09-15.md.
  */
 
 /* 320 is §8.5's bar. 305 is what a 320px window actually gives the page once a

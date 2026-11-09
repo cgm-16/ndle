@@ -43,11 +43,10 @@ Then **link** to the task file rather than copying it:
 Full task definition: [`docs/tasks/T##-name.md`](../tasks/T##-name.md)
 ```
 
-Copying the task's Purpose, Interfaces, Steps, and Acceptance sections into
-the issue body was the 1.0 practice. It worked for a single 14-task build
-where every issue closed within days, but across repeated builds it puts the
-same content in two places: the task file gets edited, the issue does not,
-and the two silently disagree. One copy, linked.
+Never copy the task's Purpose, Interfaces, Steps, and Acceptance sections into
+the issue body. Copying puts the same content in two places: the task file
+gets edited, the issue does not, and the two silently disagree. One copy,
+linked.
 
 ### 4.5 What gets a GitHub object
 
@@ -58,7 +57,7 @@ whether something belongs in the queue: *does it have a done state?*
 |---|---|---|
 | Task from `writing-plans` | **Issue** | Unit of work; closes when merged |
 | A build not yet decomposed | **Milestone** + one **tracking issue** | Milestone groups future task issues and shows progress; the tracking issue carries the summary, links the plan doc, and gives a surface to argue about the design before tasks are written |
-| Decision awaiting the user | **Issue**, label `blocked` | Genuinely closes once decided (precedent: #30) |
+| Decision awaiting the user | **Issue**, label `blocked` | Genuinely closes once decided (precedent: cgm-16/ozterisk#30) |
 | Journal entry | **None** | Append-only history with no done state. An issue for it either sits open forever as backlog noise or closes immediately and was pointless. Link it from the PR body, where it is actually read |
 | Cut or rejected idea | **None** | Already-made decisions, recorded in the journal. In a backlog they get re-litigated at every triage |
 

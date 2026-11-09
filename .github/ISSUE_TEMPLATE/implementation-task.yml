@@ -1,5 +1,5 @@
 name: Implementation task
-description: Track one task from the ozterisk loop-agent plan (docs/tasks/T##-*.md).
+description: Track one task from the ndle loop-agent plan (docs/tasks/T##-*.md).
 title: "[T##] "
 labels: []
 body:

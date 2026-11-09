@@ -110,7 +110,7 @@ describe("Tile", () => {
   });
 
   // A missing CSS Module key renders class="undefined" with no error and no
-  // test failure (docs/journal/journal-2026-08-09.md), so every state and size
+  // test failure (https://github.com/cgm-16/ndle/blob/3ccd37b/docs/journal/journal-2026-08-09.md), so every state and size
   // is asserted to resolve to a real class.
   describe("state and size classes", () => {
     const states: TileState[] = ["resting", "lifted", "reward", "marked", "disabled"];

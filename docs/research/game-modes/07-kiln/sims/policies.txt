@@ -1,8 +1,0 @@
-k=2 never fire                                           rounds mean 20.0 (±0.3) b' 0.561 | fired 0% of chances
-k=2 fire if better, face counted (optimistic)            rounds mean 22.8 (±0.4) b' 0.573 | fired 100% of chances
-k=2 fire only if it adds a missing digit                 rounds mean 22.6 (±0.4) b' 0.572 | fired 64% of chances
-k=2 fire if better, kiln face not counted (pessimistic)  rounds mean 20.0 (±0.3) b' 0.561 | fired 0% of chances
-k=0 never fire                                           rounds mean 20.0 (±0.3) b' 0.561 | fired 0% of chances
-k=0 fire if better, face counted (optimistic)            rounds mean 24.8 (±0.5) b' 0.625 | fired 100% of chances
-k=0 fire only if it adds a missing digit                 rounds mean 23.5 (±0.5) b' 0.615 | fired 55% of chances
-k=0 fire if better, kiln face not counted (pessimistic)  rounds mean 24.8 (±0.5) b' 0.625 | fired 100% of chances
