@@ -1,11 +1,11 @@
-# AGENTS.md — ozterisk Agent Kernel
+# AGENTS.md — ndle Agent Kernel
 
 This file is loaded for every agent working in this repository. Everything else
 is read on demand through the routing map below.
 
-**Goal:** Build and deploy a responsive, bilingual, fully client-side proof of concept for `ozterisk`, an endless multiplication game in which digit tiles are both answer inputs and a managed inventory.
+**Goal:** **9dle** (구들) is a daily multiplication puzzle with a Practice mode. Puzzle is its only mode, a year of solver-chosen daily tables ships with it, and a Daily resumes after a reload.
 
-**Architecture:** A Vite + React + TypeScript single-page application uses a deterministic `useReducer` state machine for the five game phases. Pure domain utilities own equation generation, rewards, answer construction, sorting, loss detection, and share formatting; React owns rendering and event orchestration. Random values and tile IDs are injected at the boundary so all game rules remain deterministic in tests.
+**Architecture:** The game is M8's Puzzle with the mode axis removed. A Vite + React + TypeScript single-page application uses a deterministic `useReducer` state machine that stays pure and knows nothing of dates, storage or Daily versus Practice. Which table a run plays is decided at the App boundary: a Daily takes today's number, from an injected clock and a launch date, and picks a table from a shipped JSON list; Practice calls `dealPuzzle(Math.random)`. A Daily is saved as its table number, its moves so far and its outcome, and a reload replays the moves through the real reducer. An offline generator, run through Vite's `runnerImport`, plants and solves tables to fill the list.
 
 **Tech Stack:** Vite, React, TypeScript, CSS Modules, Vitest, React Testing Library, `@testing-library/user-event`, Vercel.
 
@@ -17,32 +17,30 @@ is read on demand through the routing map below.
 |---|---|
 | Starting task `T##` | `docs/tasks/T##-*.md`, then every file in its `reads:` frontmatter |
 | Checking waves, milestones, parallelism, or wave exit gates | `docs/plan/roadmap.md` |
+| Generating or vetoing daily tables | `docs/spec/product.md` §1.2b |
 | Creating labels, milestones, or issues | `docs/plan/github.md` |
 | Mapping requirements to owning tasks and evidence | `docs/plan/traceability.md` |
 | Running quality gates (spec, architecture, interaction, a11y) | `docs/checklists/quality.md` |
 | Preparing or verifying the release | `docs/checklists/release.md` |
 | Recording insights that must outlive this session | `docs/journal/journal-*.md` |
 | Invoking a `mattpocock-skills` engineering skill | `docs/agents/*.md` |
-| Anything still unclear after all of the above | `docs/archive/complete-plan.md` (frozen snapshot) |
 
 ## Document precedence
 
 1. `docs/spec/**` is canonical for every product and technical rule.
 2. `docs/tasks/**` and `docs/plan/**` defer to spec on conflict. If they
    disagree, stop and report the conflict; do not patch around it.
-3. `docs/archive/complete-plan.md` is the frozen pre-split snapshot. Never
-   treat it as current; on conflict the split documents win.
 
 Section numbers (§1.x, §2.x, §4.x, §7.x, §8.x) are preserved from the original
 plan, so cross-references resolve across files.
 
 ## Global Constraints
 
-- Product name is `ozterisk`.
+- Product name is **9dle** (Korean **구들**); the slug is `ndle`.
 - Use Vite + React + TypeScript; do not use Next.js.
 - Run entirely in the browser; no backend, database, account, leaderboard, API, analytics, or anti-cheat system.
 - Use React `useReducer`; do not add Zustand, Redux, or another state library.
-- Keep the reducer pure and deterministic; never call `Math.random()`, `crypto.randomUUID()`, browser APIs, or storage APIs inside it.
+- Keep the reducer pure and deterministic; never call `Math.random()`, `crypto.randomUUID()`, browser APIs, or storage APIs, and never read the clock, inside it.
 - Use CSS Modules plus one global stylesheet; do not add Tailwind, a component
   library, or an animation library. The global stylesheet may `@import` token
   partials under `src/styles/tokens/`, which is where global `@keyframes` live —
@@ -54,16 +52,16 @@ plan, so cross-references resolve across files.
   permitted; extending it amends §1.12 first.
 - Support responsive desktop and mobile layouts with mouse, touch, and keyboard input.
 - Support English and Korean through a typed in-code dictionary; do not add an i18n dependency.
-- Persist only the language preference in `localStorage`; never persist a run, score, record, equation, or inventory.
+- Persist only the language preference and today's daily (its table number, its moves so far, its outcome) in `localStorage`; never persist a Practice run, a past daily, a streak, or any record across days.
 - Use Vitest and React Testing Library for behavior: game rules, reducer
   transitions, component interaction, and accessibility semantics are tested
   there and never in a browser. A browser suite is permitted only for
   properties jsdom cannot observe — layout geometry, overflow, and computed
   font metrics — and must assert no behavior. See `docs/spec/product.md` §1.17.
-- Use ordinary browser randomness in production; do not generate, display, encode, or share run seeds.
+- Practice uses ordinary browser randomness. The daily list is chosen offline and ships as numbered tables, never as seeds; a seeded PRNG may exist only in tests and in the offline generator under `scripts/`, never in code `src/main.tsx` reaches.
 - Do not add sound, music, mute, or volume controls.
 - Deploy the static Vite build to Vercel.
-- Do not implement a leaderboard, result URLs, saved records, accounts, tutorials, or backend validation.
+- Do not implement a leaderboard, result URLs, accounts, a daily streak, tutorials, or backend validation. A shared Daily names its table number; a Practice table is never named, replayed or shared.
 - Every task is implemented test-first, produces one independently reviewable result, and ends in a focused commit.
 - Do not start an issue until every `depends_on` issue has passed its completion gate.
 
@@ -82,6 +80,7 @@ coherent commit each, and one PR closes every issue in that milestone.
   work starts. The unit of merge moves deliberately and on the record, never
   ad hoc at branch time.
 - Branch: `feat/M#-short-kebab-name`.
+- Agent shells push over HTTPS through `gh auth git-credential`.
 - Commit: Conventional Commit with `Task: T##` in the body. One commit per
   task, independently reviewable.
 - PR title: `[M#] Imperative outcome`.
@@ -233,7 +232,7 @@ adapter onto conventions this repo already had; none of them is canonical over
 
 ### Issue tracker
 
-Issues live in this repo's GitHub Issues, via `gh`. See
+Issues live in this repo's GitHub Issues (`cgm-16/ndle`), via `gh`. See
 `docs/agents/issue-tracker.md`; label, schema, and object conventions stay in
 `docs/plan/github.md`.
 
