@@ -70,7 +70,7 @@ input {
   *::after {
     animation-duration: 0.01ms !important;
 
-    /* Staggered moments wait on a positive delay (the seals, 300 + 40·k ms);
+    /* Staggered moments wait on a positive delay;
        without this they would still hold, motionless, before jumping. */
     animation-delay: 0s !important;
     animation-iteration-count: 1 !important;

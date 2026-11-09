@@ -87,13 +87,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const arrived = [...state.inventory, ...newRewardTiles];
       const nextCurrentStreak = state.currentStreak + 1;
       const nextTotalRounds = state.totalRounds + 1;
-      // Checked against the capacity after this submission, so a seal it makes
-      // is already counted (§1.7).
-      const overflowCount = getOverflowCount({
-        mode: state.mode,
-        inventory: arrived,
-        totalRounds: nextTotalRounds,
-      });
+      const overflowCount = getOverflowCount({ mode: state.mode, inventory: arrived });
       // Sort only what fits. The tiles past capacity are the newest arrivals, in
       // arrival order, and perch on the rail — sorting first would always perch
       // the highest digits (§1.5 step 7).
@@ -185,9 +179,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const nextInventory = sortTiles(
         state.inventory.map((tile) => (tile.isNew ? { ...tile, isNew: false } : tile)),
       );
-      // A complete run (Classic at the floor, Puzzle past its last row) is over
-      // before the loss check, so a hand that could still answer does not play
-      // on; isClassicWin tells Classic's win from an empty-hand loss (§1.8).
+      // A complete run (Puzzle past its last row) is over before the loss
+      // check, so a hand that could still answer does not play on (§1.8).
       const canPlay = !isRunComplete(state) && canAttemptEquation(nextInventory, action.equation);
       return {
         ...state,

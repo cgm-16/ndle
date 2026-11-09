@@ -85,8 +85,6 @@ describe("gallery catalogue", () => {
   // this test compares against.
   const OVERFLOW_ENTRY_REWARD_COUNTS: Record<string, number> = {
     "overflow-required-1": 2,
-    "overflow-required-2": 3,
-    "overflow-marked": 3,
   };
 
   it("badges exactly as many overflow-tray tiles New as each entry's reward count", () => {
@@ -103,19 +101,6 @@ describe("gallery catalogue", () => {
       );
       cleanup();
     }
-  });
-
-  // TOGGLE_DISCARD is the only action that fills pendingDiscards, and no
-  // fixture ever set it, so the marked tile had only ever been rendered by
-  // jsdom — which performs no layout. One of the two tiles this hand must
-  // shed is marked, which is the half-made decision: the discard stays open
-  // until the second mark completes it.
-  it("marks one tile for discard in overflow-marked, with the discard still open", () => {
-    render(
-      <I18nProvider initialLanguage="en">{entryById("overflow-marked").render()}</I18nProvider>,
-    );
-    expect(screen.getAllByRole("button", { name: /Marked for discard$/ })).toHaveLength(1);
-    expect(screen.getByText("Choose 2 tiles to discard.")).toBeInTheDocument();
   });
 
   it("shows the submitted tiles in feedback-incorrect", () => {

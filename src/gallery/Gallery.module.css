@@ -102,7 +102,7 @@
 
     /* The stage gets the page's full width, as the app's arena does: the
        gallery's own inset would read every state 32px narrower than the
-       screen it stands in for (#130), below the Classic tray's 44px floor. */
+       screen it stands in for (#130), below the rack's 44px floor. */
     padding-inline: 0;
   }
 

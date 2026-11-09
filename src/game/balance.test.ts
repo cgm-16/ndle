@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  CLASSIC_FLOOR,
-  CLASSIC_SEAL_EVERY,
-  CLASSIC_START_CAPACITY,
   INVENTORY_CAPACITY,
   KIND_EQUATION_RATE,
   REWARD_BONUS,
@@ -57,37 +54,3 @@ describe("economy invariant", () => {
     expect(buildableRateCliff()).toBeCloseTo(0.6311, 4);
   });
 });
-
-// Classic is meant to cross the cliff: it opens where runs would never end and
-// closes where they must. The descent, not a margin, is what ends the run.
-describe("Classic economy invariant", () => {
-  const biasedAt = (capacity: number) =>
-    projectBiasedRate(projectBuildableRate(capacity), KIND_EQUATION_RATE);
-
-  it("opens above the cliff, so the tray starts generous", () => {
-    expect(biasedAt(CLASSIC_START_CAPACITY)).toBeGreaterThan(buildableRateCliff());
-  });
-
-  it("closes below the cliff by at least the margin, so the descent ends runs", () => {
-    expect(buildableRateCliff() - biasedAt(CLASSIC_FLOOR)).toBeGreaterThan(CLIFF_MARGIN);
-  });
-
-  it("keeps the schedule well-formed", () => {
-    // The floor must still hold the longest answer (two digits), and the start
-    // must hold a full round-robin deal of every digit.
-    expect(CLASSIC_START_CAPACITY).toBeGreaterThan(CLASSIC_FLOOR);
-    expect(CLASSIC_FLOOR).toBeGreaterThanOrEqual(2);
-    expect(CLASSIC_START_CAPACITY).toBeGreaterThanOrEqual(10);
-    expect(Number.isInteger(CLASSIC_SEAL_EVERY) && CLASSIC_SEAL_EVERY >= 1).toBe(true);
-  });
-
-  // The small rack's CSS draws twenty in 7 x 3 wide (21 cells, the rest
-  // hidden) and 6 x 4 narrow (24). Past 21 a live tile would be hidden, its
-  // discard would start no exit, and the run would freeze; below 19 the
-  // footprint drops to 18 and the wide rack's last row is ragged.
-  it("keeps the start inside the small rack's drawn rows", () => {
-    expect(CLASSIC_START_CAPACITY).toBeGreaterThanOrEqual(19);
-    expect(CLASSIC_START_CAPACITY).toBeLessThanOrEqual(21);
-  });
-});
-

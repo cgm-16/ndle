@@ -186,7 +186,7 @@ const mostCopies = (counts: readonly number[], isAllowed: (digit: Digit) => bool
     .filter((digit) => counts[digit] > 0 && isAllowed(digit))
     .reduce((best, digit) => (counts[digit] > counts[best] ? digit : best));
 
-// The journal's T84 Classic bot at skill 100%: it answers whenever it can,
+// The journal's T84 myopic bot at skill 100%: it answers whenever it can,
 // never sacrifices, discards the most-copied digit, and on a forced miss spends
 // the most-copied digits (never the product's digit, for a one-digit product).
 export function playMyopic(deal: PuzzleDeal): number {

@@ -6,7 +6,7 @@ import { TitleScreen } from "./TitleScreen";
 import styles from "./TitleScreen.module.css";
 
 describe("TitleScreen", () => {
-  it("offers Endless and Classic, with Endless chosen by default", () => {
+  it("offers Endless and Puzzle, with Endless chosen by default", () => {
     render(
       <I18nProvider initialLanguage="en">
         <TitleScreen onStart={vi.fn()} />
@@ -15,17 +15,17 @@ describe("TitleScreen", () => {
     const group = screen.getByRole("group", { name: "Mode" });
     expect(group).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^Endless/ })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: /^Classic/ })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: /^Puzzle/ })).toHaveAttribute("aria-pressed", "false");
   });
 
-  it("offers Puzzle as the third mode", () => {
+  it("offers two modes", () => {
     render(
       <I18nProvider initialLanguage="en">
         <TitleScreen onStart={vi.fn()} />
       </I18nProvider>,
     );
     const group = screen.getByRole("group", { name: "Mode" });
-    expect(within(group).getAllByRole("button")).toHaveLength(3);
+    expect(within(group).getAllByRole("button")).toHaveLength(2);
     expect(within(group).getByRole("button", { name: /^Puzzle/ })).toHaveAttribute("aria-pressed", "false");
   });
 
@@ -36,10 +36,8 @@ describe("TitleScreen", () => {
         <TitleScreen onStart={onStart} />
       </I18nProvider>,
     );
-    await userEvent.click(screen.getByRole("button", { name: /^Classic/ }));
-    expect(screen.getByRole("button", { name: /^Classic/ })).toHaveAttribute("aria-pressed", "true");
     await userEvent.click(screen.getByRole("button", { name: "Start Run" }));
-    expect(onStart).toHaveBeenCalledWith("classic");
+    expect(onStart).toHaveBeenCalledWith("endless");
   });
 
   it("starts a Puzzle run when Puzzle is chosen", async () => {
@@ -128,10 +126,6 @@ describe("TitleScreen", () => {
     // keyboard controls
     expect(
       screen.getByText(/Press a digit key to select a matching tile/),
-    ).toBeInTheDocument();
-    // Classic's twenty closing to six, and that the floor is the win (§1.14)
-    expect(
-      screen.getByText(/Classic starts with twenty sockets .* reach five sockets and the run is complete/),
     ).toBeInTheDocument();
   });
 

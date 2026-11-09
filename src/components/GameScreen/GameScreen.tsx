@@ -4,7 +4,6 @@ import type { GameAction, GameState } from "../../game/types";
 import {
   getAnswerLength,
   getCapacity,
-  getOverflowCount,
   isSubmissionReady,
 } from "../../game/selectors";
 import { useGameKeyboard } from "../../hooks/useGameKeyboard";
@@ -68,9 +67,6 @@ export function GameScreen({ state, dispatch, onSubmit, onNextRound }: GameScree
         score={state.score}
         currentStreak={state.currentStreak}
         round={state.round}
-        // Classic states its live capacity as a number; its rack's plugs show
-        // the descent, and twenty pips would be a second account of it (§1.10).
-        capacity={state.mode === "classic" ? getCapacity(state.mode, state.totalRounds) : undefined}
         par={state.table?.par}
       />
       {/* Capacity is what you hold, and a tile in an answer slot is still
@@ -138,7 +134,7 @@ export function GameScreen({ state, dispatch, onSubmit, onNextRound }: GameScree
       )}
 
       {state.phase === "overflow" && (
-        <OverflowControls requiredCount={getOverflowCount(state)} />
+        <OverflowControls />
       )}
 
       <TileInventory
@@ -151,12 +147,7 @@ export function GameScreen({ state, dispatch, onSubmit, onNextRound }: GameScree
             : state.inventory
         }
         liftedIds={state.selectedTiles.map((tile) => tile.id)}
-        capacity={getCapacity(state.mode, state.totalRounds)}
-        // Classic's rack is drawn at the displayed round's capacity, which
-        // moves only at the round change; the live capacity above says which
-        // tiles are seated (§1.7a).
-        stepped={state.mode === "classic"}
-        drawnCapacity={getCapacity(state.mode, state.round - 1)}
+        capacity={getCapacity(state)}
         mode={state.phase === "answering" ? "select" : state.phase === "overflow" ? "discard" : "readOnly"}
         pendingDiscards={state.pendingDiscards}
         onSettled={() => {

@@ -1,8 +1,5 @@
-import type { Equation, GameMode, GameState, Tile } from "./types";
+import type { Equation, GameState, Tile } from "./types";
 import {
-  CLASSIC_FLOOR,
-  CLASSIC_SEAL_EVERY,
-  CLASSIC_START_CAPACITY,
   INVENTORY_CAPACITY,
   PUZZLE_CAPACITY,
   REWARD_BONUS,
@@ -50,44 +47,18 @@ export function canConstruct(inventory: readonly Tile[], product: number): boole
   );
 }
 
-// Live capacity after `totalRounds` submissions. Classic seals one socket every
-// CLASSIC_SEAL_EVERY submissions, correct or not, down to the floor (§1.7a).
-export function getCapacity(mode: GameMode, totalRounds: number): number {
-  // Named, since every mode but Endless would otherwise fall through to
-  // Classic's descent.
-  if (mode === "puzzle") return PUZZLE_CAPACITY;
-  if (mode === "endless") return INVENTORY_CAPACITY;
-  const sealed = Math.floor(totalRounds / CLASSIC_SEAL_EVERY);
-  return Math.max(CLASSIC_FLOOR, CLASSIC_START_CAPACITY - sealed);
+export function getCapacity(state: Pick<GameState, "mode">): number {
+  return state.mode === "puzzle" ? PUZZLE_CAPACITY : INVENTORY_CAPACITY;
 }
 
-type CapacityState = Pick<GameState, "inventory" | "mode" | "totalRounds">;
-
-export function getOverflowCount(state: CapacityState): number {
-  return Math.max(0, state.inventory.length - getCapacity(state.mode, state.totalRounds));
+export function getOverflowCount(state: Pick<GameState, "inventory" | "mode">): number {
+  return Math.max(0, state.inventory.length - getCapacity(state));
 }
 
-// A Classic run at the floor is complete: the next advance ends it,
-// before any equation is generated (§1.8 step 0).
-export function isAtClassicFloor(state: Pick<GameState, "mode" | "totalRounds">): boolean {
-  return state.mode === "classic" && getCapacity(state.mode, state.totalRounds) <= CLASSIC_FLOOR;
-}
-
-// A run is complete when its last submission is in: Classic at its floor,
-// Puzzle once every row of its table is submitted. The next advance then ends
-// it (§1.8 step 0).
+// A run is complete once every row of its Puzzle table is submitted. The next
+// advance then ends it (§1.8 step 0).
 export function isRunComplete(state: Pick<GameState, "mode" | "totalRounds" | "table">): boolean {
-  return state.mode === "puzzle"
-    ? state.table !== undefined && state.totalRounds >= state.table.rows.length
-    : isAtClassicFloor(state);
-}
-
-// A Classic run that reaches the floor with tiles in hand is the win; one that
-// reaches it with an empty hand spent its last tile on a miss, and loses (§1.8).
-export function isClassicWin(
-  state: Pick<GameState, "phase" | "mode" | "totalRounds" | "inventory">,
-): boolean {
-  return state.phase === "gameOver" && isAtClassicFloor(state) && state.inventory.length > 0;
+  return state.mode === "puzzle" && state.totalRounds >= state.table!.rows.length;
 }
 
 // Par is made at game over with a score equal to the table's par, however the

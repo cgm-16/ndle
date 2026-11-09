@@ -1,4 +1,4 @@
-import { isClassicWin, isParMade } from "../game/selectors";
+import { isParMade } from "../game/selectors";
 import type { GameState, Language } from "../game/types";
 import { messages } from "../i18n/messages";
 
@@ -8,8 +8,6 @@ export type ShareStats = {
   longestStreak: number;
 } & (
   | { mode: "endless"; won: false }
-  /** `won`: a Classic run that reached the floor with tiles in hand. */
-  | { mode: "classic"; won: boolean }
   /** `won`: made par. `rows`: the table's length, so a finished table is totalRounds === rows. */
   | { mode: "puzzle"; won: boolean; par: number; rows: number }
 );
@@ -21,23 +19,18 @@ export function getShareStats(state: GameState): ShareStats {
   if (state.mode === "puzzle" && table) {
     return { mode: "puzzle", won: isParMade(state), par: table.par, rows: table.rows.length, ...figures };
   }
-  return state.mode === "classic"
-    ? { mode: "classic", won: isClassicWin(state), ...figures }
-    : { mode: "endless", won: false, ...figures };
+  return { mode: "endless", won: false, ...figures };
 }
 
-// §1.15: Classic and Puzzle name their mode and outcome ahead of the figures;
+// §1.15: Puzzle names its mode and outcome ahead of the figures;
 // Endless's first line is unchanged. The words are the dictionary's, so the
 // shared text and the screen cannot drift apart.
 function shareHeading(stats: ShareStats, language: Language): string {
   if (stats.mode === "endless") return "ozterisk";
   const { mode, gameOver } = messages[language];
-  if (stats.mode === "puzzle") {
-    const short = String(stats.par - stats.score);
-    const outcome = stats.won ? gameOver.parTitle : gameOver.shortTitle.replace("{short}", short);
-    return `ozterisk ${mode.puzzle} — ${outcome}`;
-  }
-  return `ozterisk ${mode.classic} — ${stats.won ? gameOver.winTitle : gameOver.title}`;
+  const short = String(stats.par - stats.score);
+  const outcome = stats.won ? gameOver.parTitle : gameOver.shortTitle.replace("{short}", short);
+  return `ozterisk ${mode.puzzle} — ${outcome}`;
 }
 
 export function formatShareText(stats: ShareStats, language: Language, url: string): string {

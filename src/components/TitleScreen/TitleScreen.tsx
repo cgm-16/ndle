@@ -10,7 +10,7 @@ export interface TitleScreenProps {
   onStart(mode: GameMode): void;
 }
 
-const MODES = ["endless", "classic", "puzzle"] as const;
+const MODES = ["endless", "puzzle"] as const;
 
 /**
  * The four material rules, in the design's reading order. Each swatch is the
@@ -28,7 +28,7 @@ const MATERIAL_RULES: { swatch: string; topic: keyof MessageTree["howToPlay"] }[
 
 /** Topics play never teaches on its own. Keyboard controls lead: it is the one
     of the four that no amount of playing reveals. */
-const MORE_TOPICS = ["keyboard", "selecting", "slots", "progress", "classic", "puzzle"] as const;
+const MORE_TOPICS = ["keyboard", "selecting", "slots", "progress", "puzzle"] as const;
 
 export function TitleScreen({ onStart }: TitleScreenProps) {
   const { t } = useI18n();

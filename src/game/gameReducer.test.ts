@@ -7,11 +7,8 @@ import {
   getAnswerLength,
   getCapacity,
   getOverflowCount,
-  getRewardCount,
-  isClassicWin,
   isParMade,
 } from "./selectors";
-import { CLASSIC_FLOOR, CLASSIC_SEAL_EVERY, CLASSIC_START_CAPACITY } from "./balance";
 import {
   PUZZLE_SAMPLE,
   PUZZLE_SAMPLE_PAR_LINE,
@@ -728,14 +725,14 @@ function assertInvariants(state: GameState): void {
     expect(pendingDiscards).toEqual([]);
   }
 
-  // inventory.length <= getCapacity(mode, totalRounds) when phase is
+  // inventory.length <= getCapacity(state) when phase is
   // answering, feedback, or gameOver.
-  const capacity = getCapacity(state.mode, state.totalRounds);
+  const capacity = getCapacity(state);
   if (phase === "answering" || phase === "feedback" || phase === "gameOver") {
     expect(inventory.length).toBeLessThanOrEqual(capacity);
   }
 
-  // inventory.length > getCapacity(mode, totalRounds) when phase is overflow.
+  // inventory.length > getCapacity(state) when phase is overflow.
   if (phase === "overflow") {
     expect(inventory.length).toBeGreaterThan(capacity);
   }
@@ -790,120 +787,6 @@ describe("CLEAR_SELECTION", () => {
     // A selection, so the empty-selection guard cannot be what rejects it.
     const state = makeFeedbackState(makeEquation(4, 5), { selectedTiles: [makeTile(4, "tile-selected")] });
     expect(gameReducer(state, { type: "CLEAR_SELECTION" })).toBe(state);
-  });
-});
-
-describe("Classic", () => {
-  const classicInventory = () => createInitialInventory(sequentialIds(), CLASSIC_START_CAPACITY);
-  const toFloor = (CLASSIC_START_CAPACITY - CLASSIC_FLOOR) * CLASSIC_SEAL_EVERY;
-
-  it("START_RUN carries the mode into the run", () => {
-    const next = gameReducer(createTitleState(), {
-      type: "START_RUN",
-      mode: "classic",
-      equation: makeEquation(2, 3),
-      inventory: classicInventory(),
-    });
-    expect(next.mode).toBe("classic");
-    expect(next.inventory).toHaveLength(CLASSIC_START_CAPACITY);
-  });
-
-  it("RESTART_RUN keeps the mode of the run that ended", () => {
-    const state: GameState = {
-      ...makeFeedbackState(makeEquation(7, 8)),
-      phase: "gameOver",
-      mode: "classic",
-    };
-    const next = gameReducer(state, {
-      type: "RESTART_RUN",
-      equation: makeEquation(2, 3),
-      inventory: classicInventory(),
-    });
-    expect(next.mode).toBe("classic");
-  });
-
-  it("counts the seal made by this submission when checking overflow, correct answer at a full rack", () => {
-    // Submission 2 seals a socket: capacity 20 -> 19. A full rack spending two
-    // tiles on 4 x 5 = 20 gets three back, 21 tiles against 19 sockets.
-    const inventory = classicInventory();
-    const two = inventory.find((tile) => tile.digit === 2)!;
-    const zero = inventory.find((tile) => tile.digit === 0)!;
-    const state = makeAnsweringState(makeEquation(4, 5), {
-      mode: "classic",
-      totalRounds: CLASSIC_SEAL_EVERY - 1,
-      round: CLASSIC_SEAL_EVERY,
-      inventory: inventory.filter((tile) => tile !== two && tile !== zero),
-      selectedTiles: [two, zero],
-    });
-    const next = gameReducer(state, {
-      type: "SUBMIT_CORRECT",
-      rewardTiles: [makeTile(1, "r-1"), makeTile(3, "r-3"), makeTile(2, "r-2")],
-    });
-    expect(next.phase).toBe("overflow");
-    expect(getOverflowCount(next)).toBe(2);
-    // Both past capacity perch in arrival order, 3 before 2: sorting or
-    // reversing the rail would put the 2 first (§1.5 step 7).
-    expect(next.inventory.slice(-2).map((tile) => tile.id)).toEqual(["r-3", "r-2"]);
-  });
-
-  it("never overflows on an incorrect answer, even on a sealing submission", () => {
-    const inventory = classicInventory();
-    const nine = inventory.find((tile) => tile.digit === 9)!;
-    const state = makeAnsweringState(makeEquation(2, 3), {
-      mode: "classic",
-      totalRounds: CLASSIC_SEAL_EVERY - 1,
-      round: CLASSIC_SEAL_EVERY,
-      inventory: inventory.filter((tile) => tile !== nine),
-      selectedTiles: [nine],
-    });
-    const next = gameReducer(state, { type: "SUBMIT_INCORRECT" });
-    expect(next.phase).toBe("feedback");
-    expect(getOverflowCount(next)).toBe(0);
-  });
-
-  it("NEXT_ROUND at the floor ends the run as a win, even with a hand that could answer", () => {
-    const state = makeFeedbackState(makeEquation(2, 3), {
-      mode: "classic",
-      totalRounds: toFloor,
-      round: toFloor,
-    });
-    const next = gameReducer(state, { type: "NEXT_ROUND", equation: makeEquation(2, 2) });
-    expect(next.phase).toBe("gameOver");
-    expect(isClassicWin(next)).toBe(true);
-  });
-
-  it("NEXT_ROUND at the floor with an empty hand ends the run as a loss", () => {
-    const state = makeFeedbackState(makeEquation(2, 3), {
-      mode: "classic",
-      totalRounds: toFloor,
-      round: toFloor,
-      inventory: [],
-    });
-    const next = gameReducer(state, { type: "NEXT_ROUND", equation: makeEquation(2, 3) });
-    expect(next.phase).toBe("gameOver");
-    expect(isClassicWin(next)).toBe(false);
-  });
-
-  it("NEXT_ROUND above the floor with too few tiles ends the run as a loss", () => {
-    const state = makeFeedbackState(makeEquation(2, 3), {
-      mode: "classic",
-      totalRounds: toFloor - 1,
-      round: toFloor - 1,
-      inventory: [makeTile(4)],
-    });
-    const next = gameReducer(state, { type: "NEXT_ROUND", equation: makeEquation(3, 4) });
-    expect(next.phase).toBe("gameOver");
-    expect(isClassicWin(next)).toBe(false);
-  });
-
-  it("NEXT_ROUND above the floor with enough tiles keeps playing", () => {
-    const state = makeFeedbackState(makeEquation(2, 3), {
-      mode: "classic",
-      totalRounds: toFloor - 1,
-      round: toFloor - 1,
-    });
-    const next = gameReducer(state, { type: "NEXT_ROUND", equation: makeEquation(3, 4) });
-    expect(next.phase).toBe("answering");
   });
 });
 
@@ -1018,57 +901,6 @@ describe("reducer lifecycle invariants (§2.5)", () => {
 
     expect(state.round).toBe(1);
     expect(state.totalRounds).toBe(0);
-  });
-});
-
-describe("Classic lifecycle", () => {
-  it("holds every invariant on a run from twenty to the floor, through seals, misses and discards", () => {
-    // Every round asks 1 × d for a digit d the hand holds, so a one-tile
-    // answer is always possible. Every third submission misses; the rest are
-    // correct and rewarded, so a sealing submission overflows by two.
-    const ids = sequentialIds("reward");
-    const rewardDigits: Digit[] = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-    const nextEquation = (s: GameState) => {
-      const tile = s.inventory.find((candidate) => candidate.digit > 0);
-      return makeEquation(1, tile?.digit || 9);
-    };
-    const step = (s: GameState, action: GameAction): GameState => {
-      const next = gameReducer(s, action);
-      expect(next, action.type).not.toBe(s);
-      assertInvariants(next);
-      return next;
-    };
-
-    let state = step(createTitleState(), {
-      type: "START_RUN",
-      mode: "classic",
-      equation: makeEquation(1, 1),
-      inventory: createInitialInventory(sequentialIds(), CLASSIC_START_CAPACITY),
-    });
-    let sawDoubleDiscard = false;
-    while (state.phase === "answering") {
-      const product = state.equation!.product;
-      const miss = state.round % 3 === 0;
-      const tile = state.inventory.find((candidate) => (candidate.digit === product) !== miss)!;
-      state = step(state, { type: "SELECT_TILE", tileId: tile.id });
-      if (miss) {
-        state = step(state, { type: "SUBMIT_INCORRECT" });
-      } else {
-        const rewardTiles = Array.from({ length: getRewardCount(1) }, (_, index) =>
-          makeTile(rewardDigits[(state.round + index) % rewardDigits.length]!, ids(), true),
-        );
-        state = step(state, { type: "SUBMIT_CORRECT", rewardTiles });
-      }
-      if (getOverflowCount(state) >= 2) sawDoubleDiscard = true;
-      while (state.phase === "overflow") {
-        const unmarked = state.inventory.find((candidate) => !state.pendingDiscards.includes(candidate.id))!;
-        state = step(state, { type: "TOGGLE_DISCARD", tileId: unmarked.id });
-      }
-      state = step(state, { type: "NEXT_ROUND", equation: nextEquation(state) });
-    }
-
-    expect(sawDoubleDiscard).toBe(true);
-    expect(isClassicWin(state)).toBe(true);
   });
 });
 

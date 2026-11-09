@@ -3,8 +3,7 @@ import { GameOverScreen } from "../components/GameOverScreen/GameOverScreen";
 import { GameScreen } from "../components/GameScreen/GameScreen";
 import { LanguageToggle } from "../components/LanguageToggle/LanguageToggle";
 import { TitleScreen } from "../components/TitleScreen/TitleScreen";
-import { CLASSIC_FLOOR, CLASSIC_SEAL_EVERY, CLASSIC_START_CAPACITY } from "../game/balance";
-import { createInitialInventory, createTiles, sortTiles } from "../game/factories";
+import { createTiles, sortTiles } from "../game/factories";
 import { gameReducer } from "../game/gameReducer";
 import type { GamePhase, GameState, Tile } from "../game/types";
 import { getShareStats, type ShareDependencies } from "../services/sharing";
@@ -46,7 +45,6 @@ function renderGameOverScreen(state: GameState, dependencies: ShareDependencies)
     <GameOverScreen
       equation={state.equation}
       stats={getShareStats(state)}
-      hand={state.inventory}
       url="https://example.test/"
       dependencies={dependencies}
       onPlayAgain={noop}
@@ -183,7 +181,7 @@ const INCORRECT_FULL_STATE = gameReducer(INCORRECT_PARTIAL_STATE, {
 });
 const FEEDBACK_INCORRECT_STATE = gameReducer(INCORRECT_FULL_STATE, { type: "SUBMIT_INCORRECT" });
 
-// Overflow always follows SUBMIT_CORRECT, so both overflow states are built by
+// Overflow always follows SUBMIT_CORRECT, so the overflow state is built by
 // running the real reducer: SUBMIT_CORRECT stamps every reward isNew, sorts
 // only the tiles that fit and perches the newest arrivals past capacity
 // (§1.5 step 7), and nothing hand-assembled could keep those rules in step.
@@ -195,7 +193,7 @@ function submitCorrectly(state: GameState, spentIds: readonly string[], rewardTi
   return gameReducer(selected, { type: "SUBMIT_CORRECT", rewardTiles });
 }
 
-// Endless's only overflow case: 3 x 3 spends the 9 and getRewardCount(1) = 2
+// Endless's overflow case: 3 x 3 spends the 9 and getRewardCount(1) = 2
 // tiles come back, 10 - 1 + 2 = 11. The first reward is seated and sorted; the
 // second, the newest arrival, perches past capacity whatever its digit.
 const OVERFLOW_REQUIRED_1_STATE = submitCorrectly(
@@ -203,62 +201,6 @@ const OVERFLOW_REQUIRED_1_STATE = submitCorrectly(
   ["tile-9"],
   [makeTile(0, "reward-0"), makeTile(1, "reward-1")],
 );
-
-// Classic's case, and the one that produces excess 2: a full twenty-tile hand
-// answers 4 x 5 on the second submission, which seals a socket. Two tiles
-// spent, three back, 21 tiles against 19 sockets — the first mark is only a
-// mark, and the second completes the discard.
-const OVERFLOW_REQUIRED_2_STATE = submitCorrectly(
-  makeAnsweringState(makeEquation(4, 5), {
-    mode: "classic",
-    inventory: createInitialInventory(sequentialIds(), CLASSIC_START_CAPACITY),
-    round: CLASSIC_SEAL_EVERY,
-    totalRounds: CLASSIC_SEAL_EVERY - 1,
-  }),
-  ["tile-2", "tile-0"], // the deal gives tile-i the digit i % 10, so these spell 20
-  [makeTile(3, "reward-0"), makeTile(8, "reward-1"), makeTile(0, "reward-2")],
-);
-
-// The decision the overflow phase actually asks for: one tile marked, and the
-// discard not yet complete. Only TOGGLE_DISCARD fills pendingDiscards, so no
-// state that skips the reducer has ever carried one, and the marked tile —
-// its lift and its rim — had only ever been rendered by jsdom, which performs
-// no layout.
-//
-// Built on required 2, not required 1: at excess 1 the one mark completes the
-// discard, so a tile marked and not yet gone exists only at excess 2.
-//
-// tile-10 is the hand's surviving dealt 0, its twin tile-0 having been spent on
-// the answer; it carries no reward badge of its own. Marked through the
-// reducer, which is also what proves the mark is legal: TOGGLE_DISCARD
-// returns the state unchanged if the tile is absent or the pending count has
-// already reached the overflow count.
-const OVERFLOW_MARKED_STATE = gameReducer(OVERFLOW_REQUIRED_2_STATE, {
-  type: "TOGGLE_DISCARD",
-  tileId: "tile-10",
-});
-
-// Classic at the start of a run: twenty tiles, two of each digit (§1.3), and
-// the HUD's capacity figure in place of the pip meter.
-const ANSWERING_CLASSIC_STATE = makeAnsweringState(makeEquation(3, 4), {
-  mode: "classic",
-  inventory: createInitialInventory(sequentialIds(), CLASSIC_START_CAPACITY),
-});
-
-// Classic's other two sizes (§1.12): 5 x 48 from fifteen sockets, and the
-// Endless rack, in its tray, from ten. Each is the first round drawn at that
-// capacity, with the hand dealt to fill it.
-const classicAt = (capacity: number) => {
-  const submissions = (CLASSIC_START_CAPACITY - capacity) * CLASSIC_SEAL_EVERY;
-  return makeAnsweringState(makeEquation(3, 4), {
-    mode: "classic",
-    inventory: createInitialInventory(sequentialIds(), capacity),
-    totalRounds: submissions,
-    round: submissions + 1,
-  });
-};
-const ANSWERING_CLASSIC_15_STATE = classicAt(15);
-const ANSWERING_CLASSIC_10_STATE = classicAt(10);
 
 // Puzzle (spec §7): the sample at row 1, its hand dealt, every row still to
 // play. e2e/puzzle-fit.spec.ts measures the same screen in the app, dealt from
@@ -292,18 +234,6 @@ const ANSWERING_PUZZLE_ROW_4_STATE = makeAnsweringState(PUZZLE_SAMPLE.rows[3].eq
 const FEEDBACK_AFTER_DISCARD_STATE = gameReducer(OVERFLOW_REQUIRED_1_STATE, {
   type: "TOGGLE_DISCARD",
   tileId: "tile-5",
-});
-
-// A Classic game over at the floor with tiles in hand is the win (§1.8): Run Complete, and
-// the final hand where a loss shows its equation. Above the floor it is a loss, which renders exactly as
-// game-over-idle does — so it has no entry of its own.
-const CLASSIC_TO_FLOOR = (CLASSIC_START_CAPACITY - CLASSIC_FLOOR) * CLASSIC_SEAL_EVERY;
-const GAME_OVER_CLASSIC_WIN_STATE = makeGameOverState(makeEquation(7, 8), {
-  mode: "classic",
-  totalRounds: CLASSIC_TO_FLOOR,
-  round: CLASSIC_TO_FLOOR + 1,
-  // Fewer tiles than sockets, so the final hand shows both.
-  inventory: [makeTile(1, "win-a"), makeTile(4, "win-b"), makeTile(4, "win-c"), makeTile(7, "win-d")],
 });
 
 // Puzzle's game over (spec §7) after the sample's par line: the table played to
@@ -374,21 +304,6 @@ export const GALLERY_STATES: Record<GamePhase | "interaction", GalleryEntry[]> =
       render: () => renderGameScreen(ANSWERING_FULL_STATE),
     },
     {
-      id: "answering-classic",
-      label: "Answering — Classic at twenty",
-      render: () => renderGameScreen(ANSWERING_CLASSIC_STATE),
-    },
-    {
-      id: "answering-classic-15",
-      label: "Answering — Classic at fifteen (5 x 48)",
-      render: () => renderGameScreen(ANSWERING_CLASSIC_15_STATE),
-    },
-    {
-      id: "answering-classic-10",
-      label: "Answering — Classic at ten (the Endless rack, in its tray)",
-      render: () => renderGameScreen(ANSWERING_CLASSIC_10_STATE),
-    },
-    {
       id: "answering-depleted",
       label: "Answering — a depleted rack",
       render: () => renderGameScreen(ANSWERING_DEPLETED_STATE),
@@ -437,27 +352,12 @@ export const GALLERY_STATES: Record<GamePhase | "interaction", GalleryEntry[]> =
       label: "Overflow — required 1 (Endless)",
       render: () => renderGameScreen(OVERFLOW_REQUIRED_1_STATE),
     },
-    {
-      id: "overflow-required-2",
-      label: "Overflow — required 2 (Classic, a seal and a correct answer)",
-      render: () => renderGameScreen(OVERFLOW_REQUIRED_2_STATE),
-    },
-    {
-      id: "overflow-marked",
-      label: "Overflow — a tile marked for discard",
-      render: () => renderGameScreen(OVERFLOW_MARKED_STATE),
-    },
   ],
   gameOver: [
     {
       id: "game-over-idle",
       label: "Game over — idle",
       render: () => renderGameOverScreen(GAME_OVER_STATE, RESOLVING_SHARE_DEPENDENCIES),
-    },
-    {
-      id: "game-over-classic-win",
-      label: "Game over — Classic, run complete",
-      render: () => renderGameOverScreen(GAME_OVER_CLASSIC_WIN_STATE, RESOLVING_SHARE_DEPENDENCIES),
     },
     {
       id: "game-over-puzzle",

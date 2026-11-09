@@ -1,7 +1,6 @@
 /* The arena takes its container's width, up to its maximum, rather than
-   fitting its content: the stepped rack is a size container (§1.12), and a
-   container contributes no width of its own, so a fit-content arena would
-   shrink to its other children and starve the rack of the width it reads. */
+   fitting its content, so a fit-content arena cannot shrink to its other
+   children and starve the rack of width (§1.12). */
 .screen {
   display: flex;
   flex-direction: column;
@@ -32,9 +31,7 @@
    takes the page past a narrow viewport for the frame's 420ms. The arena
    clips that motion at its own edge, which at a phone's width is the screen's.
 
-   Only where the arena holds the rack. Below 304px — 280px of Classic's
-   narrowest tray, the widest floor the rack has, plus 24px of padding — the
-   rack keeps its 44px target minimum by overflowing, and the page scrolls to
+   Only where the arena holds the rack. Below 304px the rack keeps its 44px target minimum by overflowing, and the page scrolls to
    it on purpose (TileInventory.module.css, #85). Clipping there would cut the
    rack off instead, so the page keeps scrolling. `clip` rather than `hidden`
    because only `clip` leaves the other axis visible and makes no scroll

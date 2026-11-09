@@ -3,8 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { I18nProvider } from "../../i18n/I18nContext";
 import type { ShareDependencies } from "../../services/sharing";
-import { CLASSIC_FLOOR } from "../../game/balance";
-import { makeEquation, makeTile } from "../../test/fixtures";
+import { makeEquation } from "../../test/fixtures";
 import { LanguageToggle } from "../LanguageToggle/LanguageToggle";
 import { GameOverScreen, type GameOverScreenProps } from "./GameOverScreen";
 import styles from "./GameOverScreen.module.css";
@@ -27,8 +26,7 @@ function renderScreen(overrides: Partial<GameOverScreenProps> = {}) {
       <GameOverScreen
         equation={EQUATION}
         stats={STATS}
-        hand={[]}
-        url={URL}
+                url={URL}
         dependencies={dependencies}
         onPlayAgain={onPlayAgain}
         {...overrides}
@@ -39,43 +37,6 @@ function renderScreen(overrides: Partial<GameOverScreenProps> = {}) {
 }
 
 describe("GameOverScreen", () => {
-  // §1.10: a Classic win is complete, not stopped, so it names itself and
-  // shows no equation — there is nothing left to explain.
-  it("states Run Complete and its reason on a Classic win, with no equation", () => {
-    renderScreen({ stats: { ...STATS, mode: "classic", won: true } });
-    expect(screen.getByRole("heading", { name: "Run Complete" })).toBeInTheDocument();
-    expect(screen.getByText("You reached the floor with tiles in hand.")).toBeInTheDocument();
-    expect(screen.queryByText("Game Over")).not.toBeInTheDocument();
-    expect(screen.queryByText("2 × 3 =", { exact: false })).not.toBeInTheDocument();
-  });
-
-  // §1.12: a win's verdict is gold, not the loss's vermilion, and the slot
-  // the loss gives its terminal equation holds the floor's sockets with the
-  // tiles still in them.
-  it("sets a Classic win in gold and shows its final hand in the floor's sockets", () => {
-    const hand = [makeTile(1, "a"), makeTile(4, "b"), makeTile(4, "c"), makeTile(9, "d")];
-    renderScreen({ stats: { ...STATS, mode: "classic", won: true }, hand });
-
-    const strip = screen.getByRole("img", {
-      name: `Finished with 4 tiles in ${CLASSIC_FLOOR} sockets`,
-    });
-    expect(strip.children).toHaveLength(CLASSIC_FLOOR);
-    expect(within(strip).getAllByText(/^\d$/)).toHaveLength(4);
-    expect(screen.getByRole("heading", { name: "Run Complete" })).toHaveClass(styles.won);
-  });
-
-  it("keeps the loss's heading out of gold and shows no final hand", () => {
-    renderScreen({ stats: { ...STATS, mode: "classic", won: false }, hand: [makeTile(3, "a")] });
-    expect(screen.getByRole("heading", { name: "Game Over" })).not.toHaveClass(styles.won);
-    expect(screen.queryByRole("img")).not.toBeInTheDocument();
-  });
-
-  it("renders a Classic loss like an Endless one", () => {
-    renderScreen({ stats: { ...STATS, mode: "classic", won: false } });
-    expect(screen.getByRole("heading", { name: "Game Over" })).toBeInTheDocument();
-    expect(screen.getByText("Not enough tiles left to answer.")).toBeInTheDocument();
-  });
-
   it("renders the terminal equation and its reason inside the main landmark", () => {
     renderScreen({ equation: makeEquation(7, 8) });
 
@@ -146,8 +107,7 @@ describe("GameOverScreen", () => {
         <GameOverScreen
           equation={EQUATION}
           stats={STATS}
-          hand={[]}
-          url={URL}
+                    url={URL}
           dependencies={{ writeClipboard: vi.fn().mockResolvedValue(undefined) }}
           onPlayAgain={vi.fn()}
         />
@@ -261,8 +221,7 @@ describe("GameOverScreen", () => {
         <GameOverScreen
           equation={EQUATION}
           stats={STATS}
-          hand={[]}
-          url={URL}
+                    url={URL}
           dependencies={{ nativeShare, writeClipboard }}
           onPlayAgain={vi.fn()}
         />
@@ -333,8 +292,8 @@ describe("GameOverScreen, Puzzle", () => {
 
   // The table is finished and par is made: nothing is left to explain, so the
   // slot a loss gives its equation carries only the reason.
-  it("sets made par in gold, with no equation, no final hand and no Rounds played", () => {
-    renderScreen({ stats: PUZZLE_STATS, hand: [makeTile(2, "a"), makeTile(7, "b")] });
+  it("sets made par in gold, with no equation and no Rounds played", () => {
+    renderScreen({ stats: PUZZLE_STATS });
 
     expect(screen.getByRole("heading", { name: "Made par" })).toHaveClass(styles.won);
     expect(screen.getByText("All eight rows played.")).toBeInTheDocument();
@@ -373,7 +332,7 @@ describe("GameOverScreen, Puzzle", () => {
   });
 
   it("keeps Game Over vermilion", () => {
-    renderScreen({ stats: { ...STATS, mode: "classic", won: false } });
+    renderScreen({ stats: STATS });
 
     expect(getComputedStyle(screen.getByRole("heading", { name: "Game Over" })).color).toBe(
       "var(--verm-400)",

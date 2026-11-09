@@ -121,41 +121,6 @@ async function driveToGameOver(user: ReturnType<typeof userEvent.setup>) {
   }
 }
 
-// A Classic run won at the floor. Every round is 1 × 2, a one-digit answer.
-// Rounds 1–18 spend each non-2 tile incorrectly (20 → 2 tiles); rounds 19–30
-// alternate a correct 2, rewarded with a 2 and a 0, and an incorrect 0, so the
-// hand never exceeds the closing capacity. The values are exactly what 30
-// rounds draw: the winning advance draws none (§1.8 step 0), and
-// sequenceRandom throws if it tries.
-const CLASSIC_WIN_ROUNDS = [
-  0, 0, 1, 1, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0,
-];
-
-function classicWinRandomValues(): number[] {
-  const values = [...equationSamples(1, 2)];
-  CLASSIC_WIN_ROUNDS.forEach((digit, index) => {
-    if (digit === 2) values.push(rewardSample(2), rewardSample(0));
-    if (index < CLASSIC_WIN_ROUNDS.length - 1) values.push(...equationSamples(1, 2));
-  });
-  return values;
-}
-
-async function playClassicToFloor(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole("button", { name: /^Classic/ }));
-  await user.click(screen.getByRole("button", { name: "Start Run" }));
-  // 84 presses over a 20-tile rack took this run to ~4.3s against Vitest's 5s
-  // default, and it timed out on a loaded run. Nearly all of it was the
-  // presses: userEvent's pointer sequence, and *ByRole computing every
-  // button's accessible name on each query. The rounds only need the clicks,
-  // so fireEvent plays them against the tiles' aria-label and the buttons'
-  // text; the role queries around the run still hold the names.
-  for (const digit of CLASSIC_WIN_ROUNDS) {
-    fireEvent.click(screen.getAllByLabelText(new RegExp(`^Digit ${digit}`))[0]!);
-    fireEvent.click(screen.getByText("Submit"));
-    fireEvent.click(screen.getByText("Next Round"));
-  }
-}
-
 beforeEach(() => {
   localStorage.clear();
 });
@@ -255,65 +220,6 @@ describe("App", () => {
 
     // §1.16 / AGENTS.md: no game field ever enters storage, even after a full round.
     expect(localStorage.length).toBe(0);
-  });
-
-  it("deals Classic twenty tiles, two of each digit, and states its live capacity", async () => {
-    const user = userEvent.setup();
-    const randomValues = [
-      ...equationSamples(2, 3), // round 1: product 6; submit a 5, incorrect
-      ...equationSamples(2, 3), // round 2: again incorrect, the sealing submission
-    ];
-    renderApp(randomValues, { initialLanguage: "en" });
-
-    await user.click(screen.getByRole("button", { name: /^Classic/ }));
-    await user.click(screen.getByRole("button", { name: "Start Run" }));
-
-    const digits = screen.getAllByRole("button", { name: /^Digit \d$/ }).map((tile) => tile.textContent);
-    expect(digits).toEqual(["0","0","1","1","2","2","3","3","4","4","5","5","6","6","7","7","8","8","9","9"]);
-    expect(hudField("Capacity")).toBe("20");
-    // The figure replaces the pip meter; ten pips would contradict twenty.
-    expect(screen.queryByRole("img", { name: /^Capacity/ })).not.toBeInTheDocument();
-
-    await user.click(screen.getAllByRole("button", { name: "Digit 5" })[0]!);
-    await user.click(screen.getByRole("button", { name: "Submit" }));
-    await user.click(screen.getByRole("button", { name: "Next Round" }));
-    await user.click(screen.getAllByRole("button", { name: "Digit 5" })[0]!);
-    await user.click(screen.getByRole("button", { name: "Submit" }));
-
-    expect(hudField("Capacity")).toBe("19");
-  });
-
-  it("completes a Classic run at the floor without drawing an equation for it", async () => {
-    const user = userEvent.setup();
-    renderApp(classicWinRandomValues(), { initialLanguage: "en" });
-
-    await playClassicToFloor(user);
-
-    expect(screen.getByRole("heading", { name: "Run Complete" })).toBeInTheDocument();
-  });
-
-  it("keeps Classic through Play Again, dealing twenty tiles at capacity 20", async () => {
-    const user = userEvent.setup();
-    renderApp([...classicWinRandomValues(), ...equationSamples(2, 3)], { initialLanguage: "en" });
-
-    await playClassicToFloor(user);
-    await user.click(screen.getByRole("button", { name: "Play Again" }));
-
-    expect(screen.getByText("2 × 3 =")).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: /^Digit \d$/ })).toHaveLength(20);
-    expect(hudField("Capacity")).toBe("20");
-  });
-
-  it("keeps Classic through R as well, dealing twenty tiles at capacity 20", async () => {
-    const user = userEvent.setup();
-    renderApp([...classicWinRandomValues(), ...equationSamples(2, 3)], { initialLanguage: "en" });
-
-    await playClassicToFloor(user);
-    await user.keyboard("r");
-
-    expect(screen.getByText("2 × 3 =")).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: /^Digit \d$/ })).toHaveLength(20);
-    expect(hudField("Capacity")).toBe("20");
   });
 
   it("grants no reward and resets the streak on an incorrect answer, then advances via Next Round", async () => {

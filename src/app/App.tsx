@@ -38,7 +38,7 @@ function startState(
       table,
     };
   }
-  const inventory = createInitialInventory(dependencies.nextTileId, getCapacity(mode, 0));
+  const inventory = createInitialInventory(dependencies.nextTileId, getCapacity({ mode }));
   return { equation: generateKindEquation(dependencies.random, inventory), inventory };
 }
 
@@ -83,9 +83,9 @@ export function App({ dependencies, shareDependencies }: AppProps) {
   ]);
 
   const handleNextRound = useCallback(() => {
-    // At Classic's floor or Puzzle's last row the advance ends the run (§1.8
-    // step 0): no equation is drawn, and the current one, never shown again,
-    // keeps the reducer's invariant.
+    // At Puzzle's last row the advance ends the run (§1.8 step 0): no
+    // equation is drawn, and the current one, never shown again, keeps the
+    // reducer's invariant.
     if (isRunComplete(state)) {
       if (state.equation === null) return;
       dispatch({ type: "NEXT_ROUND", equation: state.equation });
@@ -149,7 +149,6 @@ export function App({ dependencies, shareDependencies }: AppProps) {
         <GameOverScreen
           equation={state.equation}
           stats={getShareStats(state)}
-          hand={state.inventory}
           url={dependencies.gameUrl}
           dependencies={shareDependencies}
           onPlayAgain={handleRestart}

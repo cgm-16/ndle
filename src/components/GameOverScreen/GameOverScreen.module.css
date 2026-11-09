@@ -63,25 +63,6 @@
   color: var(--text-primary);
 }
 
-/* The final hand, on the panel surface so the sockets read as a rack rather
-   than as loose marks on the surround. */
-.finalHand {
-  display: flex;
-  gap: var(--space-1);
-  padding: 6px;
-  border: 1px solid var(--border-hairline);
-  border-radius: var(--radius-md);
-  background: var(--surface-panel);
-}
-
-/* An empty socket at the compact tile size. */
-.socket {
-  width: var(--tile-w-sm);
-  height: var(--tile-h-sm);
-  border-radius: var(--radius-sm);
-  background: var(--surface-socket);
-  box-shadow: var(--shadow-socket-sm), var(--rim-socket);
-}
 
 .stats {
   display: flex;

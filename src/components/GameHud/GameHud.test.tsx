@@ -28,17 +28,6 @@ const fallen = (container: HTMLElement) => container.querySelector(`.${styles.co
 const zero = (container: HTMLElement) => container.querySelector(`.${styles.counterZero}`);
 
 describe("GameHud", () => {
-  it("states a capacity only when given one, after the three figures", () => {
-    renderHud({ capacity: 19 });
-    const terms = screen.getAllByRole("term").map((term) => term.textContent);
-    expect(terms).toEqual(["Round", "Score", "Streak", "Capacity"]);
-    expect(screen.getByText("Capacity").nextElementSibling).toHaveTextContent("19");
-    cleanup();
-
-    renderHud();
-    expect(screen.queryByText("Capacity")).not.toBeInTheDocument();
-  });
-
   it("states a par only when given one, after the three figures", () => {
     renderHud({ par: 7 });
     const terms = screen.getAllByRole("term").map((term) => term.textContent);

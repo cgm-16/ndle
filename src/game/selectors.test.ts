@@ -8,15 +8,11 @@ import {
   getCapacity,
   getOverflowCount,
   getRewardCount,
-  isClassicWin,
   isParMade,
   isRunComplete,
   isSubmissionReady,
 } from "./selectors";
 import {
-  CLASSIC_FLOOR,
-  CLASSIC_SEAL_EVERY,
-  CLASSIC_START_CAPACITY,
   INVENTORY_CAPACITY,
   PUZZLE_CAPACITY,
   REWARD_BONUS,
@@ -138,33 +134,13 @@ describe("answerMatches", () => {
 });
 
 describe("getCapacity", () => {
-  it("holds Endless at its fixed capacity however many submissions pass", () => {
-    expect(getCapacity("endless", 0)).toBe(INVENTORY_CAPACITY);
-    expect(getCapacity("endless", 99)).toBe(INVENTORY_CAPACITY);
-  });
-
-  it("starts Classic at its start capacity and seals one socket every step", () => {
-    expect(getCapacity("classic", 0)).toBe(CLASSIC_START_CAPACITY);
-    expect(getCapacity("classic", CLASSIC_SEAL_EVERY - 1)).toBe(CLASSIC_START_CAPACITY);
-    expect(getCapacity("classic", CLASSIC_SEAL_EVERY)).toBe(CLASSIC_START_CAPACITY - 1);
-    expect(getCapacity("classic", 2 * CLASSIC_SEAL_EVERY)).toBe(CLASSIC_START_CAPACITY - 2);
-  });
-
-  it("stops Classic at the floor", () => {
-    const toFloor = (CLASSIC_START_CAPACITY - CLASSIC_FLOOR) * CLASSIC_SEAL_EVERY;
-    expect(getCapacity("classic", toFloor)).toBe(CLASSIC_FLOOR);
-    expect(getCapacity("classic", toFloor + 99)).toBe(CLASSIC_FLOOR);
+  it("is Endless's fixed capacity for Endless and five for Puzzle", () => {
+    expect(getCapacity({ mode: "endless" })).toBe(INVENTORY_CAPACITY);
+    expect(getCapacity({ mode: "puzzle" })).toBe(PUZZLE_CAPACITY);
   });
 });
 
 describe("getOverflowCount", () => {
-  it("measures Classic's excess against the live capacity, not ten", () => {
-    const inventory = Array.from({ length: 20 }, (_, index) => makeTile(0, `tile-${index}`));
-    const base = { ...createTitleState(), mode: "classic" as const, inventory };
-    expect(getOverflowCount({ ...base, totalRounds: 0 })).toBe(0);
-    expect(getOverflowCount({ ...base, totalRounds: CLASSIC_SEAL_EVERY })).toBe(1);
-  });
-
   it("returns 0 when inventory is under capacity", () => {
     const inventory = Array.from({ length: 8 }, (_, index) => makeTile(0, `tile-${index}`));
     expect(getOverflowCount({ ...createTitleState(), inventory })).toBe(0);
@@ -219,43 +195,11 @@ describe("isSubmissionReady", () => {
   });
 });
 
-describe("isClassicWin", () => {
-  const atFloor = (CLASSIC_START_CAPACITY - CLASSIC_FLOOR) * CLASSIC_SEAL_EVERY;
-  const gameOver = { ...createTitleState(), phase: "gameOver" as const, inventory: [makeTile(4)] };
-
-  it("is true for a Classic game over at the floor with tiles in hand", () => {
-    expect(isClassicWin({ ...gameOver, mode: "classic", totalRounds: atFloor })).toBe(true);
-  });
-
-  // A miss that spends the last tile on the final submission is a failure,
-  // floor or not (§1.8 step 0).
-  it("is false for a Classic game over at the floor with an empty hand", () => {
-    expect(isClassicWin({ ...gameOver, mode: "classic", totalRounds: atFloor, inventory: [] })).toBe(false);
-  });
-
-  it("is false for a Classic game over above the floor, which is a loss", () => {
-    expect(isClassicWin({ ...gameOver, mode: "classic", totalRounds: atFloor - 1 })).toBe(false);
-  });
-
-  it("is false for an Endless game over and for a Classic run still in play", () => {
-    expect(isClassicWin({ ...gameOver, mode: "endless", totalRounds: atFloor })).toBe(false);
-    expect(
-      isClassicWin({ ...gameOver, phase: "feedback", mode: "classic", totalRounds: atFloor }),
-    ).toBe(false);
-  });
-});
-
 describe("Puzzle selectors", () => {
-  it("holds five sockets at every submission", () => {
-    for (const totalRounds of [0, 1, 7, 8]) expect(getCapacity("puzzle", totalRounds)).toBe(PUZZLE_CAPACITY);
-  });
-
-  it("completes a Puzzle run once every row is submitted, and Classic at its floor", () => {
+  it("completes a Puzzle run once every row is submitted", () => {
     const table = PUZZLE_SAMPLE;
     expect(isRunComplete({ mode: "puzzle", totalRounds: 7, table })).toBe(false);
     expect(isRunComplete({ mode: "puzzle", totalRounds: 8, table })).toBe(true);
-    const floor = (CLASSIC_START_CAPACITY - CLASSIC_FLOOR) * CLASSIC_SEAL_EVERY;
-    expect(isRunComplete({ mode: "classic", totalRounds: floor })).toBe(true);
     expect(isRunComplete({ mode: "endless", totalRounds: 999 })).toBe(false);
   });
 
@@ -264,6 +208,6 @@ describe("Puzzle selectors", () => {
     expect(isParMade({ phase: "gameOver", mode: "puzzle", score: 7, table })).toBe(true);
     expect(isParMade({ phase: "gameOver", mode: "puzzle", score: 6, table })).toBe(false);
     expect(isParMade({ phase: "feedback", mode: "puzzle", score: 7, table })).toBe(false);
-    expect(isParMade({ phase: "gameOver", mode: "classic", score: 7 })).toBe(false);
+    expect(isParMade({ phase: "gameOver", mode: "endless", score: 7 })).toBe(false);
   });
 });

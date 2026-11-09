@@ -1,12 +1,11 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import type { Tile as TileModel } from "../../game/types";
 import { useI18n } from "../../i18n/I18nContext";
 import { Tile } from "../Tile/Tile";
 import { tileLabel } from "../Tile/tileFace";
-import { rackTier } from "./rackTier";
 import styles from "./TileInventory.module.css";
 
-/** Columns in the non-stepped rack's grid (`--rack-columns` in spacing.css): up to this many sockets fit one row. */
+/** Columns in the rack's grid (`--rack-columns` in spacing.css): up to this many sockets fit one row. */
 const RACK_COLUMNS = 5;
 
 /** A discard the rack is still drawing (8c): the hand as it stood before the
@@ -31,22 +30,9 @@ export interface TileInventoryProps {
   liftedIds: readonly string[];
   /** Live capacity: the tiles seated, and the index past which tiles perch. */
   capacity: number;
-  /** Classic: the rack steps its tile size with drawnCapacity and keeps closed
-   * sockets as sealed plugs (§1.12). */
-  stepped?: boolean;
-  /** The capacity the rack is drawn at, which changes only at the round
-   * change. Defaults to capacity. */
-  drawnCapacity?: number;
   onTile(tileId: string): void;
   /** Called once a discard's departing tiles have all finished leaving. */
   onSettled?(): void;
-}
-
-/** Removes M6·1's inline frame, which would otherwise outrank a class's animation. */
-function clearReseatFrame(cell: HTMLElement): void {
-  for (const property of ["--fx", "--fy", "--fs", "transform-origin", "animation-name", "animation-duration", "animation-timing-function", "animation-fill-mode"]) {
-    cell.style.removeProperty(property);
-  }
 }
 
 /** Renders the fixed-socket rack, including lifted and departing tile states. */
@@ -56,8 +42,6 @@ export function TileInventory({
   pendingDiscards,
   liftedIds,
   capacity,
-  stepped = false,
-  drawnCapacity = capacity,
   onTile,
   onSettled,
 }: TileInventoryProps) {
@@ -183,84 +167,13 @@ export function TileInventory({
       if (departing) retireRef.current(departing);
       if (seating) landRef.current(seating);
     };
-    // M6·1 writes its frame inline, and inline beats a class: left in place,
-    // a re-seated tile discarded later in the run would keep computing
-    // oz-reseat instead of its exit, start nothing, fire no animationend, and
-    // freeze a round that no longer has a Next Round. So the frame is removed
-    // the moment it ends, or is cancelled.
-    const onReseatDone = (event: Event) => {
-      const cell = event.target as HTMLElement;
-      if ((event as AnimationEvent).animationName !== "oz-reseat" || !cell.dataset?.tile) return;
-      clearReseatFrame(cell);
-    };
     rack.addEventListener("animationcancel", onCancel);
-    rack.addEventListener("animationend", onReseatDone);
-    rack.addEventListener("animationcancel", onReseatDone);
-    return () => {
-      rack.removeEventListener("animationcancel", onCancel);
-      rack.removeEventListener("animationend", onReseatDone);
-      rack.removeEventListener("animationcancel", onReseatDone);
-    };
+    return () => rack.removeEventListener("animationcancel", onCancel);
   }, []);
 
-  // M6·1: when the rack changes size, every tile flies from its old seat at
-  // the old size to its new one (oz-reseat, a FLIP). Seats are read from
-  // layout offsets after each commit; at a size change the offset and scale
-  // from the old seat are written straight onto the cell before paint, so
-  // the frame starts where the player last saw the tile. The re-sort that
-  // shares the round change rides the same motion.
-  const seats = useRef(new Map<string, { x: number; y: number; w: number }>());
-  const shownTop = useRef<number | null>(null);
-  const top = stepped ? rackTier(drawnCapacity).top : null;
-  useLayoutEffect(() => {
-    const rack = rackRef.current;
-    // Endless never changes size, so it never re-seats, and reads no layout.
-    if (rack === null || top === null) return;
-    const cells = [...rack.querySelectorAll<HTMLElement>("[data-tile]")];
-    const reseat = top !== null && shownTop.current !== null && shownTop.current !== top;
-    // Clearing first lets a second re-seat in the run restart the frame.
-    if (reseat) for (const cell of cells) cell.style.animationName = "";
-    const now = new Map(
-      cells.map((cell) => [
-        cell.dataset.tile ?? "",
-        { x: cell.offsetLeft, y: cell.offsetTop, w: cell.offsetWidth },
-      ]),
-    );
-    if (reseat) {
-      for (const cell of cells) {
-        const from = seats.current.get(cell.dataset.tile ?? "");
-        const to = now.get(cell.dataset.tile ?? "");
-        if (!from || !to) continue;
-        cell.style.setProperty("--fx", `${from.x - to.x}px`);
-        cell.style.setProperty("--fy", `${from.y - to.y}px`);
-        cell.style.setProperty("--fs", String(to.w > 0 ? from.w / to.w : 1));
-        cell.style.transformOrigin = "0 0";
-        cell.style.animationDuration = "var(--dur-reseat)";
-        cell.style.animationTimingFunction = "var(--ease-settle)";
-        cell.style.animationFillMode = "both";
-        cell.style.animationName = "oz-reseat";
-      }
-    }
-    // A tile discarded mid-re-seat leaves by its own exit at once; the
-    // re-seat's cancel is then not the exit the cell runs, so it retires nothing.
-    for (const cell of rack.querySelectorAll<HTMLElement>("[data-departing]")) clearReseatFrame(cell);
-    seats.current = now;
-    shownTop.current = top;
-  });
-
   // §1.12: the live capacity's sockets always render — the empty sockets are
-  // the score. Classic draws whole rows for its size's top capacity, and every
-  // cell past the live capacity is a sealed plug: the rack is always a full
-  // rectangle, and the plug count is the descent. Tiles past the live capacity
-  // never add a row; they perch on the rail above.
-  //
-  // Which size, and where it falls back to 6 x 44, is CSS's: a container
-  // query on the rack, because narrow is a property of the container and not
-  // the viewport (§1.12) — a min-width query fires about 15px early wherever a
-  // scrollbar takes layout width. Resolved in style, the first frame is
-  // already the right size.
-  const tier = stepped ? rackTier(drawnCapacity) : null;
-  const footprint = tier ? tier.footprint : capacity;
+  // the score. Tiles past the live capacity never add a row; they perch on the
+  // rail above.
   const perched = rackTiles.slice(capacity);
 
   const renderTile = (tile: TileModel, cell: number | null) => {
@@ -351,39 +264,19 @@ export function TileInventory({
     );
   };
 
-  // A plug past its size's top capacity appears only when that size is first
-  // drawn, so it seals in front of the player. Only the small size has any,
-  // because 15 and 10 are whole rows of five: the house plug, 240ms into the
-  // run (M6·0). The socket a seal took this submission closes at once (M6).
-  // Keyed by kind and size, each seals on mount and rests sealed after.
-  const renderSeal = (index: number, delay: string | undefined) => (
-    <div key={`seal-${tier?.top}-${index}`} className={`${styles.plug} ${styles.sealing}`} aria-hidden="true" data-cell={index}>
-      <span className={styles.sealWell} style={{ animationDelay: delay }} />
-      <span className={styles.sealRim} style={{ animationDelay: delay }} />
-    </div>
-  );
-  const renderClosed = (index: number) => {
-    if (index < drawnCapacity) return renderSeal(index, undefined);
-    if (tier === null || index < tier.top) {
-      return <div key={`plug-${index}`} className={styles.plug} aria-hidden="true" data-cell={index} />;
-    }
-    return renderSeal(index, "240ms");
-  };
-
   return (
-    <div ref={rackRef} className={styles.rack} data-size={tier?.size ?? (capacity <= RACK_COLUMNS ? "row" : undefined)}>
+    <div ref={rackRef} className={styles.rack} data-size={capacity <= RACK_COLUMNS ? "row" : undefined}>
       {/* The rail is in flow above the tray, and 8a·2's offsets were measured
           with it there. It stays, empty and one tile high, until the last
           dropping tile lands: gone with the fall, it would lift every seat by
           its height mid-drop and start the tile that far above its perch. */}
       {(perched.length > 0 || dropping.size > 0) && (
-        <div className={`${styles.rail}${tier ? ` ${styles.railOverTray}` : ""}`}>
+        <div className={styles.rail}>
           {perched.map((tile) => renderTile(tile, null))}
         </div>
       )}
-      <div className={`${styles.inventory}${tier ? ` ${styles.tray}` : ""}`}>
-        {Array.from({ length: footprint }, (_, index) => {
-          if (index >= capacity) return renderClosed(index);
+      <div className={styles.inventory}>
+        {Array.from({ length: capacity }, (_, index) => {
           const tile = rackTiles[index];
           if (tile === undefined) return <div key={`empty-${index}`} className={styles.socket} />;
           return renderTile(tile, index);

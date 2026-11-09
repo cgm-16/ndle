@@ -1,6 +1,6 @@
 export type Digit = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 export type Language = "en" | "ko";
-export type GameMode = "endless" | "classic" | "puzzle";
+export type GameMode = "endless" | "puzzle";
 export type GamePhase =
   | "title"
   | "answering"

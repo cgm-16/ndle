@@ -82,7 +82,7 @@ describe("GameScreen interactions", () => {
 
   it("selects the tile holding the pressed digit", async () => {
     const { dispatch } = renderScreen(
-      makeAnsweringState(makeEquation(2, 2), { mode: "classic", inventory: [makeTile(4, "four")], selectedTiles: [] }),
+      makeAnsweringState(makeEquation(2, 2), { inventory: [makeTile(4, "four")], selectedTiles: [] }),
     );
     await userEvent.keyboard("4");
     expect(dispatch).toHaveBeenCalledWith({ type: "SELECT_TILE", tileId: "four" });
@@ -440,7 +440,7 @@ describe("GameScreen phase composition", () => {
 
     const status = screen.getByRole("status");
     expect(status).toHaveTextContent("Incorrect");
-    const instruction = screen.getByText("Choose 2 tiles to discard.");
+    const instruction = screen.getByText("Choose a tile to discard.");
     expect(screen.queryByRole("button", { name: "Confirm Discard" })).not.toBeInTheDocument();
     const discardTile = screen.getByRole("button", { name: "Digit 0, Marked for discard" });
     expect(discardTile).toHaveAttribute("aria-pressed", "true");
@@ -693,32 +693,6 @@ describe("GameScreen after a discard", () => {
     expect(onNextRound).toHaveBeenCalledTimes(1);
   });
 
-  // Classic can require two: the round waits for both departures, not the first.
-  // The twentieth submission seals capacity 11 to 10, so twelve tiles is an excess of two.
-  it("advances once after a two-tile discard, when the second departure has played", () => {
-    const sealRound = { mode: "classic", round: 20, totalRounds: 20 } as const;
-    const overflow = makeOverflowState(makeEquation(3, 3), { inventory: TWELVE_TILE_INVENTORY, ...sealRound });
-    const onNextRound = vi.fn();
-    const screenFor = (state: GameState) => (
-      <I18nProvider initialLanguage="en">
-        <GameScreen state={state} dispatch={vi.fn()} onSubmit={vi.fn()} onNextRound={onNextRound} />
-      </I18nProvider>
-    );
-    const { container, rerender } = render(screenFor(overflow));
-    const gone = overflow.inventory.slice(10);
-    rerender(screenFor(discardedFeedback(overflow.inventory.slice(0, 10), sealRound)));
-
-    const end = (tileId: string) => {
-      const departing = container.querySelector(`[data-departing="${tileId}"]`)!;
-      fireEvent.animationEnd(departing);
-      fireEvent(departing, new Event("webkitAnimationEnd", { bubbles: true }));
-    };
-    end(gone[0]!.id);
-    expect(onNextRound).not.toHaveBeenCalled();
-    end(gone[1]!.id);
-    expect(onNextRound).toHaveBeenCalledTimes(1);
-  });
-
   it("waits for the verdict's celebration as well as the departure before advancing", () => {
     // A correct answer at streak 8 plays the bloom, three rings and the burst
     // on its slot. Those mount with feedback, after the discard completes, so
@@ -774,32 +748,6 @@ describe("GameScreen after a discard", () => {
     expect(tiles.slice(1).every((tile) => tile.textContent === "9")).toBe(true);
   });
 });
-
-describe("GameScreen with Classic's stepped rack", () => {
-  it("draws the rack at the displayed round's capacity, so a seal closes a socket without resizing it", async () => {
-    const { createInitialInventory } = await import("../../game/factories");
-    const { sequentialIds } = await import("../../test/fixtures");
-    // Feedback after the second submission: live capacity 19, the rack still
-    // drawn at 20 until the round change (§1.7a).
-    const state = makeFeedbackState(makeEquation(3, 3), {
-      mode: "classic",
-      round: 2,
-      totalRounds: 2,
-      inventory: createInitialInventory(sequentialIds(), 19),
-    });
-    const { container } = render(
-      <I18nProvider initialLanguage="en">
-        <GameScreen state={state} dispatch={vi.fn()} onSubmit={vi.fn()} onNextRound={vi.fn()} />
-      </I18nProvider>,
-    );
-    // Cell 19 is the socket this seal closed; cell 20 the house plug.
-    const cell = (index: number) => container.querySelector(`[data-cell="${index}"]`)!;
-    expect(cell(18).className).not.toMatch(/plug/);
-    expect(cell(19).className).toMatch(/plug/);
-    expect(cell(20).className).toMatch(/plug/);
-  });
-});
-
 
 describe("GameScreen in Puzzle", () => {
   // The gallery's answering-puzzle state: the sample at row 1, its hand dealt.
