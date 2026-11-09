@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { I18nProvider } from "../../i18n/I18nContext";
 import { GameHud, type GameHudProps } from "./GameHud";
@@ -13,7 +13,7 @@ function hudTree(props: GameHudProps) {
 }
 
 function renderHud(overrides: Partial<GameHudProps> = {}) {
-  const props: GameHudProps = { score: 0, currentStreak: 0, round: 1, ...overrides };
+  const props: GameHudProps = { score: 0, currentStreak: 0, round: 1, par: 7, ...overrides };
   const view = render(hudTree(props));
   return {
     ...view,
@@ -28,26 +28,11 @@ const fallen = (container: HTMLElement) => container.querySelector(`.${styles.co
 const zero = (container: HTMLElement) => container.querySelector(`.${styles.counterZero}`);
 
 describe("GameHud", () => {
-  it("states a capacity only when given one, after the three figures", () => {
-    renderHud({ capacity: 19 });
-    const terms = screen.getAllByRole("term").map((term) => term.textContent);
-    expect(terms).toEqual(["Round", "Score", "Streak", "Capacity"]);
-    expect(screen.getByText("Capacity").nextElementSibling).toHaveTextContent("19");
-    cleanup();
-
-    renderHud();
-    expect(screen.queryByText("Capacity")).not.toBeInTheDocument();
-  });
-
-  it("states a par only when given one, after the three figures", () => {
-    renderHud({ par: 7 });
+  it("states the par after the three figures", () => {
+    renderHud({ par: 6 });
     const terms = screen.getAllByRole("term").map((term) => term.textContent);
     expect(terms).toEqual(["Round", "Score", "Streak", "Par"]);
-    expect(screen.getByText("Par").nextElementSibling).toHaveTextContent("7");
-    cleanup();
-
-    renderHud();
-    expect(screen.queryByText("Par")).not.toBeInTheDocument();
+    expect(screen.getByText("Par").nextElementSibling).toHaveTextContent("6");
   });
 
   it("labels round, score and streak with their values", () => {

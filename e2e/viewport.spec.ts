@@ -15,7 +15,7 @@ import { START_LABEL } from "./labels.js";
  */
 
 /* 320 is §8.5's bar. 305 is what a 320px window actually gives the page once a
-   classic scrollbar takes its 15px of layout width — the condition #85 names,
+   layout-taking scrollbar takes its 15px of layout width — the condition #85 names,
    and the reason a sweep at 320 alone is not enough. 407 is the last width
    below `spacing.css`'s `min-width: 408px`, so it pins the narrow rack tier's
    upper edge; a regression that only appears one pixel under the breakpoint has
@@ -33,7 +33,7 @@ import { START_LABEL } from "./labels.js";
    the three #85 attempts that reported `clean` and counted for nothing. */
 const CONTENT_WIDTHS = [305, 320, 407, 408] as const;
 const LOCALES = ["en", "ko"] as const;
-const STATE_COUNT = 31;
+const STATE_COUNT = 20;
 
 /* `spacing.css` — the narrow tier's tile, the middle tier's, and the boundary
    between them. The 48rem tier is out of range for every width swept here. */
@@ -86,8 +86,8 @@ async function setContentWidth(page: Page, width: number): Promise<number> {
     measures nothing and reports it clean, which is what T62 hit when it swept
     `main` on the four interaction boards. */
 async function sweep(page: Page): Promise<StateReading[]> {
-  // Scoped to the picker: the title's mode select and the LanguageToggle
-  // also carry aria-pressed, and render only in some states.
+  // Scoped to the picker: the LanguageToggle also carries aria-pressed, and
+  // renders only in some states.
   const buttons = page.locator("nav ul button[aria-pressed]");
   const states = await buttons.count();
   expect(states, "gallery state count").toBe(STATE_COUNT);
@@ -111,8 +111,8 @@ async function sweep(page: Page): Promise<StateReading[]> {
           if (box.right > peak) peak = box.right;
           if (box.right > viewport + 0.5) past += 1;
         }
-        // The picker's own buttons: the LanguageToggle and the mode select
-        // also carry aria-pressed and would otherwise label the readings.
+        // The picker's own buttons: the LanguageToggle also carries
+        // aria-pressed and would otherwise label the readings.
         const picker = [...document.querySelectorAll("nav ul button[aria-pressed]")];
         return {
           state:
@@ -137,7 +137,7 @@ for (const width of CONTENT_WIDTHS) {
       // Set before the first load: switching locale at runtime hangs the
       // renderer on the lazy Hangul font import.
       await page.addInitScript(
-        (lang) => window.localStorage.setItem("one-zero.language", lang),
+        (lang) => window.localStorage.setItem("ndle.language", lang),
         locale,
       );
       await page.goto("/gallery.html");
@@ -200,11 +200,11 @@ for (const width of CONTENT_WIDTHS) {
         ).toBeGreaterThan(viewport / 2);
       }
 
-      // The states differ from each other by tens of elements — 10 on the
-      // sparsest interaction board against 85 at streak 8 — so one figure
-      // repeated nineteen times means the walk never left the first state.
+      // The states differ from each other by tens of elements, from the
+      // sparsest interaction board to the streak 8 burst, so one figure
+      // repeated for every state means the walk never left the first state.
       // T62 asked for a figure per state precisely because a range cannot tell
-      // nineteen states measured once from one state measured nineteen times.
+      // every state measured once from one state measured every time.
       const distinctCounts = new Set(readings.map((r) => r.elements));
       expect(
         distinctCounts.size,
@@ -226,8 +226,8 @@ for (const width of CONTENT_WIDTHS) {
  * `fit-content`, which is floored by min-content — the rack's fixed tracks
  * plus the arena's padding — and no `min-width` can lower a fit-content floor.
  *
- * 305 is the content width a 320px window gives the page once a classic
- * scrollbar takes its 15px, and the narrow tier still fires there, so this
+ * 305 is the content width a 320px window gives the page once a
+ * layout-taking scrollbar takes its 15px, and the narrow tier still fires there, so this
  * reproduces the condition without depending on the platform to draw a
  * scrollbar at all.
  *
@@ -242,7 +242,7 @@ for (const locale of LOCALES) {
       page,
     }) => {
       await page.addInitScript(
-        (lang) => window.localStorage.setItem("one-zero.language", lang),
+        (lang) => window.localStorage.setItem("ndle.language", lang),
         locale,
       );
       await page.goto("/");
@@ -361,88 +361,18 @@ test("the rack holds the target minimum below the 320px gate", async ({
   ).toBeGreaterThanOrEqual(reading.targetMin);
 });
 
-/* Classic's stepped rack in the app itself, not the gallery: its first size is
-   7 x 44 in a tray, capped at 6 x 44 where the arena cannot hold it (§1.12).
-   305 is the 320px gate with a scrollbar, where the narrow size must fit with
-   a pixel to spare; 402 is the phone the handoff drew; 1280 is desktop. The
-   answer slots keep the arena's tile size in every rack size, and the rack's
-   rows are the footprint's, never one more.
+/* §8.5 through an overflow. The gallery's overflow-required-1 entry is row 4
+   of the sample's par line answered: six tiles in five sockets, so the newest
+   arrival perches on the rail. A live deal is random and its first rows need
+   not overflow, so the fixed table is read from the gallery, whose overflow
+   entry runs the real reducer and so plays the discard. The rail is
+   right-aligned and 8a pivots the perched tile on its lower-left edge, so its
+   rest pose reaches right of its own cell; 8c then tips a discarded tile
+   further right still. Both are read here: the perch after its frame has
+   finished, and the slide-off at every tenth of its frame, paused, because a
+   reading straight after a click sees neither.
  *
- * Layout only: which size the rack chose is the reading, not a rule under test.
- */
-const CLASSIC_WIDTHS = [
-  { width: 305, cols: 6 },
-  { width: 402, cols: 7 },
-  { width: 1280, cols: 7 },
-] as const;
-
-for (const locale of LOCALES) {
-  for (const { width, cols } of CLASSIC_WIDTHS) {
-    test(`Classic's rack fits a ${width}px content box in ${locale}`, async ({
-      page,
-    }) => {
-      await page.addInitScript(
-        (lang) => window.localStorage.setItem("one-zero.language", lang),
-        locale,
-      );
-      await page.goto("/");
-      await setContentWidth(page, width);
-      await page.evaluate(() => document.fonts.ready);
-      await page.getByRole("button", { name: /^(Classic|클래식)/ }).click();
-      await page
-        .getByRole("button", { name: START_LABEL[locale], exact: true })
-        .click();
-      // Read once the tray is visible. The rack's size is a container query,
-      // resolved in style, so no later frame differs from this one; this
-      // reading cannot itself tell a first frame from a later one.
-      await expect(page.locator('[class*="tray"]')).toBeVisible();
-
-      const reading = await page.evaluate(() => {
-        const de = document.documentElement;
-        const tray = document.querySelector('[class*="tray"]')!;
-        const style = getComputedStyle(tray);
-        const tile = tray.querySelector('[data-tile]')!;
-        const slot = document.querySelector('[aria-label^="Answer slot"], [aria-label^="정답 칸"]');
-        return {
-          viewport: de.clientWidth,
-          scrollWidth: de.scrollWidth,
-          trayRight: tray.getBoundingClientRect().right,
-          columns: style.gridTemplateColumns.split(" ").length,
-          rows: style.gridTemplateRows.split(" ").length,
-          // Wide, the 20-size draws 21 of its 24 cells; CSS hides the rest.
-          cells: [...tray.children].filter((cell) => getComputedStyle(cell).display !== "none").length,
-          tileW: tile.getBoundingClientRect().width,
-          slotW: slot ? slot.getBoundingClientRect().width : 0,
-          targetMin: parseFloat(getComputedStyle(de).getPropertyValue("--target-min")),
-          // The arena's tile width: the rack sets its own --tile-w, the slots do not.
-          arenaTileW: parseFloat(getComputedStyle(de).getPropertyValue("--tile-w")),
-        };
-      });
-
-      // Guards on the conditions, before the result.
-      expect(reading.viewport, "content width the harness produced").toBe(width);
-      expect(reading.columns, `rack size chosen at ${width}`).toBe(cols);
-      expect(reading.slotW, "an answer slot was found").toBeGreaterThan(0);
-
-      expect(reading.scrollWidth, "document scroll width").toBeLessThanOrEqual(reading.viewport);
-      expect(reading.trayRight, "tray right edge").toBeLessThanOrEqual(reading.viewport);
-      expect(reading.tileW, "tile against the target minimum").toBeGreaterThanOrEqual(reading.targetMin);
-      expect(reading.rows * reading.columns, "rows are the footprint's, never one more").toBe(reading.cells);
-      expect(reading.slotW, "answer slots stay at the arena's tier, not the rack's size").toBe(reading.arenaTileW);
-    });
-  }
-}
-
-/* §8.5 through an overflow, in the app. A correct answer in Endless's first
-   round always overflows — a one-digit answer spends one tile and earns two, a
-   two-digit one spends two and earns three — so the newest arrival perches on
-   the rail. The rail is right-aligned and 8a pivots the perched tile on its
-   lower-left edge, so its rest pose reaches right of its own cell; 8c then
-   tips a discarded tile further right still. Both are read here: the perch
-   after its frame has finished, and the slide-off at every tenth of its
-   frame, paused, because a reading straight after a click sees neither.
- *
- * 305 is the 320px gate with a classic scrollbar; 375 a common phone.
+ * 305 is the 320px gate with a layout-taking scrollbar; 375 a common phone.
  */
 const OVERFLOW_WIDTHS = [305, 320, 375] as const;
 
@@ -450,20 +380,13 @@ for (const width of OVERFLOW_WIDTHS) {
   test(`an overflow and its discard stay inside a ${width}px content box`, async ({
     page,
   }) => {
-    await page.addInitScript(() => window.localStorage.setItem("one-zero.language", "en"));
-    await page.goto("/");
+    await page.addInitScript(() => window.localStorage.setItem("ndle.language", "en"));
+    await page.goto("/gallery.html");
     await setContentWidth(page, width);
     await page.evaluate(() => document.fonts.ready);
-    await page.getByRole("button", { name: START_LABEL.en, exact: true }).click();
-
-    // Answer the first equation correctly: its digits are all in the opening
-    // hand of one of each.
-    const equation = await page.getByText(/^\d+ × \d+ =$/).textContent();
-    const [a, b] = equation!.match(/\d+/g)!.map(Number);
-    for (const digit of String(a! * b!)) {
-      await page.getByRole("button", { name: `Digit ${digit}`, exact: true }).click();
-    }
-    await page.getByRole("button", { name: "Submit" }).click();
+    await page
+      .locator("nav ul button[aria-pressed]", { hasText: /^Overflow — required 1$/ })
+      .click();
 
     const railTile = page.locator("[data-rail]");
     await expect(railTile).toBeVisible();
@@ -481,7 +404,8 @@ for (const width of OVERFLOW_WIDTHS) {
     expect(perch.tileRight, "perched tile's right edge").toBeLessThanOrEqual(perch.viewport);
     expect(perch.scrollWidth, "document scroll width with a tile perched").toBeLessThanOrEqual(perch.viewport);
     expect(perch.railInGrid, "the perched tile sits outside the rack's grid").toBe(false);
-    expect(perch.gridRows, "the rail adds no row to the rack").toBe(2);
+    // Five sockets are one row of the rack's five columns.
+    expect(perch.gridRows, "the rail adds no row to the rack").toBe(1);
 
     // Mark the perched tile: the one required mark completes the discard, and
     // the tile tips off the rack.

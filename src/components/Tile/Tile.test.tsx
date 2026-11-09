@@ -14,44 +14,6 @@ function renderTile(overrides: Partial<TileProps> = {}) {
 }
 
 describe("Tile", () => {
-  describe("face tiles (§1.4a)", () => {
-    function renderFace(value: TileProps["value"], language: "en" | "ko" = "en") {
-      render(
-        <I18nProvider initialLanguage={language}>
-          <Tile value={value} onClick={vi.fn()} />
-        </I18nProvider>,
-      );
-      return screen.getByRole("button");
-    }
-
-    it("engraves Neighbours as its range and names it by its digits", () => {
-      const button = renderFace({ face: "nbr", centre: 4 });
-      expect(button).toHaveTextContent("3–5");
-      expect(button).toHaveAccessibleName("Digits 3 to 5");
-      expect(button).toHaveClass(styles.face!);
-    });
-
-    it("names Neighbours in Korean", () => {
-      expect(renderFace({ face: "nbr", centre: 4 }, "ko")).toHaveAccessibleName("숫자 3–5");
-    });
-
-    it.each([
-      ["wild", "✳", "Wildcard: any digit"],
-      ["odd", "O", "Odd tile: 1, 3, 5, 7, or 9"],
-      ["even", "E", "Even tile: 0, 2, 4, 6, or 8"],
-      ["low", "0–4", "Digits 0 to 4"],
-      ["high", "5–9", "Digits 5 to 9"],
-    ] as const)("engraves %s as %s and names its set", (face, glyph, name) => {
-      const button = renderFace({ face });
-      expect(button).toHaveTextContent(glyph);
-      expect(button).toHaveAccessibleName(name);
-    });
-
-    it("gives a digit tile no face class", () => {
-      expect(renderFace({ digit: 7 })).not.toHaveClass(styles.face!);
-    });
-  });
-
   describe("element rule", () => {
     it("renders a button when onClick is given", () => {
       renderTile({ onClick: vi.fn() });

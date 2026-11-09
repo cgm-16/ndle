@@ -1,18 +1,15 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App, type AppDependencies } from "./app/App";
-import { dealPlaytestFirst } from "./game/playtestTables";
 import { dealPuzzle } from "./game/puzzle";
 import { I18nProvider } from "./i18n/I18nContext";
 import type { ShareDependencies } from "./services/sharing";
 import "./styles/global.css";
 
 const dependencies: AppDependencies = {
-  random: Math.random,
   nextTileId: () => crypto.randomUUID(),
   gameUrl: window.location.origin + window.location.pathname,
-  // The preview deals the fixed playtest set first (src/game/playtestTables.ts).
-  dealPuzzle: dealPlaytestFirst(() => dealPuzzle(Math.random)),
+  dealPuzzle: () => dealPuzzle(Math.random),
 };
 
 const shareDependencies: ShareDependencies = {

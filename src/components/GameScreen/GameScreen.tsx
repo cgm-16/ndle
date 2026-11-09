@@ -1,18 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { sortTiles } from "../../game/factories";
 import type { GameAction, GameState } from "../../game/types";
-import {
-  getAnswerLength,
-  getCapacity,
-  getOverflowCount,
-  isSubmissionReady,
-} from "../../game/selectors";
+import { PUZZLE_CAPACITY } from "../../game/balance";
+import { getAnswerLength, isSubmissionReady } from "../../game/selectors";
 import { useGameKeyboard } from "../../hooks/useGameKeyboard";
 import { useI18n } from "../../i18n/I18nContext";
 import { ActionButton } from "../ActionButton/ActionButton";
 import { AnswerSlots } from "../AnswerSlots/AnswerSlots";
-import { CapacityMeter } from "../CapacityMeter/CapacityMeter";
-import { EquationBoard } from "../EquationBoard/EquationBoard";
 import { FeedbackPanel } from "../FeedbackPanel/FeedbackPanel";
 import { GameHud } from "../GameHud/GameHud";
 import { OverflowControls } from "../OverflowControls/OverflowControls";
@@ -52,9 +46,10 @@ export function GameScreen({ state, dispatch, onSubmit, onNextRound }: GameScree
     if (readyToAdvance) onNextRoundRef.current();
   }, [readyToAdvance]);
 
-  // Reducer invariant (§2.5): equation === null only in `title`. GameScreen
-  // never renders `title` (TitleScreen owns it), so this only guards the type.
-  if (state.equation === null) return null;
+  // Reducer invariant (§2.5): table and equation are null only in `title`.
+  // GameScreen never renders `title` (TitleScreen owns it), so this only
+  // guards the type.
+  if (state.equation === null || state.table === null) return null;
 
   const { lastResult } = state;
   const rewardTiles =
@@ -68,25 +63,11 @@ export function GameScreen({ state, dispatch, onSubmit, onNextRound }: GameScree
         score={state.score}
         currentStreak={state.currentStreak}
         round={state.round}
-        // Classic states its live capacity as a number; its rack's plugs show
-        // the descent, and twenty pips would be a second account of it (§1.10).
-        capacity={state.mode === "classic" ? getCapacity(state.mode, state.totalRounds) : undefined}
-        par={state.table?.par}
+        par={state.table.par}
       />
-      {/* Capacity is what you hold, and a tile in an answer slot is still
-          yours — you can return it. Reading state.inventory alone would drop
-          by one per selection and disagree with the rack beside it, which
-          keeps a socket for every tile in the same union. */}
-      {state.mode === "endless" && (
-        <CapacityMeter held={state.inventory.length + state.selectedTiles.length} />
-      )}
-      {/* Puzzle's table is face up: the ledger draws every row, the current
-          one through EquationBoard, so the slots still sit below it (§1.12). */}
-      {state.table ? (
-        <PuzzleLedger table={state.table} round={state.round} rowResults={state.rowResults ?? []} />
-      ) : (
-        <EquationBoard equation={state.equation} />
-      )}
+      {/* The table is face up: the ledger draws every row, the current one
+          through EquationBoard, so the slots still sit below it (§1.12). */}
+      <PuzzleLedger table={state.table} round={state.round} rowResults={state.rowResults} />
 
       {state.phase === "answering" && (
         <AnswerSlots
@@ -138,7 +119,7 @@ export function GameScreen({ state, dispatch, onSubmit, onNextRound }: GameScree
       )}
 
       {state.phase === "overflow" && (
-        <OverflowControls requiredCount={getOverflowCount(state)} />
+        <OverflowControls />
       )}
 
       <TileInventory
@@ -151,12 +132,7 @@ export function GameScreen({ state, dispatch, onSubmit, onNextRound }: GameScree
             : state.inventory
         }
         liftedIds={state.selectedTiles.map((tile) => tile.id)}
-        capacity={getCapacity(state.mode, state.totalRounds)}
-        // Classic's rack is drawn at the displayed round's capacity, which
-        // moves only at the round change; the live capacity above says which
-        // tiles are seated (§1.7a).
-        stepped={state.mode === "classic"}
-        drawnCapacity={getCapacity(state.mode, state.round - 1)}
+        capacity={PUZZLE_CAPACITY}
         mode={state.phase === "answering" ? "select" : state.phase === "overflow" ? "discard" : "readOnly"}
         pendingDiscards={state.pendingDiscards}
         onSettled={() => {

@@ -25,7 +25,6 @@ const SOCKETS = 5;
 async function startPuzzle(page: Page, locale: Locale): Promise<void> {
   await page.goto("/");
   await page.evaluate(() => document.fonts.ready);
-  await page.getByRole("button", { name: /^(Puzzle|묘수풀이)/ }).click();
   await page.getByRole("button", { name: START_LABEL[locale], exact: true }).click();
   await expect(page.getByRole("list", { name: LEDGER_LABEL[locale] })).toBeVisible();
   // 10b rises the current row's equation, and a transformed box counts toward
@@ -48,7 +47,7 @@ for (const locale of LOCALES) {
     // Set before the first load: switching locale at runtime hangs the
     // renderer on the lazy Hangul font import.
     await page.addInitScript(
-      (lang) => window.localStorage.setItem("one-zero.language", lang),
+      (lang) => window.localStorage.setItem("ndle.language", lang),
       locale,
     );
 

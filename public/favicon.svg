@@ -1,17 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="ozterisk">
-  <!-- background: token felt-700 in src/styles/tokens/colors.css, the felt itself, the default canvas -->
-  <rect width="32" height="32" rx="6" fill="#14342a"/>
-  <!-- mark: U+2733 EIGHT SPOKED ASTERISK, token gold-500 in src/styles/tokens/colors.css, the brand accent -->
-  <!-- each arm spans 24 degrees (halfAngle 12 degrees at the centre vertex) on a 45-degree rotation step,
-       leaving a 21-degree gap between arms so the eight spokes stay visually separate, not a solid star -->
-  <g fill="#c9a54a">
-    <path id="spike" d="M16 16 L14.13 7.20 L16 3 L17.87 7.20 Z"/>
-    <use href="#spike" transform="rotate(45 16 16)"/>
-    <use href="#spike" transform="rotate(90 16 16)"/>
-    <use href="#spike" transform="rotate(135 16 16)"/>
-    <use href="#spike" transform="rotate(180 16 16)"/>
-    <use href="#spike" transform="rotate(225 16 16)"/>
-    <use href="#spike" transform="rotate(270 16 16)"/>
-    <use href="#spike" transform="rotate(315 16 16)"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="9dle">
+  <!-- background: token felt-700 in src/styles/tokens/colors.css -->
+  <rect width="32" height="32" rx="6" fill="#1a1a1a"/>
+  <!-- the numeral, token clay-050 in src/styles/tokens/colors.css -->
+  <text x="16" y="24" text-anchor="middle" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="24" font-weight="700" fill="#f5f5f5">9</text>
 </svg>

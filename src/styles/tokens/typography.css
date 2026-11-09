@@ -1,15 +1,13 @@
 :root {
-  --font-display: "EB Garamond", "Times New Roman", serif;
+  /* Gothic A1 leads so Korean text uses the self-hosted Hangul face; its Korean
+     subset covers no Latin, so Latin and digits fall through to the system
+     stack. Until the lazy subset arrives, Hangul falls to the same stack. */
+  --font-ui: "Gothic A1", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: var(--font-ui);
+  --font-mono: var(--font-ui);
 
-  /* Noto Sans KR carries Hangul; Zen Kaku Gothic New has no Hangul subset and
-     would drop the ko locale to system-ui. Order matters — Latin resolves from
-     Zen Kaku first, Hangul falls to Noto per-glyph. */
-  --font-ui: "Zen Kaku Gothic New", "Noto Sans KR", system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
-
-  /* Numerals — equations, tile faces, HUD values. Always the display serif:
-     ozterisk's numbers are objects, not data. */
-  --font-numeral: var(--font-display);
+  /* Numerals — equations, tile faces, HUD values. */
+  --font-numeral: var(--font-ui);
 
   --size-wordmark: 52px;
   --size-equation: 68px;   /* the round's equation, the largest type in the app */
@@ -35,11 +33,11 @@
   --weight-bold: 700;
 }
 
-/* Hangul is not Latin at the same nominal size. Noto Sans KR runs optically
-   smaller than Zen Kaku Gothic New, and mono tracking pulls already-square
-   syllable blocks apart into loose separate characters — 라운드 stops being one
-   word. So in the ko locale: tracking off, one pixel back. Nothing else changes;
-   uppercase transforms stay and are harmless, Hangul having no case. */
+/* Hangul is not Latin at the same nominal size, and tracking pulls
+   already-square syllable blocks apart into loose separate characters — 라운드
+   stops being one word. So in the ko locale: tracking off, one pixel back.
+   Nothing else changes; uppercase transforms stay and are harmless, Hangul
+   having no case. */
 :root:lang(ko), [lang="ko"] {
   --track-label: normal;
   --track-label-tight: normal;

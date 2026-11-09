@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { LanguageToggle } from "../components/LanguageToggle/LanguageToggle";
 import { I18nProvider } from "./I18nContext";
 
-const KOREAN_FONT_SPECIFIER = "@fontsource/noto-sans-kr/korean-400.css";
+const KOREAN_FONT_SPECIFIER = "@fontsource/gothic-a1/korean-400.css";
 
 // Node reports unhandled rejections on `process`, and @types/node is not among
 // this project's tsconfig `types`, so the two methods used below are declared

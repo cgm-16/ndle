@@ -130,46 +130,6 @@
   100% { transform: translateY(0); opacity: 1; }
 }
 
-/* 11C — the title drops in and settles, with one small rebound the frame draws.
-   From `sb-settle`, renormalised from its useful 14%–72% span. */
-@keyframes oz-title-settle {
-  0%   { transform: translateY(-24px); opacity: 0; }
-  45%  { transform: translateY(2px); opacity: 1; }
-  76%  { transform: translateY(-2px); }
-  100% { transform: translateY(0); opacity: 1; }
-}
-
-/* 11C — the share chop lands like a stamp: oversized and turned, it comes down
-   square, holds while it is read, then lifts. From `sb-stamp`, renormalised
-   from 16%; that shape spends its own tail fading, so 100% is unmoved. No
-   transform after the landing frame is deliberate — an unspecified property
-   holds its last value, so the chop keeps the pose it struck while the opacity
-   tail runs. */
-@keyframes oz-chop {
-  0%   { transform: scale(1.5) rotate(-14deg); opacity: 0; }
-  19%  { transform: scale(1) rotate(-7deg); opacity: 1; }
-  69%  { opacity: 1; }
-  100% { opacity: 0; }
-}
-
-/* Classic — the tray descends and a socket closes for good. Two halves, both
-   on --dur-seal: the well collapses to a hairline and the rim seals across
-   where it was. It fires fifteen times a run, so it is round-tempo (180ms) and
-   not a failure tempo — the threat is the arithmetic of a shrinking rack, not
-   the drama of each closing. A sealed socket is not an empty one: an empty
-   socket is a debt the run can still repay, a sealed one is gone. */
-@keyframes oz-seal {
-  0%   { transform: scaleY(1); opacity: 1; }
-  68%  { transform: scaleY(0.16); opacity: 1; }
-  100% { transform: scaleY(0.03); opacity: 0.85; }
-}
-
-@keyframes oz-seal-rim {
-  0%   { transform: scaleX(0.22); opacity: 0; }
-  58%  { opacity: 1; }
-  100% { transform: scaleX(1); opacity: 1; }
-}
-
 /* 8a aftermath — the perched eleventh tile takes the seat a discard just
    freed. `oz-fire` was the other candidate and was rejected: firing in place
    is for a tile that arrives from nowhere, and this one has been visibly
@@ -185,16 +145,4 @@
   0%   { transform: translate(calc(var(--dx) + 3px), calc(var(--dy) + 4px)) rotate(11deg); }
   58%  { transform: translate(calc(var(--dx) * 0.1), calc(var(--dy) * 0.08)) rotate(3deg); }
   100% { transform: translate(0, 0) rotate(0deg); }
-}
-
-/* M6 · Rack re-seats. Classic's rack changes size at 15 and 10; the tiles lift
-   together, travel from their old seat at the old size, and set down in the
-   new one. The caller supplies the old seat as an offset and scale from the
-   new one (--fx / --fy / --fs, transform-origin 0 0) — a FLIP, so the frame
-   is size-agnostic. Twice a run, under the round rise. */
-@keyframes oz-reseat {
-  0%   { transform: translate(var(--fx), var(--fy)) scale(var(--fs)); }
-  22%  { transform: translate(var(--fx), calc(var(--fy) - var(--lift-offset))) scale(var(--fs)); }
-  80%  { transform: translate(0, calc(-1 * var(--lift-offset))) scale(1); }
-  100% { transform: translate(0, 0) scale(1); }
 }

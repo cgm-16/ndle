@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { CLASSIC_FLOOR } from "../../game/balance";
-import type { Equation, Tile as GameTile } from "../../game/types";
+import type { Equation } from "../../game/types";
 import { useI18n } from "../../i18n/I18nContext";
 import {
   copyResult,
@@ -12,14 +11,12 @@ import {
 } from "../../services/sharing";
 import { ActionButton } from "../ActionButton/ActionButton";
 import { EquationBoard } from "../EquationBoard/EquationBoard";
-import { Tile } from "../Tile/Tile";
 import styles from "./GameOverScreen.module.css";
 
 export interface GameOverScreenProps {
-  equation: Equation;
+  /** The equation the run stopped on; null when the table was played to its end. */
+  equation: Equation | null;
   stats: ShareStats;
-  /** The tiles still held. Only a Classic win shows them. */
-  hand: readonly GameTile[];
   url: string;
   dependencies: ShareDependencies;
   onPlayAgain(): void;
@@ -28,7 +25,6 @@ export interface GameOverScreenProps {
 export function GameOverScreen({
   equation,
   stats,
-  hand,
   url,
   dependencies,
   onPlayAgain,
@@ -50,85 +46,34 @@ export function GameOverScreen({
     setStatus(outcome);
   };
 
-  // `won` means a Classic win here and made par in Puzzle, so the final hand
-  // and the win reason are Classic's alone; Puzzle's `won` picks only its
-  // heading and that heading's gold.
-  const classicWon = stats.mode === "classic" && stats.won;
-  // A table played to its end leaves no terminal equation: the run did not
-  // stop on one.
-  const tableFinished = stats.mode === "puzzle" && stats.totalRounds === stats.rows;
-  const reason = tableFinished
-    ? "gameOver.tableReason"
-    : classicWon
-      ? "gameOver.winReason"
-      : "gameOver.reason";
-  const shortOfPar = stats.mode === "puzzle" && !stats.won;
-  const title =
-    stats.mode === "puzzle"
-      ? stats.won
-        ? t("gameOver.parTitle")
-        : t("gameOver.shortTitle", { short: stats.par - stats.score })
-      : t(stats.won ? "gameOver.winTitle" : "gameOver.title");
+  const reason = equation === null ? "gameOver.tableReason" : "gameOver.reason";
+  const title = stats.won
+    ? t("gameOver.parTitle")
+    : t("gameOver.shortTitle", { short: stats.par - stats.score });
 
   return (
     <main className={styles.screen}>
       <div className={styles.terminal}>
-        {/* A Classic win shows no equation: the run is complete, and there is
-            nothing left to explain. Its evidence takes the equation's slot
-            instead: the floor's sockets and the tiles still in them. */}
-        {classicWon ? (
-          <div
-            className={styles.finalHand}
-            role="img"
-            aria-label={t("gameOver.finalHand", { held: hand.length, floor: CLASSIC_FLOOR })}
-          >
-            {Array.from({ length: Math.max(CLASSIC_FLOOR, hand.length) }, (_, index) => {
-              const tile = hand[index];
-              return tile ? (
-                <Tile key={tile.id} value={tile} size="sm" />
-              ) : (
-                <span key={`socket-${index}`} className={styles.socket} />
-              );
-            })}
-          </div>
-        ) : tableFinished ? null : (
-          <EquationBoard equation={equation} showProduct />
-        )}
+        {equation === null ? null : <EquationBoard equation={equation} showProduct />}
         {/* §1.8 keeps the terminal equation on screen to explain the loss, but
             the equation alone reads as a live prompt. The reason sits with the
             equation rather than inside the results block, so it defuses the
             thing it explains. */}
         <p className={styles.reason}>{t(reason)}</p>
       </div>
-      <h1 className={`${styles.title} ${stats.won ? styles.won : shortOfPar ? styles.shortOfPar : ""}`}>
+      <h1 className={`${styles.title} ${stats.won ? styles.won : styles.shortOfPar}`}>
         {title}
       </h1>
       <dl className={styles.stats}>
-        {/* Puzzle's score is read against its table, so Rounds played, which
-            repeats the score's denominator, gives way to Par. */}
-        {stats.mode === "puzzle" ? (
-          <>
-            <div className={styles.entry}>
-              <dt>{t("hud.score")}</dt>
-              <dd className={styles.primary}>{`${stats.score} / ${stats.rows}`}</dd>
-            </div>
-            <div className={styles.entry}>
-              <dt>{t("hud.par")}</dt>
-              <dd>{stats.par}</dd>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className={styles.entry}>
-              <dt>{t("gameOver.rounds")}</dt>
-              <dd className={styles.primary}>{stats.totalRounds}</dd>
-            </div>
-            <div className={styles.entry}>
-              <dt>{t("hud.score")}</dt>
-              <dd>{stats.score}</dd>
-            </div>
-          </>
-        )}
+        {/* The score is read against its table, so Par sits beside it. */}
+        <div className={styles.entry}>
+          <dt>{t("hud.score")}</dt>
+          <dd className={styles.primary}>{`${stats.score} / ${stats.rows}`}</dd>
+        </div>
+        <div className={styles.entry}>
+          <dt>{t("hud.par")}</dt>
+          <dd>{stats.par}</dd>
+        </div>
         <div className={styles.entry}>
           <dt>{t("gameOver.longestStreak")}</dt>
           <dd>{stats.longestStreak}</dd>
@@ -150,16 +95,7 @@ export function GameOverScreen({
           </ActionButton>
         </div>
       </div>
-      {/* The chop is reinforcement, never the confirmation itself: §1.12 asks
-          for colour plus shape or text, and a mark carries no announcement.
-          The status region beside it stays the accessible confirmation, so the
-          chop is hidden from it. */}
       <div className={styles.confirmation}>
-        {status === "copied" ? (
-          <span className={styles.chop} aria-hidden="true">
-            ✳
-          </span>
-        ) : null}
         <p className={styles.status} role="status" aria-live="polite">
           {status === "copied" ? t("share.copied") : status === "failed" ? t("share.failed") : ""}
         </p>

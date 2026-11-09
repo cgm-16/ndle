@@ -3,19 +3,17 @@ import { GameOverScreen } from "../components/GameOverScreen/GameOverScreen";
 import { GameScreen } from "../components/GameScreen/GameScreen";
 import { LanguageToggle } from "../components/LanguageToggle/LanguageToggle";
 import { TitleScreen } from "../components/TitleScreen/TitleScreen";
-import { createInitialInventory, createTiles, createTitleState, sortTiles } from "../game/factories";
+import { createPuzzleStart, createTiles, createTitleState } from "../game/factories";
 import { gameReducer } from "../game/gameReducer";
-import { generateKindEquation, generateRewardTiles } from "../game/generators";
-import { answerMatches, getCapacity, getRewardCount, isRunComplete } from "../game/selectors";
-import type { Equation, GameMode, PuzzleTable, RandomSource, Tile, TileIdFactory } from "../game/types";
+import { answerMatches, isRunComplete } from "../game/selectors";
+import type { PuzzleTable, TileIdFactory } from "../game/types";
 import { getShareStats, type ShareDependencies } from "../services/sharing";
 import styles from "./App.module.css";
 
 export interface AppDependencies {
-  random: RandomSource;
   nextTileId: TileIdFactory;
   gameUrl: string;
-  /** Deals Puzzle's next table. Called only from event handlers, once per run. */
+  /** Deals a Practice table. Called only from event handlers, once per run. */
   dealPuzzle(): PuzzleTable;
 }
 
@@ -24,54 +22,24 @@ export interface AppProps {
   shareDependencies: ShareDependencies;
 }
 
-// What a run opens with. The opening hand fills the mode's starting capacity
-// (§1.3); Puzzle's hand and first equation come from the table it deals.
-function startState(
-  dependencies: AppDependencies,
-  mode: GameMode,
-): { equation: Equation; inventory: Tile[]; table?: PuzzleTable } {
-  if (mode === "puzzle") {
-    const table = dependencies.dealPuzzle();
-    return {
-      equation: table.rows[0].equation,
-      inventory: sortTiles(createTiles(table.hand, dependencies.nextTileId)),
-      table,
-    };
-  }
-  const inventory = createInitialInventory(dependencies.nextTileId, getCapacity(mode, 0));
-  return { equation: generateKindEquation(dependencies.random, inventory), inventory };
-}
-
 export function App({ dependencies, shareDependencies }: AppProps) {
   const [state, dispatch] = useReducer(gameReducer, undefined, createTitleState);
 
-  const handleStart = useCallback(
-    (mode: GameMode) => {
-      dispatch({ type: "START_RUN", mode, ...startState(dependencies, mode) });
-    },
-    [dependencies],
-  );
+  const handleStart = useCallback(() => {
+    dispatch(createPuzzleStart(dependencies.dealPuzzle(), dependencies.nextTileId));
+  }, [dependencies]);
 
-  // RESTART_RUN keeps the run's mode, so the hand is dealt for it too.
   const handleRestart = useCallback(() => {
-    dispatch({ type: "RESTART_RUN", ...startState(dependencies, state.mode) });
-  }, [dependencies, state.mode]);
+    dispatch({ ...createPuzzleStart(dependencies.dealPuzzle(), dependencies.nextTileId), type: "RESTART_RUN" });
+  }, [dependencies]);
 
   const handleSubmit = useCallback(() => {
-    // Reducer invariant (§2.5): equation === null only in `title`, and Submit
-    // only renders in `answering`, so this only guards the type.
-    if (state.equation === null) return;
+    // Reducer invariant (§2.5): table and equation are null only in `title`,
+    // and Submit only renders in `answering`, so this only guards the type.
+    if (state.equation === null || state.table === null) return;
     if (answerMatches(state.selectedTiles, state.equation.product)) {
-      // A Puzzle row pays the tiles printed on it; the other modes draw theirs.
-      const rewardTiles = state.table
-        ? createTiles(state.table.rows[state.round - 1].pay, dependencies.nextTileId)
-        : generateRewardTiles(
-            getRewardCount(state.selectedTiles.length),
-            dependencies.random,
-            dependencies.nextTileId,
-            state.mode,
-            state.totalRounds,
-          );
+      // A row pays the tiles printed on it.
+      const rewardTiles = createTiles(state.table.rows[state.round - 1].pay, dependencies.nextTileId);
       dispatch({ type: "SUBMIT_CORRECT", rewardTiles });
     } else {
       dispatch({ type: "SUBMIT_INCORRECT" });
@@ -79,29 +47,13 @@ export function App({ dependencies, shareDependencies }: AppProps) {
   }, [
     state.equation,
     state.selectedTiles,
-    state.mode,
-    state.totalRounds,
     state.table,
     state.round,
     dependencies,
   ]);
 
-  const handleNextRound = useCallback(() => {
-    // At Classic's floor or Puzzle's last row the advance ends the run (§1.8
-    // step 0): no equation is drawn, and the current one, never shown again,
-    // keeps the reducer's invariant.
-    if (isRunComplete(state)) {
-      if (state.equation === null) return;
-      dispatch({ type: "NEXT_ROUND", equation: state.equation });
-      return;
-    }
-    // state.inventory is already final (post-discard) at `feedback`; a stale
-    // capture here would silently bias equations against the previous round's hand.
-    const equation = state.table
-      ? state.table.rows[state.round].equation
-      : generateKindEquation(dependencies.random, state.inventory);
-    dispatch({ type: "NEXT_ROUND", equation });
-  }, [dependencies, state]);
+  // The reducer reads the next row from the table, and ends the run past its last.
+  const handleNextRound = useCallback(() => dispatch({ type: "NEXT_ROUND" }), []);
 
   // §1.11: gameOver restarts the run on R, equivalent to Play Again. Enter has
   // no global shortcut in this phase — it destroyed the score screen with the
@@ -149,11 +101,11 @@ export function App({ dependencies, shareDependencies }: AppProps) {
         />
       )}
 
-      {state.phase === "gameOver" && state.equation !== null && (
+      {state.phase === "gameOver" && (
         <GameOverScreen
-          equation={state.equation}
+          // A table played to its end stopped on no equation.
+          equation={isRunComplete(state) ? null : state.equation}
           stats={getShareStats(state)}
-          hand={state.inventory}
           url={dependencies.gameUrl}
           dependencies={shareDependencies}
           onPlayAgain={handleRestart}

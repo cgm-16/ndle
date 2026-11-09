@@ -1,8 +1,7 @@
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import slotStyles from "../components/AnswerSlots/AnswerSlots.module.css";
-import gameOverStyles from "../components/GameOverScreen/GameOverScreen.module.css";
-import { INVENTORY_CAPACITY } from "../game/balance";
+import { PUZZLE_CAPACITY } from "../game/balance";
 import type { Language } from "../game/types";
 import { I18nProvider } from "../i18n/I18nContext";
 import { GALLERY_STATES, type GalleryEntry } from "./states";
@@ -55,38 +54,34 @@ describe("gallery catalogue", () => {
 
   // SELECT_TILE moves a tile out of inventory into an answer slot; it never
   // adds one. So the live tile count (inventory buttons + filled answer-slot
-  // buttons) must stay at INVENTORY_CAPACITY once every slot is filled, not
+  // buttons) must stay at PUZZLE_CAPACITY once every slot is filled, not
   // grow past it the way an additively hand-assembled selection would.
-  it("conserves tile count in answering-full: inventory plus filled slots equals INVENTORY_CAPACITY", () => {
+  it("conserves tile count in answering-full: inventory plus filled slots equals PUZZLE_CAPACITY", () => {
     render(<I18nProvider initialLanguage="en">{entryById("answering-full").render()}</I18nProvider>);
 
     const inventoryTiles = screen.getAllByRole("button", { name: /^Digit \d$/ });
     const filledSlots = screen.getAllByRole("button", { name: /^Answer slot \d: \d$/ });
-    expect(inventoryTiles.length + filledSlots.length).toBe(INVENTORY_CAPACITY);
+    expect(inventoryTiles.length + filledSlots.length).toBe(PUZZLE_CAPACITY);
   });
 
   // The rack empties as a run goes on and §1.12 makes the empty sockets the
   // score, so a nearly-spent rack is a state in its own right — and it is the
   // one no fixture reached, which is how #84 survived a measurement pass.
-  it("renders a rack holding fewer than eight tiles", () => {
+  it("renders a rack holding fewer tiles than it has sockets", () => {
     render(
       <I18nProvider initialLanguage="en">{entryById("answering-depleted").render()}</I18nProvider>,
     );
-    expect(screen.getAllByRole("button", { name: /^Digit \d$/ }).length).toBeLessThan(8);
+    expect(screen.getAllByRole("button", { name: /^Digit \d$/ }).length).toBeLessThan(PUZZLE_CAPACITY);
   });
 
-  // makeOverflowInventory (src/test/fixtures.ts) is shared with the rest of
-  // the suite, so a future change to its id format or size handling could
-  // make rewardTileIds.includes(tile.id) match nothing inside
-  // makeOverflowInventoryWithRewards (states.tsx), silently dropping every
-  // tray New-tile badge while the render-without-throwing test below stays
-  // green. Expected counts are named here rather than derived from
-  // states.tsx, so a break in the stamping logic can't also break the value
-  // this test compares against.
+  // makeOverflowState (src/test/fixtures.ts) is shared with the rest of the
+  // suite, so a future change to how it plays row 4 could leave the overflow
+  // entry with no reward tiles, silently dropping every tray New-tile badge
+  // while the render-without-throwing test below stays green. Expected counts
+  // are named here rather than derived from states.tsx, so a break in the
+  // fixture can't also break the value this test compares against.
   const OVERFLOW_ENTRY_REWARD_COUNTS: Record<string, number> = {
     "overflow-required-1": 2,
-    "overflow-required-2": 3,
-    "overflow-marked": 3,
   };
 
   it("badges exactly as many overflow-tray tiles New as each entry's reward count", () => {
@@ -103,72 +98,6 @@ describe("gallery catalogue", () => {
       );
       cleanup();
     }
-  });
-
-  // TOGGLE_DISCARD is the only action that fills pendingDiscards, and no
-  // fixture ever set it, so the marked tile had only ever been rendered by
-  // jsdom — which performs no layout. One of the two tiles this hand must
-  // shed is marked, which is the half-made decision: the discard stays open
-  // until the second mark completes it.
-  describe("face tiles (M7)", () => {
-    const FACE_NAMES = [
-      "Wildcard: any digit",
-      "Odd tile: 1, 3, 5, 7, or 9",
-      "Even tile: 0, 2, 4, 6, or 8",
-      "Digits 3 to 5",
-      "Digits 0 to 4",
-      "Digits 5 to 9",
-    ];
-
-    it("draws every kind in every state, at both sizes", async () => {
-      await renderEntry(entryById("interaction-face-tiles"));
-      for (const name of FACE_NAMES) {
-        // resting, lifted, reward, marked and disabled, as buttons
-        expect(screen.getAllByRole("button", { name }), name).toHaveLength(5);
-      }
-      expect(screen.getAllByText("✳")).toHaveLength(6); // five buttons and one compact
-    });
-
-    it("seats all six kinds in a Classic rack, after the digits, in rack order", async () => {
-      await renderEntry(entryById("answering-classic-faces"));
-      const names = screen
-        .getAllByRole("button", { name: /^(Digit \d|Wildcard|Odd|Even|Digits)/ })
-        .map((button) => button.getAttribute("aria-label"));
-      const firstFace = names.findIndex((name) => !name?.startsWith("Digit "));
-      expect(names.slice(0, firstFace).every((name) => name?.startsWith("Digit "))).toBe(true);
-      expect(names.slice(firstFace)).toEqual([
-        "Wildcard: any digit",
-        "Odd tile: 1, 3, 5, 7, or 9",
-        "Even tile: 0, 2, 4, 6, or 8",
-        "Digits 0 to 4",
-        "Digits 3 to 5",
-        "Digits 5 to 9",
-      ]);
-    });
-
-    it("states the product a face counted as, in feedback-correct-face", async () => {
-      await renderEntry(entryById("feedback-correct-face"));
-      expect(screen.getByRole("status")).toHaveTextContent("Your answer: 56");
-    });
-
-    it("engraves a missed face, in feedback-incorrect-face", async () => {
-      await renderEntry(entryById("feedback-incorrect-face"));
-      expect(screen.getByRole("status")).toHaveTextContent("Your answer: O·3");
-      expect(screen.getByRole("status")).toHaveTextContent("Correct answer: 63");
-    });
-
-    it("holds a face in the Classic win's final hand", async () => {
-      const { container } = await renderEntry(entryById("game-over-classic-win"));
-      expect(container.querySelector(`.${gameOverStyles.finalHand}`)).toHaveTextContent("✳");
-    });
-  });
-
-  it("marks one tile for discard in overflow-marked, with the discard still open", () => {
-    render(
-      <I18nProvider initialLanguage="en">{entryById("overflow-marked").render()}</I18nProvider>,
-    );
-    expect(screen.getAllByRole("button", { name: /Marked for discard$/ })).toHaveLength(1);
-    expect(screen.getByText("Choose 2 tiles to discard.")).toBeInTheDocument();
   });
 
   it("shows the submitted tiles in feedback-incorrect", () => {
@@ -202,18 +131,16 @@ describe("gallery catalogue", () => {
     expect(streakEight.container.querySelectorAll(`.${slotStyles.rim}`)).toHaveLength(0);
   });
 
-  // 11C's chop and the status beside it are GameOverScreen's own local state,
-  // reached only by pressing Copy Result. Both copy entries have to arrive at
+  // The status is GameOverScreen's own local state, reached only by pressing
+  // Copy Result. Both copy entries have to arrive at
   // rest showing the outcome they are named for.
   it("shows each game-over copy outcome at rest", async () => {
-    const copied = await renderEntry(entryById("game-over-copy-succeeded"));
+    await renderEntry(entryById("game-over-copy-succeeded"));
     expect(screen.getByRole("status")).toHaveTextContent("Result copied.");
-    expect(copied.container.querySelector(`.${gameOverStyles.chop}`)).not.toBeNull();
     cleanup();
 
-    const failed = await renderEntry(entryById("game-over-copy-failed"));
+    await renderEntry(entryById("game-over-copy-failed"));
     expect(screen.getByRole("status")).toHaveTextContent("Could not share or copy the result.");
-    expect(failed.container.querySelector(`.${gameOverStyles.chop}`)).toBeNull();
   });
 
   // Four rules in the system draw a focus ring, and LanguageToggle's is the

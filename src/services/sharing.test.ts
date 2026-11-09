@@ -1,119 +1,54 @@
 import { describe, expect, it, vi } from "vitest";
-import { CLASSIC_FLOOR, CLASSIC_SEAL_EVERY, CLASSIC_START_CAPACITY } from "../game/balance";
-import { makeEquation, makeGameOverState, PUZZLE_SAMPLE } from "../test/fixtures";
+import { createTitleState } from "../game/factories";
+import { makeGameOverState } from "../test/fixtures";
 import { copyResult, formatShareText, getShareStats, shareResult } from "./sharing";
-import type { ShareDependencies, ShareStats } from "./sharing";
+import type { ShareDependencies } from "./sharing";
+
+const MADE_PAR_TEXT =
+  "9dle — Made par — Score: 7/8 · par 7\nLongest streak: 7\n\nCan you make par?\nhttps://example.test/";
 
 describe("getShareStats", () => {
-  const atFloor = (CLASSIC_START_CAPACITY - CLASSIC_FLOOR) * CLASSIC_SEAL_EVERY;
+  const madePar = makeGameOverState();
 
-  it("reports a Classic run at the floor with tiles in hand as won", () => {
-    const state = makeGameOverState(makeEquation(3, 3), { mode: "classic", totalRounds: atFloor });
-    expect(getShareStats(state)).toEqual({
-      mode: "classic",
-      won: true,
-      score: 7,
-      totalRounds: atFloor,
-      longestStreak: 4,
-    });
+  it("reports made par as won, with the table's par and length", () => {
+    expect(getShareStats(madePar)).toEqual({ won: true, par: 7, rows: 8, score: 7, longestStreak: 7 });
+    expect(getShareStats({ ...madePar, score: 6 }).won).toBe(false);
   });
 
-  it("never reports an Endless run as won", () => {
-    const state = makeGameOverState(makeEquation(3, 3), { mode: "endless", totalRounds: atFloor });
-    expect(getShareStats(state).won).toBe(false);
-  });
-
-  it("does not let an Endless run be typed as won", () => {
-    // @ts-expect-error — only Classic can win (§1.8).
-    const endlessWin: ShareStats = { mode: "endless", won: true, score: 0, totalRounds: 0, longestStreak: 0 };
-    expect(endlessWin.mode).toBe("endless");
+  it("throws for a state with no table", () => {
+    expect(() => getShareStats(createTitleState())).toThrow(RangeError);
   });
 });
 
 describe("formatShareText", () => {
-  // §1.15: Classic prefixes the first line with the mode and outcome, and
-  // keeps every other line of the Endless format.
-  it.each([
-    ["en", true, "ozterisk Classic — Run Complete — Rounds: 28\nScore: 7\nLongest streak: 4\n\nCan you beat it?\nhttps://example.test/"],
-    ["en", false, "ozterisk Classic — Game Over — Rounds: 28\nScore: 7\nLongest streak: 4\n\nCan you beat it?\nhttps://example.test/"],
-    ["ko", true, "ozterisk 클래식 — 완주 — 라운드: 28\n점수: 7\n최장 연속 정답: 4\n\n이 기록을 넘을 수 있나요?\nhttps://example.test/"],
-    ["ko", false, "ozterisk 클래식 — 게임 종료 — 라운드: 28\n점수: 7\n최장 연속 정답: 4\n\n이 기록을 넘을 수 있나요?\nhttps://example.test/"],
-  ] as const)("formats a Classic run in %s, won %s, exactly", (language, won, expected) => {
-    const text = formatShareText(
-      { mode: "classic", won, score: 7, totalRounds: 28, longestStreak: 4 },
-      language,
-      "https://example.test/",
-    );
-    expect(text).toBe(expected);
-  });
+  const madePar = makeGameOverState();
 
   it("formats the English share text exactly", () => {
-    const text = formatShareText(
-      { mode: "endless", won: false, score: 7, totalRounds: 12, longestStreak: 4 },
-      "en",
-      "https://example.test/",
-    );
+    const text = formatShareText(getShareStats(madePar), "en", "https://example.test/");
 
-    expect(text).toBe(
-      "ozterisk — Rounds: 12\nScore: 7\nLongest streak: 4\n\nCan you beat it?\nhttps://example.test/",
+    expect(text).toBe(MADE_PAR_TEXT);
+    expect(formatShareText(getShareStats({ ...madePar, score: 4 }), "en", "https://example.test/")).toMatch(
+      /^9dle — 3 short of par — Score: 4\/8 · par 7\n/,
     );
 
     const lines = text.split("\n");
-    expect(lines).toHaveLength(6);
-    expect(lines[3]).toBe("");
-    expect(lines[5]).toBe("https://example.test/");
+    expect(lines).toHaveLength(5);
+    expect(lines[2]).toBe("");
+    expect(lines[4]).toBe("https://example.test/");
   });
 
   it("formats the Korean share text exactly", () => {
-    const text = formatShareText(
-      { mode: "endless", won: false, score: 7, totalRounds: 12, longestStreak: 4 },
-      "ko",
-      "https://example.test/",
-    );
-
-    expect(text).toBe(
-      "ozterisk — 라운드: 12\n점수: 7\n최장 연속 정답: 4\n\n이 기록을 넘을 수 있나요?\nhttps://example.test/",
-    );
-
-    const lines = text.split("\n");
-    expect(lines).toHaveLength(6);
-    expect(lines[3]).toBe("");
-    expect(lines[5]).toBe("https://example.test/");
-  });
-});
-
-describe("Puzzle", () => {
-  const madePar = { ...makeGameOverState(PUZZLE_SAMPLE.rows[7]!.equation), mode: "puzzle" as const,
-    table: PUZZLE_SAMPLE, rowResults: [], score: 7, totalRounds: 8, longestStreak: 4 };
-
-  it("reports made par as won, with the table's par and length", () => {
-    expect(getShareStats(madePar)).toEqual({
-      mode: "puzzle", won: true, par: 7, rows: 8, score: 7, totalRounds: 8, longestStreak: 4,
-    });
-    expect(getShareStats({ ...madePar, score: 6 }).won).toBe(false);
-  });
-
-  it("formats the English Puzzle share text exactly", () => {
-    expect(formatShareText(getShareStats(madePar), "en", "https://example.test/")).toBe(
-      "ozterisk Puzzle — Made par — Score: 7/8 · par 7\nLongest streak: 4\n\nCan you make par?\nhttps://example.test/",
-    );
-    expect(formatShareText(getShareStats({ ...madePar, score: 4 }), "en", "https://example.test/")).toMatch(
-      /^ozterisk Puzzle — 3 short of par — Score: 4\/8 · par 7\n/,
-    );
-  });
-
-  it("formats the Korean Puzzle share text exactly", () => {
     expect(formatShareText(getShareStats(madePar), "ko", "https://example.test/")).toBe(
-      "ozterisk 묘수풀이 — 목표 달성 — 점수: 7/8 · 목표 7\n최장 연속 정답: 4\n\n목표를 달성할 수 있나요?\nhttps://example.test/",
+      "구들 — 목표 달성 — 점수: 7/8 · 목표 7\n최장 연속 정답: 7\n\n목표를 달성할 수 있나요?\nhttps://example.test/",
     );
     expect(formatShareText(getShareStats({ ...madePar, score: 4 }), "ko", "https://example.test/")).toMatch(
-      /^ozterisk 묘수풀이 — 목표까지 3점 부족 — 점수: 4\/8 · 목표 7\n/,
+      /^구들 — 목표까지 3점 부족 — 점수: 4\/8 · 목표 7\n/,
     );
   });
 });
 
 describe("shareResult", () => {
-  const text = "ozterisk — Rounds: 9\nScore: 7\nLongest streak: 4\n\nCan you beat it?\nhttps://example.test/";
+  const text = MADE_PAR_TEXT;
   const url = "https://example.test/";
 
   it("shares natively when available and never touches the clipboard", async () => {
@@ -162,7 +97,7 @@ describe("shareResult", () => {
 });
 
 describe("copyResult", () => {
-  const text = "ozterisk — Rounds: 9\nScore: 7\nLongest streak: 4\n\nCan you beat it?\nhttps://example.test/";
+  const text = MADE_PAR_TEXT;
 
   it("resolves to copied when the clipboard write succeeds", async () => {
     const writeClipboard = vi.fn().mockResolvedValue(undefined);

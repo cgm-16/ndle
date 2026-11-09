@@ -1,34 +1,16 @@
-/* Tile House names four families. The design system loads them from Google
-   Fonts; the app self-hosts them through @fontsource so a run makes zero
-   non-origin requests.
+/* The Latin interface and every digit use the system stack set in
+   typography.css, so English makes no font download at all and a run makes
+   zero non-origin requests.
 
-   Only Latin subsets ship eagerly. Zen Kaku Gothic New is a Japanese family
-   that serves no Hangul, so its CJK subsets would be weight nobody reads, and
-   Noto Sans KR's Korean subset is 542 KB at a single weight — far too much to
-   hand an English player. It loads on demand instead; see loadKoreanFont in
+   Hangul is the one script the stack cannot be trusted with: the face the
+   browser would pick differs by platform. Gothic A1 supplies it, self-hosted
+   through @fontsource at weights 400 (body) and 700 (buttons, the toggle's
+   active segment, the title disclosure). Its Korean subset is far too large to
+   hand an English player, so it is not imported here; it loads on demand, once,
+   the first time the interface needs it. See loadKoreanFont in
    src/i18n/koreanFont.ts.
 
-   Each face listed here is selected by a rule in src/. A face that ships and
-   cannot be selected is never requested, so it costs no bytes on the wire —
-   but it costs disk and deploy size, and it makes the stylesheet claim a
-   weight the app does not have (#137). The inverse is worse: a rule asking
-   for a weight no face supplies renders a substitute chosen by the browser,
-   silently and without an error (#138). So the population below and the
-   weights src/ asks for are one list, and changing either changes both.
-
-   Display (EB Garamond): 500 for the wordmark and the game-over line, 600 for
-   every ceramic digit, the equation and the verdict headline.
-   UI (Zen Kaku Gothic New): 400 from body, 500 for the language toggle's
-   resting segments, 700 for buttons, the toggle's active segment and the
-   title disclosure. Nothing selects 600 — the design system's own request
-   omits that face too, so 600 always rendered as the 700 one.
-   Mono (IBM Plex Mono): 500 only, for the capacity meter and two game-over
-   labels. */
-@import url("@fontsource/eb-garamond/latin-500.css");
-@import url("@fontsource/eb-garamond/latin-600.css");
-
-@import url("@fontsource/zen-kaku-gothic-new/latin-400.css");
-@import url("@fontsource/zen-kaku-gothic-new/latin-500.css");
-@import url("@fontsource/zen-kaku-gothic-new/latin-700.css");
-
-@import url("@fontsource/ibm-plex-mono/latin-500.css");
+   Hangul loads only 400 and 700, while src/ also asks for 500 (the wordmark,
+   the title, dt) and 600 (dd). The browser substitutes silently, without an
+   error (#138): Hangul at 500 renders the 400 face and at 600 the 700 face.
+   Changing the weights loaded or the weights asked for changes that mapping. */

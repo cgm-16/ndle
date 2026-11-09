@@ -61,18 +61,17 @@ describe("keyframes.css", () => {
     expect(keyframesUsedIn(".a { animation: oz-bloom var(--dur-bloom) both; }")).toEqual([
       "oz-bloom",
     ]);
-    expect(keyframesUsedIn('<i style={{ animation: "oz-chop 900ms" }} />')).toEqual(["oz-chop"]);
+    expect(keyframesUsedIn('<i style={{ animation: "oz-bloom 900ms" }} />')).toEqual(["oz-bloom"]);
     // global.css retires motion by duration alone, and naming no keyframe is
     // not a missing one. Widening the pattern to match this reintroduces the
     // false positives the oz- prefix exists to avoid.
     expect(keyframesUsedIn("* { animation-duration: 0.01ms !important; }")).toEqual([]);
   });
 
-  // Classic's moments (§1.12): the seal, the perch resolving, the re-seat, and
-  // 8c's slide-off, which supersedes oz-tip-off — one frame for a tile leaving
-  // the table, not two.
-  it("defines Classic's frames, and 8c only as oz-slide-off", () => {
-    for (const name of ["oz-slide-off", "oz-seal", "oz-seal-rim", "oz-perch-drop", "oz-reseat"]) {
+  // The rack's moments (§1.12): the perch resolving and 8c's slide-off, which
+  // supersedes oz-tip-off — one frame for a tile leaving the table, not two.
+  it("defines the rack's frames, and 8c only as oz-slide-off", () => {
+    for (const name of ["oz-slide-off", "oz-perch-drop"]) {
       expect(defined.has(name), name).toBe(true);
     }
     expect(defined.has("oz-tip-off")).toBe(false);

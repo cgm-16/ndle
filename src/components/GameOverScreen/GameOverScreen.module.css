@@ -37,51 +37,27 @@
   text-align: center;
 }
 
-/* The verdict is a mono label, not a headline: the run's numbers below carry
-   the screen's one focal point. Vermilion is the hue for a tile leaving.
-   --state-incorrect is the wrong step of it here: at 11px this is body text
-   and owes 4.5:1, and verm-600 measures 3.34:1 on --surface-surround. verm-400
-   measures 6.26:1 and keeps the hue. The larger vermilion surfaces elsewhere
-   on this screen stay on --state-incorrect, which clears the 3:1 they owe. */
+/* The verdict is a label, not a headline: the run's numbers below carry the
+   screen's one focal point. Every verdict is either .won or .shortOfPar, which
+   set the colour. */
 .title {
   font: var(--weight-medium) var(--size-label) / var(--leading-tight) var(--font-mono);
   letter-spacing: var(--track-label);
   text-transform: uppercase;
-  color: var(--verm-400);
 }
 
-/* A win keeps nothing leaving, so it takes gold, the hue for what was earned:
-   --gold-500 measures 8.7:1 on --surface-surround. */
+/* A win takes the accent, the hue for what was earned: --gold-500 measures
+   6.97:1 on --surface-surround. */
 .title.won {
   color: var(--gold-500);
 }
 
-/* A Puzzle table that fell short of par is a score to read against its par,
-   not a tile leaving, so it keeps the ink of the figures beneath it instead of
-   the loss's vermilion. */
+/* A table that fell short of par is a score to read against its par,
+   so it keeps the ink of the figures beneath it. */
 .title.shortOfPar {
   color: var(--text-primary);
 }
 
-/* The final hand, on the panel surface so the sockets read as a rack rather
-   than as loose marks on the surround. */
-.finalHand {
-  display: flex;
-  gap: var(--space-1);
-  padding: 6px;
-  border: 1px solid var(--border-hairline);
-  border-radius: var(--radius-md);
-  background: var(--surface-panel);
-}
-
-/* An empty socket at the compact tile size. */
-.socket {
-  width: var(--tile-w-sm);
-  height: var(--tile-h-sm);
-  border-radius: var(--radius-sm);
-  background: var(--surface-socket);
-  box-shadow: var(--shadow-socket-sm), var(--rim-socket);
-}
 
 .stats {
   display: flex;
@@ -103,19 +79,18 @@
   color: var(--text-meta);
 }
 
-/* typography.css names run values as display-serif territory alongside
-   equations and tile faces — "ozterisk's numbers are objects, not data".
-   Family only: the sizes stay literal rem, because the guard below compares
-   two computed font sizes and jsdom does not substitute var(). */
+/* Run values take --font-numeral, as equations and tile faces do. Family only:
+   the sizes stay literal rem, because the guard below compares two computed
+   font sizes and jsdom does not substitute var(). */
 .entry dd {
   font-family: var(--font-numeral);
   font-size: 1.5rem;
   font-weight: 600;
 }
 
-/* Rounds survived is Endless's win condition, so it is the number the screen
-   is built around. `.entry dd.primary` is (0,2,1) against `.entry dd`'s
-   (0,1,1): it wins on specificity, not on source order. */
+/* The score against the table is the number the screen is built around.
+   `.entry dd.primary` is (0,2,1) against `.entry dd`'s (0,1,1): it wins on
+   specificity, not on source order. */
 .entry dd.primary {
   font-size: 2.125rem;
 }
@@ -132,8 +107,8 @@
 /* The hint names the key that presses the button above it, so it stays meta
    text: label size, meta ink, and none of --size-label's mono/uppercase/tracked
    treatment, which belongs to labels rather than to a sentence. At 11px this is
-   body text and owes 4.5:1 — --text-meta composites to #87897d over
-   --surface-surround and measures 5.18:1. */
+   body text and owes 4.5:1 — --text-meta composites to #909090 over
+   --surface-surround and measures 6.05:1. */
 .restartHint {
   font-size: var(--size-label);
   color: var(--text-meta);
@@ -146,44 +121,13 @@
   justify-content: center;
 }
 
-/* The chop's height is reserved whether or not it is stamped, so a copy
-   confirms in place instead of pushing the screen down. */
+/* The confirmation's height is reserved whether or not a copy has happened,
+   so a copy confirms in place instead of pushing the screen down. */
 .confirmation {
-  --chop-size: 34px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: var(--space-3);
-  min-height: var(--chop-size);
-}
-
-/* Ref 11C, the vermilion chop bearing ✳: it lands oversized and turned, comes
-   down square, holds while it is read, then lifts. The element mounts only
-   when a copy succeeds, so mounting is the trigger and no state flag is needed.
-   `forwards` because oz-chop ends at zero opacity — that fade is the moment's
-   ending, and without the fill mode the chop would snap back to full and stay.
-   Longhands rather than the `animation` shorthand: jsdom expands no shorthand,
-   so the shorthand form reads back as animationName `none` and no test can
-   tell a placed animation from a misplaced one. `global()` because
-   keyframes.css is not a CSS Module and this file is: without the escape the
-   name is rewritten to a locally scoped one that matches no @keyframes
-   anywhere, and an animation naming a keyframe nothing defines fails
-   silently. */
-.chop {
-  animation-name: global(oz-chop);
-  animation-duration: var(--dur-share);
-  animation-timing-function: var(--ease-snap);
-  animation-fill-mode: forwards;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--chop-size);
-  height: var(--chop-size);
-  border-radius: var(--radius-sm);
-  background: var(--state-incorrect);
-  color: var(--ink-000);
-  font: var(--weight-medium) var(--size-body) / var(--leading-tight) var(--font-display);
+  min-height: 34px;
 }
 
 .status {

@@ -52,10 +52,11 @@ input {
 
 /* No component declares an outline of its own, so this rule draws the ring on
    every focused control. It sits outside the control, on the ground behind it,
-   and gold clears 3:1 against every step of the felt ramp — 7.01 against the
-   lightest (--felt-600) through 11.85 against the darkest (--felt-900). Drawn
-   inside, it would land on the control's own face instead, where gold reads
-   1.10 against a ceramic tile and 1.51 against the gold of a primary button.
+   and the accent clears 3:1 against every step of the field ramp — 8.56 against
+   the lightest (--felt-600) through 10.64 against the darkest (--felt-900).
+   Drawn inside, it would land on the control's own face instead, where the
+   accent reads 1.22 against a tile and 2.64 against the orange of a primary
+   button.
    The inset two-tone bezel --ring-focus is a box-shadow and has to compose
    after an object's own shadow, so it belongs on the objects that carry one,
    not in a global rule. */
@@ -70,7 +71,7 @@ input {
   *::after {
     animation-duration: 0.01ms !important;
 
-    /* Staggered moments wait on a positive delay (the seals, 300 + 40·k ms);
+    /* Staggered moments wait on a positive delay;
        without this they would still hold, motionless, before jumping. */
     animation-delay: 0s !important;
     animation-iteration-count: 1 !important;

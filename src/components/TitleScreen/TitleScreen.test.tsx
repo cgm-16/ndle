@@ -1,57 +1,20 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { I18nProvider } from "../../i18n/I18nContext";
 import { TitleScreen } from "./TitleScreen";
-import styles from "./TitleScreen.module.css";
 
 describe("TitleScreen", () => {
-  it("offers Endless and Classic, with Endless chosen by default", () => {
-    render(
-      <I18nProvider initialLanguage="en">
-        <TitleScreen onStart={vi.fn()} />
-      </I18nProvider>,
-    );
-    const group = screen.getByRole("group", { name: "Mode" });
-    expect(group).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^Endless/ })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: /^Classic/ })).toHaveAttribute("aria-pressed", "false");
-  });
-
-  it("offers Puzzle as the third mode", () => {
-    render(
-      <I18nProvider initialLanguage="en">
-        <TitleScreen onStart={vi.fn()} />
-      </I18nProvider>,
-    );
-    const group = screen.getByRole("group", { name: "Mode" });
-    expect(within(group).getAllByRole("button")).toHaveLength(3);
-    expect(within(group).getByRole("button", { name: /^Puzzle/ })).toHaveAttribute("aria-pressed", "false");
-  });
-
-  it("starts the run in the chosen mode", async () => {
+  it("starts a run with no mode to choose", async () => {
     const onStart = vi.fn();
     render(
       <I18nProvider initialLanguage="en">
         <TitleScreen onStart={onStart} />
       </I18nProvider>,
     );
-    await userEvent.click(screen.getByRole("button", { name: /^Classic/ }));
-    expect(screen.getByRole("button", { name: /^Classic/ })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.queryByRole("group", { name: "Mode" })).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: "Start Run" }));
-    expect(onStart).toHaveBeenCalledWith("classic");
-  });
-
-  it("starts a Puzzle run when Puzzle is chosen", async () => {
-    const onStart = vi.fn();
-    render(
-      <I18nProvider initialLanguage="en">
-        <TitleScreen onStart={onStart} />
-      </I18nProvider>,
-    );
-    await userEvent.click(screen.getByRole("button", { name: /^Puzzle/ }));
-    await userEvent.click(screen.getByRole("button", { name: "Start Run" }));
-    expect(onStart).toHaveBeenCalledWith("puzzle");
+    expect(onStart).toHaveBeenCalledWith();
   });
 
   it("starts only from the explicit action", async () => {
@@ -61,7 +24,7 @@ describe("TitleScreen", () => {
         <TitleScreen onStart={onStart} />
       </I18nProvider>,
     );
-    expect(screen.getByRole("heading", { name: "ozterisk" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "9dle" })).toBeVisible();
     await userEvent.click(screen.getByRole("button", { name: "Start Run" }));
     expect(onStart).toHaveBeenCalledTimes(1);
   });
@@ -111,44 +74,29 @@ describe("TitleScreen", () => {
     expect(
       screen.getByText(/Answer slots fill in the order you select tiles/),
     ).toBeInTheDocument();
-    // correct and incorrect outcomes
+    // the printed pay, and correct and incorrect outcomes
     expect(
-      screen.getByText(/A correct answer replaces the tiles you spent/),
+      screen.getByText(/A correct answer spends its tiles and pays the digits printed on its row/),
     ).toBeInTheDocument();
-    // ten-tile capacity
-    expect(screen.getByText(/holds at most ten tiles/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/An incorrect answer removes the tiles you spent/),
+    ).toBeInTheDocument();
+    // five-tile capacity
+    expect(screen.getByText(/Your hand holds at most five tiles/)).toBeInTheDocument();
     // overflow discarding
     expect(
-      screen.getByText(/choose tiles to discard before play continues/),
+      screen.getByText(/choose one tile to discard before play continues/),
     ).toBeInTheDocument();
-    // score, streak, round, and loss rules
+    // par
+    expect(screen.getByText(/Par is the best score the table allows/)).toBeInTheDocument();
+    // score, streak, round, and the end of a table
     expect(
-      screen.getByText(/Round shows which equation is currently on screen, score counts correct answers/),
+      screen.getByText(/Round shows which row of the table is current, score counts correct answers/),
     ).toBeInTheDocument();
+    expect(screen.getByText(/The table ends after row 8/)).toBeInTheDocument();
     // keyboard controls
     expect(
       screen.getByText(/Press a digit key to select a matching tile/),
-    ).toBeInTheDocument();
-    // Classic's twenty closing to six, and that the floor is the win (§1.14)
-    expect(
-      screen.getByText(/Classic starts with twenty sockets .* reach five sockets and the run is complete/),
-    ).toBeInTheDocument();
-  });
-
-  // Puzzle's playtesters are told the title-screen rules only, and the
-  // always-visible ones are Endless's, so its rule has to be under More.
-  it("lists the Puzzle topic under More", async () => {
-    render(
-      <I18nProvider initialLanguage="en">
-        <TitleScreen onStart={vi.fn()} />
-      </I18nProvider>,
-    );
-
-    const more = screen.getByText("More");
-    await userEvent.click(more);
-
-    expect(
-      within(more.closest("details")!).getByText(/Puzzle deals five tiles and eight equations face up/),
     ).toBeInTheDocument();
   });
 
@@ -163,9 +111,9 @@ describe("TitleScreen", () => {
     // even if every rule were still in the panel. The closest("details") check
     // is what makes this a test of where the rules are.
     for (const rule of [
-      /holds at most ten tiles/,
-      /A correct answer replaces the tiles you spent/,
-      /choose tiles to discard before play continues/,
+      /Your hand holds at most five tiles/,
+      /A correct answer spends its tiles and pays the digits printed on its row/,
+      /choose one tile to discard before play continues/,
       /An incorrect answer removes the tiles you spent/,
     ]) {
       expect(screen.getByText(rule).closest("details")).toBeNull();
@@ -186,7 +134,7 @@ describe("TitleScreen", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "한국어" }));
 
-    expect(screen.getByRole("heading", { name: "ozterisk" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "구들" })).toBeVisible();
     expect(screen.getByRole("button", { name: "게임 시작" })).toBeInTheDocument();
     expect(screen.getByText("더 보기")).toBeInTheDocument();
     expect(screen.getByRole("group", { name: "언어" })).toBeInTheDocument();
@@ -196,25 +144,27 @@ describe("TitleScreen", () => {
     expect(screen.getByRole("button", { name: "Start Run" })).toBeInTheDocument();
   });
 
-  // 11C. Cascade resolution, which jsdom does decide; that the mark actually
-  // settles, and over how long, is T56's to measure in a browser.
-  it("settles the mark on entrance and animates nothing else on the screen", () => {
+  it("names the game 9dle in plain text, with no mark", () => {
     const { container } = render(
       <I18nProvider initialLanguage="en">
         <TitleScreen onStart={vi.fn()} />
       </I18nProvider>,
     );
 
-    const mark = container.querySelector(`.${styles.markTile}`);
-    expect(mark).not.toBeNull();
-    expect(getComputedStyle(mark as Element).animationName).toBe("oz-title-settle");
+    expect(screen.getByRole("heading", { name: "9dle" })).toHaveTextContent(/^9dle$/);
+    expect(container).not.toHaveTextContent("\u2733");
+  });
 
-    // The mark settles; the screen does not. A staggered sequence across the
-    // wordmark, the rules and the button would be decorative motion outside
-    // §1.12's named inventory, and the rules are the first thing a new player
-    // reads.
+  // Cascade resolution, which jsdom does decide. The screen carries no motion
+  // of its own: §1.12's inventory names no title entrance.
+  it("animates nothing on the screen", () => {
+    const { container } = render(
+      <I18nProvider initialLanguage="en">
+        <TitleScreen onStart={vi.fn()} />
+      </I18nProvider>,
+    );
+
     for (const element of container.querySelectorAll("*")) {
-      if (element === mark) continue;
       expect(getComputedStyle(element).animationName).toBe("none");
     }
   });

@@ -1,12 +1,9 @@
-import type { Digit, GameState, Tile, TileIdFactory } from "./types";
-import { tileDigits } from "./selectors";
-
-const ALL_DIGITS: readonly Digit[] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+import type { Digit, GameState, PuzzleTable, Tile, TileIdFactory } from "./types";
 
 export function createTitleState(): GameState {
   return {
     phase: "title",
-    mode: "endless",
+    table: null,
     equation: null,
     inventory: [],
     selectedTiles: [],
@@ -17,17 +14,17 @@ export function createTitleState(): GameState {
     currentStreak: 0,
     longestStreak: 0,
     lastResult: null,
+    rowResults: [],
   };
 }
 
-// Deals round-robin through the digits, so a hand of 10 holds one of each and a
-// hand of 20 two of each (§1.3). Sorted, since the deal order is by digit.
-export function createInitialInventory(
-  idFactory: TileIdFactory,
-  count = ALL_DIGITS.length,
-): Tile[] {
-  const digits = Array.from({ length: count }, (_, index) => ALL_DIGITS[index % ALL_DIGITS.length]);
-  return sortTiles(createTiles(digits, idFactory));
+// A run's opening action: the table's hand, dealt in rack order. The reducer
+// takes row 1's equation from the table.
+export function createPuzzleStart(
+  table: PuzzleTable,
+  nextTileId: TileIdFactory,
+): { type: "START_RUN"; table: PuzzleTable; inventory: Tile[] } {
+  return { type: "START_RUN", table, inventory: sortTiles(createTiles(table.hand, nextTileId)) };
 }
 
 // Digit tiles in the given order, unsorted: a Puzzle pay arrives in its printed
@@ -36,25 +33,10 @@ export function createTiles(digits: readonly Digit[], idFactory: TileIdFactory):
   return digits.map((digit) => ({ id: idFactory(), digit, isNew: false }));
 }
 
-// Rack order (§1.4a): digits ascending, then ✳, O, E, then the ranges by their
-// lowest digit, then their highest.
-function rackKey(tile: Tile): readonly number[] {
-  if ("digit" in tile) return [0, tile.digit];
-  if (tile.face === "wild") return [1];
-  if (tile.face === "odd") return [2];
-  if (tile.face === "even") return [3];
-  const digits = tileDigits(tile);
-  return [4, digits[0] ?? 0, digits[digits.length - 1] ?? 0];
-}
-
+// Rack order (§1.3): digits ascending, then by id.
 export function sortTiles(tiles: readonly Tile[]): Tile[] {
   return [...tiles].sort((a, b) => {
-    const keyA = rackKey(a);
-    const keyB = rackKey(b);
-    for (let index = 0; index < keyA.length; index++) {
-      const difference = (keyA[index] ?? 0) - (keyB[index] ?? 0);
-      if (difference !== 0) return difference;
-    }
+    if (a.digit !== b.digit) return a.digit - b.digit;
     if (a.id < b.id) return -1;
     if (a.id > b.id) return 1;
     return 0;

@@ -14,7 +14,7 @@ function setNavigatorLocale(language: string, languages: string[] = [language]) 
 
 describe("LANGUAGE_STORAGE_KEY", () => {
   it("is the exact key the spec requires", () => {
-    expect(LANGUAGE_STORAGE_KEY).toBe("one-zero.language");
+    expect(LANGUAGE_STORAGE_KEY).toBe("ndle.language");
   });
 });
 

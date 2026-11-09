@@ -1,7 +1,6 @@
 import type { RoundResult, Tile as TileModel } from "../../game/types";
 import { useI18n } from "../../i18n/I18nContext";
 import { Tile } from "../Tile/Tile";
-import { tileGlyph } from "../Tile/tileFace";
 import styles from "./FeedbackPanel.module.css";
 
 export interface FeedbackPanelProps {
@@ -48,13 +47,7 @@ export function FeedbackPanel({ result, rewardTiles }: FeedbackPanelProps) {
         </>
       ) : (
         <div className={styles.comparison}>
-          {/* A missed face spells no number, so each slot prints as engraved and a
-              middle dot keeps "0–4" and "3" from reading as "0–43" (§1.14). */}
-          <p>
-            {t("result.submitted", {
-              value: result.submittedValue ?? result.submittedTiles.map(tileGlyph).join("·"),
-            })}
-          </p>
+          <p>{t("result.submitted", { value: result.submittedValue })}</p>
           <p>{t("result.answer", { value: result.correctValue })}</p>
         </div>
       )}

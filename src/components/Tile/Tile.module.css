@@ -60,50 +60,6 @@ button.tile:not(:disabled):active {
   font: var(--weight-semibold) var(--size-tile-sm) / var(--leading-tight) var(--font-numeral);
 }
 
-/* A face tile (§1.12) is the digit tile plus a gold inlay rule; every state
-   below applies unchanged. Glyphs scale with the tier's digit size, so they
-   land on 36px letters and 25px ranges at 34px (18px and 11px at the compact
-   19px) and shrink with the stepped rack. Contents clip, so a crack stays
-   inside the tile. */
-.face {
-  position: relative;
-  overflow: hidden;
-}
-
-.face::before {
-  content: "";
-  position: absolute;
-  inset: 5px;
-  border: 1px solid var(--gold-700);
-  border-radius: 4px;
-  pointer-events: none;
-}
-
-.sm.face::before {
-  inset: 3px;
-  border-radius: 3px;
-}
-
-.lg.face {
-  font-size: calc(var(--size-tile) * 36 / 34);
-}
-
-.lg.face.range {
-  font-size: calc(var(--size-tile) * 25 / 34);
-}
-
-.sm.face {
-  font-size: calc(var(--size-tile-sm) * 18 / 19);
-}
-
-.sm.face.range {
-  font-size: calc(var(--size-tile-sm) * 11 / 19);
-}
-
-.wild {
-  color: var(--gold-500);
-}
-
 /* Every state names its own edge in --tile-edge instead of setting box-shadow,
    so the focus rule below can compose the bezel onto whatever edge the state
    draws rather than replace it (src/styles/tokens/elevation.css:21-39). */

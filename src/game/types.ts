@@ -1,6 +1,5 @@
 export type Digit = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 export type Language = "en" | "ko";
-export type GameMode = "endless" | "classic" | "puzzle";
 export type GamePhase =
   | "title"
   | "answering"
@@ -8,14 +7,7 @@ export type GamePhase =
   | "overflow"
   | "gameOver";
 
-export type FaceKind = "wild" | "odd" | "even" | "low" | "high";
-
-// A digit tile, or a face tile standing for a set of digits (product.md §1.4a).
-// Face tiles exist in Classic only.
-export type FaceSet = { face: FaceKind } | { face: "nbr"; centre: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 };
-// What a tile shows and stands for, apart from its identity.
-export type TileValue = { digit: Digit } | FaceSet;
-export type Tile = { id: string; isNew: boolean } & TileValue;
+export type Tile = { id: string; digit: Digit; isNew: boolean };
 
 export interface Equation {
   left: number;
@@ -25,8 +17,8 @@ export interface Equation {
 
 export interface RoundResult {
   kind: "correct" | "incorrect";
-  /** The product on a correct answer; the spelled number on an incorrect all-digit answer; null when an incorrect answer holds a face tile. */
-  submittedValue: number | null;
+  /** The product on a correct answer; the spelled number on an incorrect answer. */
+  submittedValue: number;
   correctValue: number;
   submittedTiles: Tile[];
   rewardTileIds: string[];
@@ -36,7 +28,7 @@ export interface RoundResult {
 
 export interface GameState {
   phase: GamePhase;
-  mode: GameMode;
+  table: PuzzleTable | null; // null only in "title"
   equation: Equation | null;
   inventory: Tile[];
   selectedTiles: Tile[];
@@ -47,21 +39,19 @@ export interface GameState {
   currentStreak: number;
   longestStreak: number;
   lastResult: RoundResult | null;
-  /** Set only in Puzzle: the dealt table, for checking pays and ending the run. */
-  table?: PuzzleTable;
-  /** Set only in Puzzle: one entry per submitted row, in order, for the ledger's marks. */
-  rowResults?: RoundResult["kind"][];
+  /** One entry per submitted row, in order, for the ledger's marks. */
+  rowResults: RoundResult["kind"][];
 }
 
 export type GameAction =
-  | { type: "START_RUN"; mode: GameMode; equation: Equation; inventory: Tile[]; table?: PuzzleTable }
+  | { type: "START_RUN"; table: PuzzleTable; inventory: Tile[] } // equation = table.rows[0].equation
+  | { type: "RESTART_RUN"; table: PuzzleTable; inventory: Tile[] }
   | { type: "SELECT_TILE"; tileId: string }
   | { type: "RETURN_TILE"; tileId: string }
   | { type: "SUBMIT_CORRECT"; rewardTiles: Tile[] }
   | { type: "SUBMIT_INCORRECT" }
   | { type: "TOGGLE_DISCARD"; tileId: string }
-  | { type: "NEXT_ROUND"; equation: Equation }
-  | { type: "RESTART_RUN"; equation: Equation; inventory: Tile[]; table?: PuzzleTable } // keeps state.mode
+  | { type: "NEXT_ROUND" } // the reducer reads table.rows[round]
   | { type: "CLEAR_SELECTION" };
 
 export interface PuzzleRow {

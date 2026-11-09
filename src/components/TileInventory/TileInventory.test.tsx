@@ -1,11 +1,10 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { INVENTORY_CAPACITY } from "../../game/balance";
+import { PUZZLE_CAPACITY } from "../../game/balance";
 import type { Digit, Tile } from "../../game/types";
 import { I18nProvider } from "../../i18n/I18nContext";
 import tileStyles from "../Tile/Tile.module.css";
-import { rackTier } from "./rackTier";
 import { TileInventory, type TileInventoryProps } from "./TileInventory";
 import rackStyles from "./TileInventory.module.css";
 
@@ -22,7 +21,7 @@ function renderInventory(overrides: Partial<TileInventoryProps> = {}) {
         mode="select"
         pendingDiscards={[]}
         liftedIds={[]}
-        capacity={INVENTORY_CAPACITY}
+        capacity={PUZZLE_CAPACITY}
         onTile={onTile}
         onSettled={onSettled}
         {...props}
@@ -58,10 +57,6 @@ function railCells(container: HTMLElement): HTMLElement[] {
   return Array.from(container.querySelector(`.${rackStyles.rail}`)?.children ?? []) as HTMLElement[];
 }
 
-function plugCount(container: HTMLElement): number {
-  return cells(container).filter((cell) => cell.classList.contains(rackStyles.plug)).length;
-}
-
 // The one motion fact jsdom can settle: which element the cascade puts an
 // animation on. Durations, distances and appearance are measured in a browser.
 function animationOn(cell: HTMLElement): string {
@@ -85,11 +80,11 @@ function cancelEvent(animationName: string): Event {
   return Object.assign(new Event("animationcancel", { bubbles: true }), { animationName });
 }
 
-// Ten seated tiles and one on the rail, as the reducer leaves an Endless
+// Five seated tiles and one on the rail, as the reducer leaves a Puzzle
 // overflow: sorted seats, the newest arrival past capacity.
 function railedRack(): Tile[] {
   return [
-    ...Array.from({ length: 10 }, (_, index) => tile((index % 10) as Digit, `s${index}`)),
+    ...Array.from({ length: 5 }, (_, index) => tile(index as Digit, `s${index}`)),
     tile(7, "rail", true),
   ];
 }
@@ -188,24 +183,22 @@ describe("TileInventory", () => {
     expect(onTile).not.toHaveBeenCalled();
   });
 
-  it("renders ten cells whether one tile is held or all ten are", () => {
+  it("renders five cells whether one tile is held or all five are", () => {
     const { container: oneHeld } = renderInventory({ tiles: [tile(1, "a")] });
-    expect(cellCount(oneHeld)).toBe(INVENTORY_CAPACITY);
+    expect(cellCount(oneHeld)).toBe(PUZZLE_CAPACITY);
     cleanup();
 
-    const tenHeld = Array.from({ length: 10 }, (_, index) =>
-      tile((index % 10) as Digit, `t${index}`),
-    );
-    const { container: allHeld } = renderInventory({ tiles: tenHeld });
-    expect(cellCount(allHeld)).toBe(INVENTORY_CAPACITY);
+    const fiveHeld = Array.from({ length: 5 }, (_, index) => tile(index as Digit, `t${index}`));
+    const { container: allHeld } = renderInventory({ tiles: fiveHeld });
+    expect(cellCount(allHeld)).toBe(PUZZLE_CAPACITY);
   });
 
-  // M6·1 reads every seat's layout after each commit to re-seat at a size
-  // change; Endless never changes size, so its taps pay for no forced layout.
-  it("reads no layout on an Endless render", () => {
+  // The rack reads layout only to measure a spared rail tile's drop (8a·2),
+  // so a tap that spends a tile pays for no forced layout.
+  it("reads no layout on a render that spends a tile", () => {
     const offsetLeft = vi.spyOn(HTMLElement.prototype, "offsetLeft", "get");
     try {
-      const tiles = railedRack().slice(0, 10);
+      const tiles = railedRack().slice(0, 5);
       const { rerender } = renderInventory({ tiles });
       rerender({ tiles: tiles.slice(1) });
       expect(offsetLeft).not.toHaveBeenCalled();
@@ -214,10 +207,10 @@ describe("TileInventory", () => {
     }
   });
 
-  it("keeps ten sockets and perches an eleventh tile on the rail, never in a new row", () => {
-    const eleven = Array.from({ length: 11 }, (_, index) => tile(0, `t${index}`));
-    const { container } = renderInventory({ tiles: eleven });
-    expect(cellCount(container)).toBe(10);
+  it("keeps five sockets and perches a sixth tile on the rail, never in a new row", () => {
+    const six = Array.from({ length: 6 }, (_, index) => tile(0, `t${index}`));
+    const { container } = renderInventory({ tiles: six });
+    expect(cellCount(container)).toBe(5);
     expect(railCells(container)).toHaveLength(1);
   });
 
@@ -268,21 +261,21 @@ describe("TileInventory", () => {
     expect(animationOn(after)).toBe("oz-fire");
   });
 
-  it("rim-rejects the perched tile and none of the ten sockets", () => {
-    const eleven = Array.from({ length: 11 }, (_, index) => tile(0, `t${index}`));
-    const { container } = renderInventory({ tiles: eleven });
+  it("rim-rejects the perched tile and none of the five sockets", () => {
+    const six = Array.from({ length: 6 }, (_, index) => tile(0, `t${index}`));
+    const { container } = renderInventory({ tiles: six });
     expect(animationOn(railCells(container)[0])).toBe("oz-rim-reject");
-    expect(cells(container).slice(0, INVENTORY_CAPACITY).map(animationOn)).toEqual(
-      Array.from({ length: INVENTORY_CAPACITY }, () => "none"),
+    expect(cells(container).slice(0, PUZZLE_CAPACITY).map(animationOn)).toEqual(
+      Array.from({ length: PUZZLE_CAPACITY }, () => "none"),
     );
   });
 
   // 8a is positional and 9i is per-tile, and the tile that overflows the rack
-  // is a reward tile almost every time — so the two collide on the eleventh
-  // cell. It is the arrival that did not land, so it rim-rejects.
-  it("rim-rejects an eleventh cell that holds a reward tile rather than firing it", () => {
-    const eleven = Array.from({ length: 11 }, (_, index) => tile(0, `t${index}`, index === 10));
-    const { container } = renderInventory({ tiles: eleven });
+  // is a reward tile every time — so the two collide on the sixth cell. It is
+  // the arrival that did not land, so it rim-rejects.
+  it("rim-rejects a sixth cell that holds a reward tile rather than firing it", () => {
+    const six = Array.from({ length: 6 }, (_, index) => tile(0, `t${index}`, index === 5));
+    const { container } = renderInventory({ tiles: six });
     expect(animationOn(railCells(container)[0])).toBe("oz-rim-reject");
   });
 
@@ -304,12 +297,11 @@ describe("TileInventory", () => {
     expect(cells(container)[1].textContent).toBe("3");
   });
 
-  // The only discard the product can actually reach. INVENTORY_CAPACITY plus
-  // REWARD_BONUS caps overflow at one tile, so GameScreen dispatches
-  // TOGGLE_DISCARD and CONFIRM_DISCARD from the same click handler; React
-  // batches them, and the rack is never once rendered with the tile's id in
-  // pendingDiscards. Measured in a browser against the real game: keying the
-  // exit off pendingDiscards meant 8c never played at all.
+  // The only discard the product can actually reach. PUZZLE_CAPACITY plus
+  // REWARD_BONUS caps overflow at one tile, so the one mark completes the
+  // discard in the reducer, and the rack is never once rendered with the
+  // tile's id in pendingDiscards. Measured in a browser against the real game:
+  // keying the exit off pendingDiscards meant 8c never played at all.
   it("tips off a discard that was never rendered as pending", () => {
     const tiles = [tile(1, "a"), tile(2, "b"), tile(3, "c")];
     const { container, rerender } = renderInventory({
@@ -397,7 +389,7 @@ describe("TileInventory", () => {
     expect(cellCount(sparse)).toBe(19);
   });
 
-  // The non-stepped grid is five columns wide, so five sockets fill one row and
+  // The grid is five columns wide, so five sockets fill one row and
   // six need the second.
   it("draws one row for five sockets and keeps two rows for six", () => {
     const { container: five } = renderInventory({ capacity: 5 });
@@ -414,38 +406,39 @@ describe("TileInventory", () => {
   // drawing the hand as it stood until the departure has played.
   it("draws the pre-discard hand while a seated tile departs, then the reducer's", () => {
     const before = railedRack();
-    const after = [...before.slice(0, 10)];
-    after[4] = before[10]!;
+    const after = [...before.slice(0, 5)];
+    after[2] = before[5]!;
     const { container, rerender } = renderInventory({ tiles: before, mode: "discard" });
     rerender({ tiles: after, mode: "readOnly" });
 
-    expect(cells(container)[4].textContent).toBe("4");
-    expect(cells(container)[5].textContent).toBe("5");
+    expect(cells(container)[2].textContent).toBe("2");
+    expect(cells(container)[3].textContent).toBe("3");
     expect(railCells(container)[0].textContent).toBe("7");
 
-    endAnimation(cells(container)[4]);
-    expect(cellCount(container)).toBe(10);
+    endAnimation(cells(container)[2]);
+    expect(cellCount(container)).toBe(5);
     expect(railCells(container)).toHaveLength(0);
-    expect(cells(container)[4].textContent).toBe("7");
-    expect(cells(container)[5].textContent).toBe("5");
+    expect(cells(container)[2].textContent).toBe("7");
+    expect(cells(container)[3].textContent).toBe("3");
   });
 
+  // No deal reaches two tiles past capacity, but the rack takes any excess.
   it("settles once, when the last of two departing tiles has played", () => {
     const before = [...railedRack(), tile(8, "rail-2", true)];
-    const after = [...before.slice(0, 10)];
-    after[2] = before[10]!;
-    after[6] = before[11]!;
+    const after = [...before.slice(0, 5)];
+    after[1] = before[5]!;
+    after[3] = before[6]!;
     const { container, rerender, onSettled } = renderInventory({ tiles: before, mode: "discard" });
     rerender({ tiles: after, mode: "readOnly" });
 
-    endAnimation(cells(container)[2]);
+    endAnimation(cells(container)[1]);
     expect(onSettled).not.toHaveBeenCalled();
-    endAnimation(cells(container)[6]);
+    endAnimation(cells(container)[3]);
     // Both rail tiles now drop into the freed seats (8a·2); the discard
     // settles when they land.
     expect(onSettled).not.toHaveBeenCalled();
-    endAnimation(cells(container)[2]);
-    endAnimation(cells(container)[6]);
+    endAnimation(cells(container)[1]);
+    endAnimation(cells(container)[3]);
     expect(onSettled).toHaveBeenCalledTimes(1);
   });
 
@@ -455,13 +448,13 @@ describe("TileInventory", () => {
   // handler undo the first, one id was never retired, and the run froze.
   it("settles when two departures end in the same batch", () => {
     const before = [...railedRack(), tile(8, "rail-2", true)];
-    const after = [...before.slice(0, 10)];
-    after[2] = before[10]!;
-    after[6] = before[11]!;
+    const after = [...before.slice(0, 5)];
+    after[1] = before[5]!;
+    after[3] = before[6]!;
     const { container, rerender, onSettled } = renderInventory({ tiles: before, mode: "discard" });
     rerender({ tiles: after, mode: "readOnly" });
 
-    const [first, second] = [cells(container)[2], cells(container)[6]];
+    const [first, second] = [cells(container)[1], cells(container)[3]];
     const endTogether = (pair: HTMLElement[]) =>
       act(() => {
         for (const cell of pair) {
@@ -471,7 +464,7 @@ describe("TileInventory", () => {
       });
     endTogether([first, second]);
     // The two perched tiles land together too.
-    endTogether([cells(container)[2], cells(container)[6]]);
+    endTogether([cells(container)[1], cells(container)[3]]);
     expect(onSettled).toHaveBeenCalledTimes(1);
   });
 
@@ -479,8 +472,8 @@ describe("TileInventory", () => {
   // falls into it from where it perched — the perch was real, so the fall is.
   it("drops the surviving rail tile into the freed seat, and settles when it lands", () => {
     const before = railedRack();
-    const after = [...before.slice(0, 10)];
-    after[4] = before[10]!;
+    const after = [...before.slice(0, 5)];
+    after[4] = before[5]!;
     const { container, rerender, onSettled } = renderInventory({ tiles: before, mode: "discard" });
     rerender({ tiles: after, mode: "readOnly" });
 
@@ -519,38 +512,14 @@ describe("TileInventory", () => {
     expect(animationOn(cells(container)[4])).not.toBe("oz-fire");
   });
 
-  // Classic's two-tile discard can take one seated tile and one rail tile:
-  // the rail tile slides off where it perched, while the other rail tile
-  // drops into the freed seat. The discard settles once, when that one lands.
-  it("settles once for a seated and a rail tile discarded together, when the survivor lands", () => {
-    const before = [...railedRack(), tile(8, "rail-2", true)];
-    const after = [...before.slice(0, 10)];
-    after[2] = before[11]!;
-    // Classic's twentieth submission seals capacity to 10; the rack stays drawn at 11 until the round changes.
-    const classic = { capacity: 10, stepped: true, drawnCapacity: 11 };
-    const { container, rerender, onSettled } = renderInventory({ tiles: before, mode: "discard", ...classic });
-    rerender({ tiles: after, mode: "readOnly" });
-
-    endAnimation(railCells(container)[0]);
-    expect(onSettled).not.toHaveBeenCalled();
-    endAnimation(cells(container)[2]);
-    expect(onSettled).not.toHaveBeenCalled();
-    expect(cells(container)[2].textContent).toBe("8");
-    expect(animationOn(cells(container)[2])).toBe("oz-perch-drop");
-
-    endAnimation(cells(container)[2]);
-    expect(onSettled).toHaveBeenCalledTimes(1);
-    expect(cellCount(container)).toBe(rackTier(classic.drawnCapacity).footprint);
-  });
-
   it("settles when the rail tile itself is the one discarded", () => {
     const before = railedRack();
     const { container, rerender, onSettled } = renderInventory({ tiles: before, mode: "discard" });
-    rerender({ tiles: before.slice(0, 10), mode: "readOnly" });
+    rerender({ tiles: before.slice(0, 5), mode: "readOnly" });
 
     endAnimation(railCells(container)[0]);
     expect(onSettled).toHaveBeenCalledTimes(1);
-    expect(cellCount(container)).toBe(10);
+    expect(cellCount(container)).toBe(5);
   });
 
   // With Next Round gone after a discard, a departure that never reports its
@@ -558,7 +527,7 @@ describe("TileInventory", () => {
   it("settles on animationcancel as well as animationend", () => {
     const before = railedRack();
     const { container, rerender, onSettled } = renderInventory({ tiles: before, mode: "discard" });
-    rerender({ tiles: before.slice(0, 10), mode: "readOnly" });
+    rerender({ tiles: before.slice(0, 5), mode: "readOnly" });
 
     // React has no onAnimationCancel, so the rack listens natively.
     fireEvent(railCells(container)[0], cancelEvent("oz-slide-off"));
@@ -571,7 +540,7 @@ describe("TileInventory", () => {
   it("ignores the cancel of the animation a departing cell replaced", () => {
     const before = railedRack();
     const { container, rerender, onSettled } = renderInventory({ tiles: before, mode: "discard" });
-    rerender({ tiles: before.slice(0, 10), mode: "readOnly" });
+    rerender({ tiles: before.slice(0, 5), mode: "readOnly" });
 
     fireEvent(railCells(container)[0], cancelEvent("oz-fire"));
     expect(onSettled).not.toHaveBeenCalled();
@@ -582,175 +551,5 @@ describe("TileInventory", () => {
     const { rerender, onSettled } = renderInventory({ tiles });
     rerender({ tiles: [tiles[0]] });
     expect(onSettled).not.toHaveBeenCalled();
-  });
-
-  describe("the stepped Classic rack", () => {
-    const hand = (count: number) =>
-      Array.from({ length: count }, (_, index) => tile((index % 10) as Digit, `h${index}`));
-
-    // The sizes' figures, and the small size's narrow 6 x 44 fallback, are CSS:
-    // a container query jsdom cannot evaluate. What the component owns is which
-    // size, and enough cells for its whole rows: the small size's fallback rows
-    // of six, and the mid size's rows of five.
-    it("steps its size with the drawn capacity: small above 15, mid above 10, home at 10 and below", () => {
-      expect(rackTier(20)).toEqual({ size: "small", top: 20, footprint: 24 });
-      expect(rackTier(16)).toEqual({ size: "small", top: 20, footprint: 24 });
-      expect(rackTier(15)).toEqual({ size: "mid", top: 15, footprint: 15 });
-      expect(rackTier(11)).toEqual({ size: "mid", top: 15, footprint: 15 });
-      expect(rackTier(10)).toEqual({ size: "home", top: 10, footprint: 10 });
-      expect(rackTier(6)).toEqual({ size: "home", top: 10, footprint: 10 });
-    });
-
-    it("names its size for the stylesheet", () => {
-      const { container } = renderInventory({ tiles: hand(15), capacity: 15, drawnCapacity: 15, stepped: true });
-      expect(container.querySelector(`.${rackStyles.rack}`)).toHaveAttribute("data-size", "mid");
-    });
-
-    // 24 cells: the narrow fallback's four rows of six. Wide, CSS draws the
-    // first 21 — seven by three — so the house plug is the one at index 20.
-    it("draws the whole-row footprint, sealing the house plugs at twenty", () => {
-      const { container } = renderInventory({ tiles: hand(20), capacity: 20, drawnCapacity: 20, stepped: true });
-      expect(cellCount(container)).toBe(24);
-      expect(plugCount(container)).toBe(4);
-      const plug = cells(container).find((cell) => cell.classList.contains(rackStyles.plug))!;
-      expect(plug).toHaveAttribute("aria-hidden", "true");
-    });
-
-    it("closes the socket a seal took before the round change, and seats no tile there", () => {
-      // Live 19 after the second submission; the rack is still drawn at 20.
-      const { container } = renderInventory({ tiles: hand(19), capacity: 19, drawnCapacity: 20, stepped: true });
-      expect(cellCount(container)).toBe(24);
-      expect(plugCount(container)).toBe(5);
-      expect(cells(container)[19].textContent).toBe("");
-    });
-
-    it("perches Classic's two-tile excess on the rail and keeps the grid whole", () => {
-      const { container } = renderInventory({ tiles: hand(21), capacity: 19, drawnCapacity: 20, stepped: true });
-      expect(cellCount(container)).toBe(24);
-      expect(railCells(container)).toHaveLength(2);
-    });
-
-    // 15 is three whole rows of five, so the mid size starts with no plug.
-    it("draws 15 cells and no plug at fifteen", () => {
-      const { container } = renderInventory({ tiles: hand(15), capacity: 15, drawnCapacity: 15, stepped: true });
-      expect(cellCount(container)).toBe(15);
-      expect(plugCount(container)).toBe(0);
-    });
-
-    it("draws the ten-socket rack from ten down, where only a closed socket is a plug", () => {
-      const { container } = renderInventory({ tiles: hand(9), capacity: 9, drawnCapacity: 10, stepped: true });
-      expect(cellCount(container)).toBe(10);
-      expect(plugCount(container)).toBe(1);
-    });
-
-    // M6: the socket a submission sealed closes where it is — the well shrinks
-    // from the bottom and a hairline rim closes over it — and stays closed.
-    it("closes the socket the seal took: the well collapses and the rim seals over it", () => {
-      const { container } = renderInventory({ tiles: hand(19), capacity: 19, drawnCapacity: 20, stepped: true });
-      const closing = cells(container)[19];
-      const [well, rim] = Array.from(closing.children) as HTMLElement[];
-      expect(animationOn(well)).toBe("oz-seal");
-      expect(animationOn(rim)).toBe("oz-seal-rim");
-      expect(well.style.animationDelay).toBe("");
-    });
-
-    // M6·0: the twenty-first socket seals under the entrance, once a run.
-    it("seals the house plug 240ms into the first render at twenty", () => {
-      const { container } = renderInventory({ tiles: hand(20), capacity: 20, drawnCapacity: 20, stepped: true });
-      const [well] = Array.from(cells(container)[20].children) as HTMLElement[];
-      expect(animationOn(well)).toBe("oz-seal");
-      expect(well.style.animationDelay).toBe("240ms");
-    });
-
-    // M6·1: at a size change the tiles fly from their old seats. Every size
-    // below twenty starts on whole rows, so no plug arrives with it.
-    it("re-seats every tile at a size change, and adds no plug", () => {
-      const tiles = hand(15);
-      // jsdom lays nothing out, so give each seat a layout per size: 44px
-      // tiles on a 46px pitch at the top, then 48px tiles on a 50px pitch 10px
-      // lower. The FLIP starts each tile where it was, at its old width.
-      let layout = { pitch: 46, top: 0, width: 44 };
-      const seatIndex = (element: HTMLElement) => Number(element.dataset.tile?.slice(1) ?? 0);
-      const spies = [
-        vi.spyOn(HTMLElement.prototype, "offsetLeft", "get").mockImplementation(function (this: HTMLElement) {
-          return seatIndex(this) * layout.pitch;
-        }),
-        vi.spyOn(HTMLElement.prototype, "offsetTop", "get").mockImplementation(() => layout.top),
-        vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockImplementation(() => layout.width),
-      ];
-      try {
-        const { container, rerender } = renderInventory({ tiles, capacity: 15, drawnCapacity: 16, stepped: true });
-        layout = { pitch: 50, top: 10, width: 48 };
-        rerender({ tiles, capacity: 15, drawnCapacity: 15, stepped: true });
-        expect(cellCount(container)).toBe(15);
-
-        const seated = cells(container).slice(0, 15);
-        seated.forEach((cell, index) => {
-          expect(cell.style.animationName).toBe("oz-reseat");
-          expect(cell.style.getPropertyValue("--fx")).toBe(`${index * -4}px`);
-          expect(cell.style.getPropertyValue("--fy")).toBe("-10px");
-          expect(Number(cell.style.getPropertyValue("--fs"))).toBeCloseTo(44 / 48, 5);
-          expect(cell.style.transformOrigin).toBe("0 0");
-        });
-      } finally {
-        for (const spy of spies) spy.mockRestore();
-      }
-    });
-
-    it("does not re-seat on a render that keeps the size", () => {
-      const tiles = hand(18);
-      const { container, rerender } = renderInventory({ tiles, capacity: 18, drawnCapacity: 19, stepped: true });
-      rerender({ tiles, capacity: 18, drawnCapacity: 18, stepped: true });
-      expect(cells(container)[0].style.animationName).toBe("");
-    });
-
-    // The re-seat's frame is written inline, and inline beats a class: left
-    // in place, a re-seated tile discarded later would keep computing
-    // oz-reseat instead of oz-slide-off, start no exit, fire no animationend,
-    // and — with no Next Round after a discard — freeze the run.
-    it("lets a re-seated tile leave by its own exit later in the run", () => {
-      const tiles = hand(15);
-      const { container, rerender, onSettled } = renderInventory({
-        tiles, capacity: 15, drawnCapacity: 16, stepped: true,
-      });
-      rerender({ tiles, capacity: 15, drawnCapacity: 15, stepped: true });
-      for (const cell of cells(container).slice(0, 15)) {
-        fireEvent(cell, Object.assign(new Event("animationend", { bubbles: true }), { animationName: "oz-reseat" }));
-      }
-
-      const railed = [...tiles, tile(7, "rail", true)];
-      rerender({ tiles: railed, capacity: 15, drawnCapacity: 15, stepped: true, mode: "discard" });
-      const after = [...tiles];
-      after[3] = railed[15]!;
-      rerender({ tiles: after, capacity: 15, drawnCapacity: 15, stepped: true, mode: "readOnly" });
-
-      const departing = cells(container)[3];
-      expect(animationOn(departing)).toBe("oz-slide-off");
-      endAnimation(departing);
-      endAnimation(cells(container)[3]); // the rail tile lands
-      expect(onSettled).toHaveBeenCalledTimes(1);
-    });
-
-    // A discard inside the 300ms re-seat: the leaving tile drops the re-seat
-    // for its exit at once, and the re-seat's cancel is not its exit ending.
-    it("plays the exit of a tile discarded while it is still re-seating", () => {
-      const tiles = hand(15);
-      const { container, rerender, onSettled } = renderInventory({
-        tiles, capacity: 15, drawnCapacity: 16, stepped: true,
-      });
-      rerender({ tiles, capacity: 15, drawnCapacity: 15, stepped: true });
-
-      const railed = [...tiles, tile(7, "rail", true)];
-      rerender({ tiles: railed, capacity: 15, drawnCapacity: 15, stepped: true, mode: "discard" });
-      const after = [...tiles];
-      after[3] = railed[15]!;
-      rerender({ tiles: after, capacity: 15, drawnCapacity: 15, stepped: true, mode: "readOnly" });
-
-      const departing = cells(container)[3];
-      expect(animationOn(departing)).toBe("oz-slide-off");
-      fireEvent(departing, cancelEvent("oz-reseat"));
-      expect(container.querySelector("[data-departing]")).not.toBeNull();
-      expect(onSettled).not.toHaveBeenCalled();
-    });
   });
 });

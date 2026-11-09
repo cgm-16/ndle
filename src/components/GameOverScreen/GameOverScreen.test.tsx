@@ -3,19 +3,19 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { I18nProvider } from "../../i18n/I18nContext";
 import type { ShareDependencies } from "../../services/sharing";
-import { CLASSIC_FLOOR } from "../../game/balance";
-import { makeEquation, makeTile } from "../../test/fixtures";
+import { makeEquation } from "../../test/fixtures";
 import { LanguageToggle } from "../LanguageToggle/LanguageToggle";
 import { GameOverScreen, type GameOverScreenProps } from "./GameOverScreen";
 import styles from "./GameOverScreen.module.css";
 
-const STATS = { mode: "endless", won: false, score: 7, totalRounds: 9, longestStreak: 4 } as const;
+// A table that ended early, two short of par: the run stopped on EQUATION.
+const STATS = { won: false, par: 7, rows: 8, score: 5, longestStreak: 4 } as const;
 const EQUATION = makeEquation(2, 3);
 const URL = "https://example.test/";
 const EN_TEXT =
-  "ozterisk — Rounds: 9\nScore: 7\nLongest streak: 4\n\nCan you beat it?\nhttps://example.test/";
+  "9dle — 2 short of par — Score: 5/8 · par 7\nLongest streak: 4\n\nCan you make par?\nhttps://example.test/";
 const KO_TEXT =
-  "ozterisk — 라운드: 9\n점수: 7\n최장 연속 정답: 4\n\n이 기록을 넘을 수 있나요?\nhttps://example.test/";
+  "구들 — 목표까지 2점 부족 — 점수: 5/8 · 목표 7\n최장 연속 정답: 4\n\n목표를 달성할 수 있나요?\nhttps://example.test/";
 
 function renderScreen(overrides: Partial<GameOverScreenProps> = {}) {
   const onPlayAgain = vi.fn();
@@ -27,8 +27,7 @@ function renderScreen(overrides: Partial<GameOverScreenProps> = {}) {
       <GameOverScreen
         equation={EQUATION}
         stats={STATS}
-        hand={[]}
-        url={URL}
+                url={URL}
         dependencies={dependencies}
         onPlayAgain={onPlayAgain}
         {...overrides}
@@ -39,43 +38,6 @@ function renderScreen(overrides: Partial<GameOverScreenProps> = {}) {
 }
 
 describe("GameOverScreen", () => {
-  // §1.10: a Classic win is complete, not stopped, so it names itself and
-  // shows no equation — there is nothing left to explain.
-  it("states Run Complete and its reason on a Classic win, with no equation", () => {
-    renderScreen({ stats: { ...STATS, mode: "classic", won: true } });
-    expect(screen.getByRole("heading", { name: "Run Complete" })).toBeInTheDocument();
-    expect(screen.getByText("You reached the floor with tiles in hand.")).toBeInTheDocument();
-    expect(screen.queryByText("Game Over")).not.toBeInTheDocument();
-    expect(screen.queryByText("2 × 3 =", { exact: false })).not.toBeInTheDocument();
-  });
-
-  // §1.12: a win's verdict is gold, not the loss's vermilion, and the slot
-  // the loss gives its terminal equation holds the floor's sockets with the
-  // tiles still in them.
-  it("sets a Classic win in gold and shows its final hand in the floor's sockets", () => {
-    const hand = [makeTile(1, "a"), makeTile(4, "b"), makeTile(4, "c"), makeTile(9, "d")];
-    renderScreen({ stats: { ...STATS, mode: "classic", won: true }, hand });
-
-    const strip = screen.getByRole("img", {
-      name: `Finished with 4 tiles in ${CLASSIC_FLOOR} sockets`,
-    });
-    expect(strip.children).toHaveLength(CLASSIC_FLOOR);
-    expect(within(strip).getAllByText(/^\d$/)).toHaveLength(4);
-    expect(screen.getByRole("heading", { name: "Run Complete" })).toHaveClass(styles.won);
-  });
-
-  it("keeps the loss's heading out of gold and shows no final hand", () => {
-    renderScreen({ stats: { ...STATS, mode: "classic", won: false }, hand: [makeTile(3, "a")] });
-    expect(screen.getByRole("heading", { name: "Game Over" })).not.toHaveClass(styles.won);
-    expect(screen.queryByRole("img")).not.toBeInTheDocument();
-  });
-
-  it("renders a Classic loss like an Endless one", () => {
-    renderScreen({ stats: { ...STATS, mode: "classic", won: false } });
-    expect(screen.getByRole("heading", { name: "Game Over" })).toBeInTheDocument();
-    expect(screen.getByText("Not enough tiles left to answer.")).toBeInTheDocument();
-  });
-
   it("renders the terminal equation and its reason inside the main landmark", () => {
     renderScreen({ equation: makeEquation(7, 8) });
 
@@ -99,42 +61,31 @@ describe("GameOverScreen", () => {
     expect(within(main).getByText("7 × 8 =")).toBeInTheDocument();
   });
 
-  it("shows the run statistics", () => {
-    renderScreen();
-    expect(screen.getByRole("heading", { name: "Game Over" })).toBeInTheDocument();
-    expect(screen.getByText("Score")).toBeInTheDocument();
-    expect(screen.getByText("7")).toBeInTheDocument();
-    expect(screen.getByText("Rounds played")).toBeInTheDocument();
-    expect(screen.getByText("9")).toBeInTheDocument();
-    expect(screen.getByText("Longest streak")).toBeInTheDocument();
-    expect(screen.getByText("4")).toBeInTheDocument();
-  });
-
-  it("orders the statistics rounds, score, longest streak", () => {
+  it("orders the statistics score, par, longest streak", () => {
     renderScreen();
 
-    const rounds = screen.getByText("Rounds played");
     const score = screen.getByText("Score");
+    const par = screen.getByText("Par");
     const streak = screen.getByText("Longest streak");
 
     // DOCUMENT_POSITION_FOLLOWING (4) means the argument node comes after `this` node.
-    expect(rounds.compareDocumentPosition(score) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(score.compareDocumentPosition(streak) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(score.compareDocumentPosition(par) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(par.compareDocumentPosition(streak) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   // Mirrors the HUD's emphasis guard in App.test.tsx: reading getComputedStyle
   // catches a `.primary` rule that loses the cascade, which a className
   // assertion would not.
-  it("renders the rounds value at a larger computed font size than score", () => {
+  it("renders the score at a larger computed font size than par", () => {
     renderScreen();
 
-    const roundsValue = screen.getByText("Rounds played").nextElementSibling as HTMLElement;
     const scoreValue = screen.getByText("Score").nextElementSibling as HTMLElement;
+    const parValue = screen.getByText("Par").nextElementSibling as HTMLElement;
 
-    const roundsFontSize = parseFloat(getComputedStyle(roundsValue).fontSize);
     const scoreFontSize = parseFloat(getComputedStyle(scoreValue).fontSize);
+    const parFontSize = parseFloat(getComputedStyle(parValue).fontSize);
 
-    expect(roundsFontSize).toBeGreaterThan(scoreFontSize);
+    expect(scoreFontSize).toBeGreaterThan(parFontSize);
   });
 
   // The R shortcut has no other affordance in the product, so its hint has to
@@ -146,8 +97,7 @@ describe("GameOverScreen", () => {
         <GameOverScreen
           equation={EQUATION}
           stats={STATS}
-          hand={[]}
-          url={URL}
+                    url={URL}
           dependencies={{ writeClipboard: vi.fn().mockResolvedValue(undefined) }}
           onPlayAgain={vi.fn()}
         />
@@ -226,21 +176,6 @@ describe("GameOverScreen", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Result copied.");
   });
 
-  // Queried by the CSS Modules key rather than by role: the chop is
-  // aria-hidden, and a key that does not exist would render class="undefined"
-  // with no error, so the selector is the guard.
-  it("stamps the chop when a copy succeeds, with the status region still announcing", async () => {
-    const writeClipboard = vi.fn().mockResolvedValue(undefined);
-    const { container } = renderScreen({ dependencies: { writeClipboard } });
-
-    expect(container.querySelector(`.${styles.chop}`)).toBeNull();
-
-    await userEvent.click(screen.getByRole("button", { name: "Copy Result" }));
-
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Result copied."));
-    expect(container.querySelector(`.${styles.chop}`)).toBeInTheDocument();
-  });
-
   it("shows an inline failure status when the clipboard write rejects", async () => {
     const writeClipboard = vi.fn().mockRejectedValue(new Error("denied"));
     renderScreen({ dependencies: { writeClipboard } });
@@ -261,8 +196,7 @@ describe("GameOverScreen", () => {
         <GameOverScreen
           equation={EQUATION}
           stats={STATS}
-          hand={[]}
-          url={URL}
+                    url={URL}
           dependencies={{ nativeShare, writeClipboard }}
           onPlayAgain={vi.fn()}
         />
@@ -279,68 +213,21 @@ describe("GameOverScreen", () => {
     await waitFor(() => expect(nativeShare).toHaveBeenCalledTimes(2));
     expect(nativeShare).toHaveBeenNthCalledWith(2, { text: KO_TEXT, url: URL });
   });
-
-  // 11C. Cascade resolution, which jsdom does decide; that the stamp actually
-  // plays, how long it holds and what it looks like are T56's to measure in a
-  // browser. The animation names are longhands rather than the `animation`
-  // shorthand precisely so this read is possible at all.
-  it("stamps the chop only once a copy has succeeded", async () => {
-    const { container } = renderScreen({
-      dependencies: { writeClipboard: vi.fn().mockResolvedValue(undefined) },
-    });
-
-    expect(container.querySelector(`.${styles.chop}`)).toBeNull();
-
-    await userEvent.click(screen.getByRole("button", { name: "Share" }));
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Result copied."));
-
-    const chop = container.querySelector(`.${styles.chop}`);
-    expect(chop).not.toBeNull();
-    expect(getComputedStyle(chop as Element).animationName).toBe("oz-chop");
-    // The chop is reinforcement; the status region is the confirmation. A
-    // screen reader must hear the copy from the region and never from here.
-    expect(chop).toHaveAttribute("aria-hidden", "true");
-  });
-
-  it("leaves the chop unstamped when the share fails", async () => {
-    const { container } = renderScreen({
-      dependencies: {
-        nativeShare: vi.fn().mockRejectedValue(new Error("cancelled")),
-        writeClipboard: vi.fn().mockResolvedValue(undefined),
-      },
-    });
-
-    await userEvent.click(screen.getByRole("button", { name: "Share" }));
-    await waitFor(() =>
-      expect(screen.getByRole("status")).toHaveTextContent("Could not share or copy the result."),
-    );
-
-    expect(container.querySelector(`.${styles.chop}`)).toBeNull();
-  });
 });
 
-describe("GameOverScreen, Puzzle", () => {
-  const PUZZLE_STATS = {
-    mode: "puzzle",
-    won: true,
-    par: 7,
-    rows: 8,
-    score: 7,
-    totalRounds: 8,
-    longestStreak: 4,
-  } as const;
+describe("GameOverScreen verdicts", () => {
+  const PUZZLE_STATS = { won: true, par: 7, rows: 8, score: 7, longestStreak: 4 } as const;
   const statValue = (label: string) => screen.getByText(label).nextElementSibling?.textContent;
 
   // The table is finished and par is made: nothing is left to explain, so the
   // slot a loss gives its equation carries only the reason.
-  it("sets made par in gold, with no equation, no final hand and no Rounds played", () => {
-    renderScreen({ stats: PUZZLE_STATS, hand: [makeTile(2, "a"), makeTile(7, "b")] });
+  it("sets made par in gold, with no equation", () => {
+    renderScreen({ equation: null, stats: PUZZLE_STATS });
 
     expect(screen.getByRole("heading", { name: "Made par" })).toHaveClass(styles.won);
     expect(screen.getByText("All eight rows played.")).toBeInTheDocument();
     expect(screen.queryByText("2 × 3 =", { exact: false })).not.toBeInTheDocument();
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
-    expect(screen.queryByText("Rounds played")).not.toBeInTheDocument();
     expect(statValue("Score")).toBe("7 / 8");
     expect(statValue("Par")).toBe("7");
     expect(statValue("Longest streak")).toBe("4");
@@ -352,19 +239,19 @@ describe("GameOverScreen, Puzzle", () => {
   // `.reason` that keeps its own size reads back unset in jsdom, which
   // substitutes no var().
   it("keeps the reason a caption when no equation precedes it", () => {
-    renderScreen({ stats: PUZZLE_STATS });
+    renderScreen({ equation: null, stats: PUZZLE_STATS });
 
     const reason = screen.getByText("All eight rows played.");
     expect(getComputedStyle(reason).fontSize).not.toBe("var(--size-title)");
   });
 
   it("names the shortfall in ink when par is missed on a finished table", () => {
-    renderScreen({ stats: { ...PUZZLE_STATS, won: false, score: 5 } });
+    renderScreen({ equation: null, stats: { ...PUZZLE_STATS, won: false, score: 5 } });
 
     const heading = screen.getByRole("heading", { name: "2 short of par" });
     expect(heading).not.toHaveClass(styles.won);
-    // Ink, not Game Over's vermilion: a short table is a score to read, not a
-    // tile leaving. Read by computed colour, which jsdom resolves from the
+    // Ink, not vermilion: a short table is a score to read, not a tile
+    // leaving. Read by computed colour, which jsdom resolves from the
     // cascade without substituting var().
     expect(heading).toHaveClass(styles.shortOfPar);
     expect(getComputedStyle(heading).color).toBe("var(--text-primary)");
@@ -372,18 +259,10 @@ describe("GameOverScreen, Puzzle", () => {
     expect(statValue("Score")).toBe("5 / 8");
   });
 
-  it("keeps Game Over vermilion", () => {
-    renderScreen({ stats: { ...STATS, mode: "classic", won: false } });
-
-    expect(getComputedStyle(screen.getByRole("heading", { name: "Game Over" })).color).toBe(
-      "var(--verm-400)",
-    );
-  });
-
   it("keeps the terminal equation and the loss reason when the run ended early", () => {
     renderScreen({
       equation: makeEquation(7, 8),
-      stats: { ...PUZZLE_STATS, won: false, score: 1, totalRounds: 3 },
+      stats: { ...PUZZLE_STATS, won: false, score: 1 },
     });
 
     expect(screen.getByText("7 × 8 =")).toBeInTheDocument();
@@ -393,14 +272,14 @@ describe("GameOverScreen, Puzzle", () => {
     expect(screen.getByRole("heading", { name: "6 short of par" })).toBeInTheDocument();
   });
 
-  it("copies the Puzzle share text", async () => {
-    const { dependencies } = renderScreen({ stats: PUZZLE_STATS });
+  it("copies the share text", async () => {
+    const { dependencies } = renderScreen({ equation: null, stats: PUZZLE_STATS });
 
     await userEvent.click(screen.getByRole("button", { name: "Copy Result" }));
 
     await waitFor(() => expect(dependencies.writeClipboard).toHaveBeenCalledTimes(1));
     expect(dependencies.writeClipboard).toHaveBeenCalledWith(
-      "ozterisk Puzzle — Made par — Score: 7/8 · par 7\nLongest streak: 4\n\nCan you make par?\nhttps://example.test/",
+      "9dle — Made par — Score: 7/8 · par 7\nLongest streak: 4\n\nCan you make par?\nhttps://example.test/",
     );
   });
 });

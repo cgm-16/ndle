@@ -8,27 +8,20 @@ import type { GameState, PuzzleTable } from "../../game/types";
 import { I18nProvider } from "../../i18n/I18nContext";
 import {
   makeAnsweringState,
-  makeEquation,
-  makeFaceTile,
   makeFeedbackState,
   makeGameOverState,
-  makeNbrTile,
-  makeOverflowInventory,
   makeOverflowState,
   makePuzzleRow,
-  makeTile,
-  PUZZLE_SAMPLE,
+  parLineAt,
+  PUZZLE_SAMPLE_PAR_LINE,
+  playRow,
+  selectDigits,
   sequentialIds,
+  tileWith,
 } from "../../test/fixtures";
 import slotStyles from "../AnswerSlots/AnswerSlots.module.css";
 import rackStyles from "../TileInventory/TileInventory.module.css";
 import { GameScreen, type GameScreenProps } from "./GameScreen";
-
-// A 12-tile inventory (excess 2), where a first mark is only a mark.
-// makeOverflowState's 11-tile default completes on its first mark, so
-// covering the unfinished state needs an inventory override, not a change to
-// that default (which every other overflow test still relies on).
-const TWELVE_TILE_INVENTORY = makeOverflowInventory(12);
 
 function renderScreen(state: GameState) {
   const dispatch = vi.fn();
@@ -43,100 +36,62 @@ function renderScreen(state: GameState) {
   return { dispatch, onSubmit, onNextRound };
 }
 
+// Row 1 of the sample, 3 × 5 = 15, with both slots filled.
+const FULL_ANSWER = () => selectDigits(makeAnsweringState(), 1, 5);
+
 describe("GameScreen interactions", () => {
   // 1. clicking duplicate digits dispatches the exact clicked ID
   it("dispatches SELECT_TILE with the exact clicked tile id among duplicate digits", async () => {
-    const equation = makeEquation(2, 3); // product 6, one slot
-    const inventory = [makeTile(2, "b"), makeTile(2, "c")];
-    const state = makeAnsweringState(equation, { inventory, selectedTiles: [] });
+    const state = parLineAt(8); // 1 2 7 8 8
     const { dispatch } = renderScreen(state);
 
-    const duplicates = screen.getAllByRole("button", { name: "Digit 2" });
+    const duplicates = screen.getAllByRole("button", { name: "Digit 8" });
     await userEvent.click(duplicates[1]);
 
-    expect(dispatch).toHaveBeenCalledWith({ type: "SELECT_TILE", tileId: "c" });
+    const second = state.inventory.filter((tile) => tile.digit === 8)[1]!;
+    expect(dispatch).toHaveBeenCalledWith({ type: "SELECT_TILE", tileId: second.id });
   });
 
   // 2. digit key chooses the first matching sorted inventory tile
   it("selects the first matching sorted inventory tile on a digit key press", async () => {
-    const equation = makeEquation(2, 3);
-    const inventory = [makeTile(2, "b"), makeTile(2, "c")];
-    const state = makeAnsweringState(equation, { inventory, selectedTiles: [] });
+    const state = parLineAt(8);
     const { dispatch } = renderScreen(state);
 
-    await userEvent.keyboard("2");
+    await userEvent.keyboard("8");
 
-    expect(dispatch).toHaveBeenCalledWith({ type: "SELECT_TILE", tileId: "b" });
+    expect(dispatch).toHaveBeenCalledWith({ type: "SELECT_TILE", tileId: tileWith(state, 8).id });
   });
 
   // 3. filled slots reject additional digits
   it("does not dispatch on a digit key press when all answer slots are already filled", async () => {
-    const equation = makeEquation(2, 3); // one slot
-    const inventory = [makeTile(4, "extra")];
-    const selectedTiles = [makeTile(6, "sel")];
-    const state = makeAnsweringState(equation, { inventory, selectedTiles });
+    const state = selectDigits(parLineAt(3), 9); // 3 × 3, one slot
     const { dispatch } = renderScreen(state);
 
-    await userEvent.keyboard("4");
+    await userEvent.keyboard("1");
 
     expect(dispatch).not.toHaveBeenCalled();
   });
 
-  describe("digit keys and face tiles (§1.4a)", () => {
-    const equation = makeEquation(2, 2); // product 4, one slot
-    const answering = (inventory: GameState["inventory"]) =>
-      makeAnsweringState(equation, { mode: "classic", inventory, selectedTiles: [] });
-
-    it("takes a digit tile over any face holding the digit", async () => {
-      const { dispatch } = renderScreen(answering([makeTile(4, "four"), makeFaceTile("wild")]));
-      await userEvent.keyboard("4");
-      expect(dispatch).toHaveBeenCalledWith({ type: "SELECT_TILE", tileId: "four" });
-    });
-
-    it("takes the narrowest face when no digit tile holds it", async () => {
-      const { dispatch } = renderScreen(answering([makeFaceTile("low"), makeNbrTile(4)]));
-      await userEvent.keyboard("4");
-      expect(dispatch).toHaveBeenCalledWith({ type: "SELECT_TILE", tileId: "nbr-4" });
-    });
-
-    it("breaks a tie between equally narrow faces by rack order", async () => {
-      const { dispatch } = renderScreen(answering([makeFaceTile("even"), makeFaceTile("low")]));
-      await userEvent.keyboard("4");
-      expect(dispatch).toHaveBeenCalledWith({ type: "SELECT_TILE", tileId: "face-even" });
-    });
-
-    it("never marks a face in overflow", async () => {
-      // Only the wildcard holds a 7: makeOverflowInventory's lone 7 is dropped.
-      const inventory = [
-        makeFaceTile("wild"),
-        ...makeOverflowInventory(10).filter((tile) => !("digit" in tile) || tile.digit !== 7),
-      ];
-      const { dispatch } = renderScreen(
-        makeOverflowState(equation, { mode: "classic", inventory, totalRounds: 30 }),
-      );
-      await userEvent.keyboard("7");
-      expect(dispatch).not.toHaveBeenCalled();
-    });
+  it("selects the tile holding the pressed digit", async () => {
+    const state = makeAnsweringState();
+    const { dispatch } = renderScreen(state);
+    await userEvent.keyboard("4");
+    expect(dispatch).toHaveBeenCalledWith({ type: "SELECT_TILE", tileId: tileWith(state, 4).id });
   });
 
   // 4. Backspace returns the most recent selected tile
   it("returns the most recently selected tile on Backspace", async () => {
-    const equation = makeEquation(7, 8); // product 56, two slots
-    const selectedTiles = [makeTile(5, "first"), makeTile(6, "second")];
-    const state = makeAnsweringState(equation, { inventory: [], selectedTiles });
+    const state = FULL_ANSWER();
     const { dispatch } = renderScreen(state);
 
     await userEvent.keyboard("{Backspace}");
 
-    expect(dispatch).toHaveBeenCalledWith({ type: "RETURN_TILE", tileId: "second" });
+    expect(dispatch).toHaveBeenCalledWith({ type: "RETURN_TILE", tileId: state.selectedTiles[1]!.id });
   });
 
   // 4b. Escape clears the entire selection
   it("dispatches CLEAR_SELECTION on Escape when tiles are selected", async () => {
-    const equation = makeEquation(7, 8); // product 56, two slots
-    const selectedTiles = [makeTile(5, "first"), makeTile(6, "second")];
-    const state = makeAnsweringState(equation, { inventory: [], selectedTiles });
-    const { dispatch } = renderScreen(state);
+    const { dispatch } = renderScreen(FULL_ANSWER());
 
     await userEvent.keyboard("{Escape}");
 
@@ -144,9 +99,7 @@ describe("GameScreen interactions", () => {
   });
 
   it("does not dispatch on Escape when nothing is selected", async () => {
-    const equation = makeEquation(7, 8);
-    const state = makeAnsweringState(equation, { inventory: [], selectedTiles: [] });
-    const { dispatch } = renderScreen(state);
+    const { dispatch } = renderScreen(makeAnsweringState());
 
     await userEvent.keyboard("{Escape}");
 
@@ -155,12 +108,7 @@ describe("GameScreen interactions", () => {
 
   // 5. Enter submits only when ready
   it("submits on Enter when all answer slots are filled", async () => {
-    const equation = makeEquation(7, 8);
-    const state = makeAnsweringState(equation, {
-      inventory: [],
-      selectedTiles: [makeTile(5, "a"), makeTile(6, "b")],
-    });
-    const { onSubmit } = renderScreen(state);
+    const { onSubmit } = renderScreen(FULL_ANSWER());
 
     await userEvent.keyboard("{Enter}");
 
@@ -168,12 +116,7 @@ describe("GameScreen interactions", () => {
   });
 
   it("does not submit on Enter when an answer slot is still empty", async () => {
-    const equation = makeEquation(7, 8);
-    const state = makeAnsweringState(equation, {
-      inventory: [],
-      selectedTiles: [makeTile(5, "a")],
-    });
-    const { onSubmit } = renderScreen(state);
+    const { onSubmit } = renderScreen(selectDigits(makeAnsweringState(), 1));
 
     await userEvent.keyboard("{Enter}");
 
@@ -181,23 +124,8 @@ describe("GameScreen interactions", () => {
   });
 
   // 6. Enter has no overflow action: there is nothing to confirm (§1.11)
-  it("does nothing on Enter in overflow, even with marks placed", async () => {
-    const equation = makeEquation(3, 3);
-    const state = makeOverflowState(equation, {
-      inventory: TWELVE_TILE_INVENTORY,
-      pendingDiscards: ["tile-0"],
-    });
-    const { dispatch } = renderScreen(state);
-
-    await userEvent.keyboard("{Enter}");
-
-    expect(dispatch).not.toHaveBeenCalled();
-  });
-
   it("does not confirm discard on Enter when the marked count is short of the excess", async () => {
-    const equation = makeEquation(3, 3);
-    const state = makeOverflowState(equation, { pendingDiscards: [] });
-    const { dispatch } = renderScreen(state);
+    const { dispatch } = renderScreen(makeOverflowState());
 
     await userEvent.keyboard("{Enter}");
 
@@ -206,9 +134,7 @@ describe("GameScreen interactions", () => {
 
   // 7. Enter advances from feedback
   it("advances to the next round on Enter during feedback", async () => {
-    const equation = makeEquation(3, 3);
-    const state = makeFeedbackState(equation);
-    const { onNextRound } = renderScreen(state);
+    const { onNextRound } = renderScreen(makeFeedbackState());
 
     await userEvent.keyboard("{Enter}");
 
@@ -218,10 +144,7 @@ describe("GameScreen interactions", () => {
   // 8. disabled shortcuts dispatch nothing
   describe("disabled keyboard shortcuts are no-ops", () => {
     it("ignores a digit key held with a modifier", async () => {
-      const equation = makeEquation(2, 3);
-      const inventory = [makeTile(4, "a")];
-      const state = makeAnsweringState(equation, { inventory, selectedTiles: [] });
-      const { dispatch } = renderScreen(state);
+      const { dispatch } = renderScreen(makeAnsweringState());
 
       await userEvent.keyboard("{Meta>}4{/Meta}");
 
@@ -229,12 +152,7 @@ describe("GameScreen interactions", () => {
     });
 
     it("ignores a repeated Enter keydown", () => {
-      const equation = makeEquation(7, 8);
-      const state = makeAnsweringState(equation, {
-        inventory: [],
-        selectedTiles: [makeTile(5, "a"), makeTile(6, "b")],
-      });
-      const { onSubmit } = renderScreen(state);
+      const { onSubmit } = renderScreen(FULL_ANSWER());
 
       fireEvent.keyDown(window, { key: "Enter", repeat: true });
 
@@ -242,12 +160,9 @@ describe("GameScreen interactions", () => {
     });
 
     it("ignores a digit key with no matching tile in inventory", async () => {
-      const equation = makeEquation(2, 3);
-      const inventory = [makeTile(4, "a")];
-      const state = makeAnsweringState(equation, { inventory, selectedTiles: [] });
-      const { dispatch } = renderScreen(state);
+      const { dispatch } = renderScreen(makeAnsweringState()); // 1 4 5 7 9
 
-      await userEvent.keyboard("9");
+      await userEvent.keyboard("2");
 
       expect(dispatch).not.toHaveBeenCalled();
     });
@@ -255,10 +170,8 @@ describe("GameScreen interactions", () => {
 
   // 9. intentional incorrect selection can be submitted
   it("allows submitting an intentionally incorrect answer via the Submit button", async () => {
-    const equation = makeEquation(5, 6); // correct product is 30
-    const selectedTiles = [makeTile(6, "a"), makeTile(5, "b")]; // deliberately wrong: 65
-    const state = makeAnsweringState(equation, { inventory: [], selectedTiles });
-    const { onSubmit } = renderScreen(state);
+    // The sacrifice: 57 for 15.
+    const { onSubmit } = renderScreen(selectDigits(makeAnsweringState(), 5, 7));
 
     const submitButton = screen.getByRole("button", { name: "Submit" });
     expect(submitButton).toBeEnabled();
@@ -269,31 +182,19 @@ describe("GameScreen interactions", () => {
 
   // 10. Clear button visibility follows selection state
   it("disables Clear when nothing is selected", () => {
-    const equation = makeEquation(5, 6);
-    const state = makeAnsweringState(equation, { inventory: [], selectedTiles: [] });
-    renderScreen(state);
+    renderScreen(makeAnsweringState());
 
     expect(screen.getByRole("button", { name: "Clear" })).toBeDisabled();
   });
 
   it("enables Clear once a tile is chosen", () => {
-    const equation = makeEquation(5, 6);
-    const state = makeAnsweringState(equation, {
-      inventory: [],
-      selectedTiles: [makeTile(3, "sel")],
-    });
-    renderScreen(state);
+    renderScreen(selectDigits(makeAnsweringState(), 4));
 
     expect(screen.getByRole("button", { name: "Clear" })).toBeEnabled();
   });
 
   it("dispatches CLEAR_SELECTION when Clear is clicked", async () => {
-    const equation = makeEquation(5, 6);
-    const state = makeAnsweringState(equation, {
-      inventory: [],
-      selectedTiles: [makeTile(3, "sel")],
-    });
-    const { dispatch } = renderScreen(state);
+    const { dispatch } = renderScreen(selectDigits(makeAnsweringState(), 4));
 
     await userEvent.click(screen.getByRole("button", { name: "Clear" }));
 
@@ -309,9 +210,7 @@ describe("GameScreen interactions", () => {
   // in that it is a single path, whichever side of the guard it runs on.
   describe("Enter does not double-fire when the phase action button has focus", () => {
     it("calls onNextRound exactly once with Next Round focused", async () => {
-      const equation = makeEquation(3, 3);
-      const state = makeFeedbackState(equation);
-      const { onNextRound } = renderScreen(state);
+      const { onNextRound } = renderScreen(makeFeedbackState());
 
       screen.getByRole("button", { name: "Next Round" }).focus();
       await userEvent.keyboard("{Enter}");
@@ -320,12 +219,7 @@ describe("GameScreen interactions", () => {
     });
 
     it("calls onSubmit exactly once with Submit focused", async () => {
-      const equation = makeEquation(7, 8);
-      const state = makeAnsweringState(equation, {
-        inventory: [],
-        selectedTiles: [makeTile(5, "a"), makeTile(6, "b")],
-      });
-      const { onSubmit } = renderScreen(state);
+      const { onSubmit } = renderScreen(FULL_ANSWER());
 
       screen.getByRole("button", { name: "Submit" }).focus();
       await userEvent.keyboard("{Enter}");
@@ -344,12 +238,7 @@ describe("GameScreen interactions", () => {
     it("clears instead of submitting with Clear focused", async () => {
       // Both conditions hold together by construction: Clear is enabled
       // whenever a tile is selected, and a full set of slots implies that.
-      const equation = makeEquation(7, 8);
-      const state = makeAnsweringState(equation, {
-        inventory: [],
-        selectedTiles: [makeTile(5, "a"), makeTile(6, "b")],
-      });
-      const { dispatch, onSubmit } = renderScreen(state);
+      const { dispatch, onSubmit } = renderScreen(FULL_ANSWER());
 
       screen.getByRole("button", { name: "Clear" }).focus();
       await userEvent.keyboard("{Enter}");
@@ -365,21 +254,17 @@ describe("GameScreen phase composition", () => {
   // the product: printing it here hands the player the answer they are being
   // asked for.
   it("does not print the product while the round is live", () => {
-    const equation = makeEquation(3, 4); // product 12
-    const state = makeAnsweringState(equation, { inventory: [makeTile(1, "a")] });
-    renderScreen(state);
+    renderScreen(makeAnsweringState()); // 3 × 5 = 15
 
-    expect(screen.getByText("3 × 4 =")).toBeInTheDocument();
-    expect(screen.queryByText("12")).not.toBeInTheDocument();
+    expect(screen.getByText("3 × 5 =")).toBeInTheDocument();
+    expect(screen.queryByText("15")).not.toBeInTheDocument();
   });
 
   it("orders HUD, equation, Submit, and inventory for the answering phase", () => {
-    const equation = makeEquation(3, 4);
-    const state = makeAnsweringState(equation, { inventory: [makeTile(1, "a")] });
-    renderScreen(state);
+    renderScreen(makeAnsweringState());
 
     const hud = screen.getByText("Score").closest("dl");
-    const equationEl = screen.getByText("3 × 4 =");
+    const equationEl = screen.getByText("3 × 5 =");
     const submit = screen.getByRole("button", { name: "Submit" });
     const inventoryTile = screen.getByRole("button", { name: "Digit 1" });
     expect(hud).not.toBeNull();
@@ -391,9 +276,7 @@ describe("GameScreen phase composition", () => {
   });
 
   it("renders interactive answer slots and a select-mode inventory in answering, without feedback", () => {
-    const equation = makeEquation(3, 4);
-    const state = makeAnsweringState(equation, { inventory: [makeTile(1, "a")] });
-    renderScreen(state);
+    renderScreen(makeAnsweringState());
 
     expect(screen.getByRole("button", { name: "Answer slot 1: empty" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Digit 1" })).toBeEnabled();
@@ -401,23 +284,13 @@ describe("GameScreen phase composition", () => {
   });
 
   it("keeps the submitted tiles on screen in feedback with no answer-slot button", () => {
-    const equation = makeEquation(3, 4); // product 12, two slots
-    // Digits 5 and 6 appear in neither the equation, the submitted value, the
-    // correct value, nor the inventory, so getByText finds only the slots.
-    const state = makeFeedbackState(equation, {
-      inventory: [],
-      lastResult: {
-        kind: "incorrect",
-        submittedValue: 0,
-        correctValue: equation.product,
-        submittedTiles: [makeTile(5, "a"), makeTile(6, "b")],
-        rewardTileIds: [],
-      },
-    });
-    renderScreen(state);
+    // The sacrifice, 5 then 7. The ledger draws digits too, so the slots are
+    // read on their own.
+    renderScreen(makeFeedbackState());
 
-    expect(screen.getByText("5")).toBeInTheDocument();
-    expect(screen.getByText("6")).toBeInTheDocument();
+    const slots = document.querySelector<HTMLElement>(`.${slotStyles.slots}`)!;
+    expect(within(slots).getByText("5")).toBeInTheDocument();
+    expect(within(slots).getByText("7")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Answer slot/ })).not.toBeInTheDocument();
   });
 
@@ -427,27 +300,18 @@ describe("GameScreen phase composition", () => {
      the round on screen — one ring at 3 rather than three is what says the
      count travelled rather than a constant. */
   it("gates the streak ladder on the streak the judged answer earned", () => {
-    const equation = makeEquation(3, 4); // product 12, two slots
-    const state = makeFeedbackState(equation, {
-      currentStreak: 3,
-      lastResult: {
-        kind: "correct",
-        submittedValue: equation.product,
-        correctValue: equation.product,
-        submittedTiles: [makeTile(1, "a"), makeTile(2, "b")],
-        rewardTileIds: [],
-      },
-    });
+    // Row 4's 7, the third answer since the sacrifice, after its discard.
+    const ids = sequentialIds();
+    const state = playRow(parLineAt(4, ids), PUZZLE_SAMPLE_PAR_LINE[3]!, ids);
+    expect(state.currentStreak).toBe(3);
     renderScreen(state);
 
-    // One ring per filled slot, and the answer fills two.
-    expect(document.querySelectorAll(`.${slotStyles.ring}`)).toHaveLength(2);
+    // One ring per filled slot, and the answer fills one.
+    expect(document.querySelectorAll(`.${slotStyles.ring}`)).toHaveLength(1);
   });
 
   it("renders a read-only inventory, feedback, and Next Round in feedback, with no answer-slot button", () => {
-    const equation = makeEquation(3, 3);
-    const state = makeFeedbackState(equation, { inventory: [makeTile(1, "a")] });
-    renderScreen(state);
+    renderScreen(makeFeedbackState());
 
     const status = screen.getByRole("status");
     const nextRound = screen.getByRole("button", { name: "Next Round" });
@@ -462,19 +326,14 @@ describe("GameScreen phase composition", () => {
   });
 
   it("renders a discard-mode inventory, preserved feedback, and the instruction with no Confirm in overflow", () => {
-    const equation = makeEquation(3, 3);
-    const state = makeOverflowState(equation, {
-      inventory: TWELVE_TILE_INVENTORY,
-      pendingDiscards: ["tile-0"],
-    });
-    renderScreen(state);
+    renderScreen(makeOverflowState());
 
     const status = screen.getByRole("status");
-    expect(status).toHaveTextContent("Incorrect");
-    const instruction = screen.getByText("Choose 2 tiles to discard.");
+    expect(status).toHaveTextContent("Correct");
+    const instruction = screen.getByText("Choose a tile to discard.");
     expect(screen.queryByRole("button", { name: "Confirm Discard" })).not.toBeInTheDocument();
-    const discardTile = screen.getByRole("button", { name: "Digit 0, Marked for discard" });
-    expect(discardTile).toHaveAttribute("aria-pressed", "true");
+    const discardTile = screen.getByRole("button", { name: "Digit 1" });
+    expect(discardTile).toHaveAttribute("aria-pressed", "false");
 
     // HUD -> equation/feedback context -> phase action -> inventory (§1.10).
     expect(status.compareDocumentPosition(instruction) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -485,25 +344,23 @@ describe("GameScreen phase composition", () => {
   // it is inserted, so the region has to exist, empty, before the verdict
   // arrives in it (#31).
   it("keeps the feedback status region mounted, empty, from answering into feedback", () => {
-    const equation = makeEquation(3, 3);
     const screenFor = (state: GameState) => (
       <I18nProvider initialLanguage="en">
         <GameScreen state={state} dispatch={vi.fn()} onSubmit={vi.fn()} onNextRound={vi.fn()} />
       </I18nProvider>
     );
-    const { rerender } = render(screenFor(makeAnsweringState(equation)));
+    const { rerender } = render(screenFor(makeAnsweringState()));
     const status = screen.getByRole("status");
     expect(status).toBeEmptyDOMElement();
 
-    rerender(screenFor(makeFeedbackState(equation)));
+    rerender(screenFor(makeFeedbackState()));
 
     expect(screen.getByRole("status")).toBe(status);
     expect(status).toHaveTextContent("Incorrect");
   });
 
   it("keeps the feedback status region mounted across the overflow-to-feedback transition", () => {
-    const equation = makeEquation(3, 3);
-    const overflowState = makeOverflowState(equation, { pendingDiscards: ["tile-0"] });
+    const overflowState = makeOverflowState();
     const { rerender } = render(
       <I18nProvider initialLanguage="en">
         <GameScreen state={overflowState} dispatch={vi.fn()} onSubmit={vi.fn()} onNextRound={vi.fn()} />
@@ -511,8 +368,9 @@ describe("GameScreen phase composition", () => {
     );
     const statusBeforeConfirm = screen.getByRole("status");
 
-    const feedbackState = makeFeedbackState(equation, {
-      inventory: overflowState.inventory.filter((tile) => tile.id !== "tile-0"),
+    const feedbackState = gameReducer(overflowState, {
+      type: "TOGGLE_DISCARD",
+      tileId: tileWith(overflowState, 6).id,
     });
     rerender(
       <I18nProvider initialLanguage="en">
@@ -524,19 +382,9 @@ describe("GameScreen phase composition", () => {
   });
 
   it("does not auto-advance out of feedback without user action", () => {
-    const equation = makeEquation(3, 3);
-    const state = makeFeedbackState(equation);
-    const { onNextRound, dispatch } = renderScreen(state);
+    const { onNextRound, dispatch } = renderScreen(makeFeedbackState());
 
     expect(onNextRound).not.toHaveBeenCalled();
-    expect(dispatch).not.toHaveBeenCalled();
-  });
-
-  it("does not auto-confirm discard merely from reaching the exact required count", () => {
-    const equation = makeEquation(3, 3);
-    const state = makeOverflowState(equation, { pendingDiscards: ["tile-0"] });
-    const { dispatch } = renderScreen(state);
-
     expect(dispatch).not.toHaveBeenCalled();
   });
 });
@@ -544,7 +392,7 @@ describe("GameScreen phase composition", () => {
 describe("GameScreen overflow collapse", () => {
   it("dispatches exactly one TOGGLE_DISCARD for a forced single-tile discard under StrictMode", async () => {
     const user = userEvent.setup();
-    const state = makeOverflowState(makeEquation(3, 3)); // 11 tiles -> required 1
+    const state = makeOverflowState(); // 1 2 4 6 8, a 4 on the rail -> required 1
     const dispatch = vi.fn();
     render(
       <StrictMode>
@@ -554,73 +402,43 @@ describe("GameScreen overflow collapse", () => {
       </StrictMode>,
     );
 
-    // Digit 5 (index 5 of 11, digits cycle 0-8 then wrap to 0,1): the only
-    // digits that repeat in this fixture are 0 and 1, so "Digit 5" is the
-    // one accessible name guaranteed to resolve to a single button.
-    await user.click(screen.getByRole("button", { name: "Digit 5" }));
+    // The 4s are the row's pay and both read "Digit 4, New tile", so "Digit 6"
+    // is a name that resolves to a single button.
+    await user.click(screen.getByRole("button", { name: "Digit 6" }));
 
     // The reducer completes the discard on this mark (§1.7); the screen only
     // forwards it, once, so StrictMode's double render cannot double it.
     expect(dispatch.mock.calls.map(([action]) => action.type)).toEqual(["TOGGLE_DISCARD"]);
   });
 
-  it("dispatches a single mark on a multi-tile (12-tile) overflow tap and renders no Confirm", async () => {
-    const equation = makeEquation(3, 3);
-    const state = makeOverflowState(equation, { inventory: TWELVE_TILE_INVENTORY }); // required 2
+  it("dispatches a single mark on an overflow tap and renders no Confirm", async () => {
+    const state = makeOverflowState();
     const { dispatch } = renderScreen(state);
 
     expect(screen.queryByRole("button", { name: "Confirm Discard" })).not.toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: "Digit 5" }));
+    await userEvent.click(screen.getByRole("button", { name: "Digit 6" }));
 
     expect(dispatch).toHaveBeenCalledTimes(1);
-    expect(dispatch).toHaveBeenCalledWith({ type: "TOGGLE_DISCARD", tileId: "tile-5" });
+    expect(dispatch).toHaveBeenCalledWith({ type: "TOGGLE_DISCARD", tileId: tileWith(state, 6).id });
   });
 
   it("marks a tile via a digit key press during overflow", async () => {
-    const equation = makeEquation(3, 3);
-    const state = makeOverflowState(equation, { inventory: TWELVE_TILE_INVENTORY }); // required 2
+    const state = makeOverflowState();
     const { dispatch } = renderScreen(state);
 
-    await userEvent.keyboard("5");
+    await userEvent.keyboard("6");
 
     expect(dispatch).toHaveBeenCalledTimes(1);
-    expect(dispatch).toHaveBeenCalledWith({ type: "TOGGLE_DISCARD", tileId: "tile-5" });
+    expect(dispatch).toHaveBeenCalledWith({ type: "TOGGLE_DISCARD", tileId: tileWith(state, 6).id });
   });
 
   it("marks on a digit key press at a required count of one, leaving completion to the reducer", async () => {
-    const equation = makeEquation(3, 3);
-    const state = makeOverflowState(equation); // 11 tiles -> required 1
-    const { dispatch } = renderScreen(state);
+    const { dispatch } = renderScreen(makeOverflowState()); // required 1
 
-    await userEvent.keyboard("5");
+    await userEvent.keyboard("8");
 
     expect(dispatch.mock.calls.map(([action]) => action.type)).toEqual(["TOGGLE_DISCARD"]);
-  });
-
-  it("walks through duplicate-digit tiles on repeated presses instead of re-toggling an already-marked one", async () => {
-    const equation = makeEquation(3, 3);
-    // required 2; digit 0 appears twice (tile-0, tile-9) with tile-0 already marked.
-    const state = makeOverflowState(equation, {
-      inventory: TWELVE_TILE_INVENTORY,
-      pendingDiscards: ["tile-0"],
-    });
-    const { dispatch } = renderScreen(state);
-
-    await userEvent.keyboard("0");
-
-    expect(dispatch).toHaveBeenCalledTimes(1);
-    expect(dispatch).toHaveBeenCalledWith({ type: "TOGGLE_DISCARD", tileId: "tile-9" });
-  });
-
-  it("ignores a digit key press once the required discard count is already marked", async () => {
-    const equation = makeEquation(3, 3);
-    const state = makeOverflowState(equation, { pendingDiscards: ["tile-0"] }); // required 1, already met
-    const { dispatch } = renderScreen(state);
-
-    await userEvent.keyboard("5");
-
-    expect(dispatch).not.toHaveBeenCalled();
   });
 });
 
@@ -635,16 +453,11 @@ describe("GameScreen overflow collapse", () => {
 describe("useGameKeyboard under React.StrictMode", () => {
   it("dispatches CLEAR_SELECTION exactly once for a single Escape press", async () => {
     const user = userEvent.setup();
-    const equation = makeEquation(7, 8);
-    const state = makeAnsweringState(equation, {
-      inventory: [],
-      selectedTiles: [makeTile(5, "a"), makeTile(6, "b")],
-    });
     const dispatch = vi.fn();
     render(
       <StrictMode>
         <I18nProvider initialLanguage="en">
-          <GameScreen state={state} dispatch={dispatch} onSubmit={vi.fn()} onNextRound={vi.fn()} />
+          <GameScreen state={FULL_ANSWER()} dispatch={dispatch} onSubmit={vi.fn()} onNextRound={vi.fn()} />
         </I18nProvider>
       </StrictMode>,
     );
@@ -655,43 +468,15 @@ describe("useGameKeyboard under React.StrictMode", () => {
   });
 });
 
-// The capacity meter reads the same union the rack draws. Selecting a tile
-// moves it out of state.inventory and into state.selectedTiles, so a meter
-// reading inventory alone drops by one per selection and contradicts the rack
-// beside it, which keeps a socket for every tile in that union. It is wrong in
-// the direction that hides overflow: it shows headroom the player has not got.
-//
-// This is asserted at the GameScreen level on purpose. CapacityMeter's own
-// tests pass `held` by hand, so they constrain the component and can never
-// reach the wiring — which is how this shipped past 261 green tests once.
-const EIGHT_HELD_DIGITS = [0, 1, 2, 3, 4, 5, 6, 7] as const;
-
-describe("GameScreen capacity meter", () => {
-  it("counts tiles in the answer slots as still held", () => {
-    const equation = makeEquation(3, 4);
-    const inventory = EIGHT_HELD_DIGITS.map((digit) => makeTile(digit, `held-${digit}`));
-    const state = makeAnsweringState(equation, {
-      inventory,
-      selectedTiles: [makeTile(8, "lifted-a"), makeTile(9, "lifted-b")],
-    });
-    renderScreen(state);
-
-    expect(screen.getByRole("img", { name: "Capacity 10 of 10" })).toBeInTheDocument();
-  });
-
-  it("drops the count only when a tile actually leaves", () => {
-    const equation = makeEquation(3, 4);
-    const inventory = EIGHT_HELD_DIGITS.map((digit) => makeTile(digit, `held-${digit}`));
-    renderScreen(makeAnsweringState(equation, { inventory, selectedTiles: [] }));
-
-    expect(screen.getByRole("img", { name: "Capacity 8 of 10" })).toBeInTheDocument();
-  });
-});
-
 describe("GameScreen after a discard", () => {
-  const discardedFeedback = (inventory = makeOverflowInventory(10), overrides: Partial<GameState> = {}) => {
-    const state = makeFeedbackState(makeEquation(3, 3), { inventory, ...overrides });
-    return { ...state, lastResult: { ...state.lastResult!, discarded: true } };
+  // Row 4's overflow with its rail tile discarded: the seated tiles stay put,
+  // so no survivor drops and the departure is the rack's only moment.
+  const discardedFeedback = (overflow = makeOverflowState()) =>
+    gameReducer(overflow, { type: "TOGGLE_DISCARD", tileId: overflow.inventory[5]!.id });
+
+  const end = (element: Element) => {
+    fireEvent.animationEnd(element);
+    fireEvent(element, new Event("webkitAnimationEnd", { bubbles: true }));
   };
 
   it("renders no Next Round, because the round advances on its own (§1.7)", () => {
@@ -706,7 +491,7 @@ describe("GameScreen after a discard", () => {
   });
 
   it("advances to the next round once the departing tile has played", () => {
-    const overflow = makeOverflowState(makeEquation(3, 3));
+    const overflow = makeOverflowState();
     const onNextRound = vi.fn();
     const screenFor = (state: GameState) => (
       <I18nProvider initialLanguage="en">
@@ -714,58 +499,22 @@ describe("GameScreen after a discard", () => {
       </I18nProvider>
     );
     const { container, rerender } = render(screenFor(overflow));
-    const gone = overflow.inventory[10]!;
-    rerender(screenFor(discardedFeedback(overflow.inventory.filter((tile) => tile !== gone))));
+    const gone = overflow.inventory[5]!;
+    rerender(screenFor(discardedFeedback(overflow)));
 
-    const departing = container.querySelector(`[data-departing="${gone.id}"]`)!;
+    // The verdict's bloom and ring finish first; the departure is the last half.
+    [...container.querySelectorAll("[data-moment]")].forEach(end);
     expect(onNextRound).not.toHaveBeenCalled();
-    fireEvent.animationEnd(departing);
-    fireEvent(departing, new Event("webkitAnimationEnd", { bubbles: true }));
-    expect(onNextRound).toHaveBeenCalledTimes(1);
-  });
-
-  // Classic can require two: the round waits for both departures, not the first.
-  // The twentieth submission seals capacity 11 to 10, so twelve tiles is an excess of two.
-  it("advances once after a two-tile discard, when the second departure has played", () => {
-    const sealRound = { mode: "classic", round: 20, totalRounds: 20 } as const;
-    const overflow = makeOverflowState(makeEquation(3, 3), { inventory: TWELVE_TILE_INVENTORY, ...sealRound });
-    const onNextRound = vi.fn();
-    const screenFor = (state: GameState) => (
-      <I18nProvider initialLanguage="en">
-        <GameScreen state={state} dispatch={vi.fn()} onSubmit={vi.fn()} onNextRound={onNextRound} />
-      </I18nProvider>
-    );
-    const { container, rerender } = render(screenFor(overflow));
-    const gone = overflow.inventory.slice(10);
-    rerender(screenFor(discardedFeedback(overflow.inventory.slice(0, 10), sealRound)));
-
-    const end = (tileId: string) => {
-      const departing = container.querySelector(`[data-departing="${tileId}"]`)!;
-      fireEvent.animationEnd(departing);
-      fireEvent(departing, new Event("webkitAnimationEnd", { bubbles: true }));
-    };
-    end(gone[0]!.id);
-    expect(onNextRound).not.toHaveBeenCalled();
-    end(gone[1]!.id);
+    end(container.querySelector(`[data-departing="${gone.id}"]`)!);
     expect(onNextRound).toHaveBeenCalledTimes(1);
   });
 
   it("waits for the verdict's celebration as well as the departure before advancing", () => {
     // A correct answer at streak 8 plays the bloom, three rings and the burst
     // on its slot. Those mount with feedback, after the discard completes, so
-    // the 420ms exit ends before the 720ms burst does.
-    const answer = makeTile(9, "answer");
-    const correct = (state: GameState): GameState => ({
-      ...state,
-      currentStreak: 8,
-      lastResult: {
-        ...state.lastResult!,
-        kind: "correct",
-        submittedValue: 9,
-        submittedTiles: [answer],
-      },
-    });
-    const overflow = correct(makeOverflowState(makeEquation(3, 3)));
+    // the 420ms exit ends before the 720ms burst does. No table reaches
+    // streak 8 by row 4, so it is set on row 4's answer.
+    const overflow = { ...makeOverflowState(), currentStreak: 8 };
     const onNextRound = vi.fn();
     const screenFor = (state: GameState) => (
       <I18nProvider initialLanguage="en">
@@ -773,13 +522,9 @@ describe("GameScreen after a discard", () => {
       </I18nProvider>
     );
     const { container, rerender } = render(screenFor(overflow));
-    const gone = overflow.inventory[10]!;
-    rerender(screenFor(correct(discardedFeedback(overflow.inventory.filter((tile) => tile !== gone)))));
+    const gone = overflow.inventory[5]!;
+    rerender(screenFor(discardedFeedback(overflow)));
 
-    const end = (element: Element) => {
-      fireEvent.animationEnd(element);
-      fireEvent(element, new Event("webkitAnimationEnd", { bubbles: true }));
-    };
     end(container.querySelector(`[data-departing="${gone.id}"]`)!);
     expect(onNextRound).not.toHaveBeenCalled();
 
@@ -793,63 +538,24 @@ describe("GameScreen after a discard", () => {
 
   it("draws the rack in the reducer's order outside answering, so the newest arrival stays on the rail", () => {
     // The reducer leaves the newest arrival past capacity (§1.5 step 7); a
-    // re-sort here would pull this 0 to the front and perch a 9 instead.
-    const seated = makeOverflowInventory(10).map((tile) => ({ ...tile, digit: 9 as const }));
-    const state = makeOverflowState(makeEquation(3, 3), {
-      inventory: [...seated, makeTile(0, "newest", true)],
-    });
-    renderScreen(state);
+    // re-sort here would seat this second 4 and perch the 8 instead.
+    renderScreen(makeOverflowState());
     // The rail sits above the rack, so the perched tile comes first.
     const tiles = screen.getAllByRole("button", { name: /^Digit/ });
-    expect(tiles[0]).toHaveAccessibleName("Digit 0, New tile");
-    expect(tiles.slice(1).every((tile) => tile.textContent === "9")).toBe(true);
+    expect(tiles[0]).toHaveAccessibleName("Digit 4, New tile");
+    expect(tiles.slice(1).map((tile) => tile.textContent)).toEqual(["1", "2", "4", "6", "8"]);
   });
 });
-
-describe("GameScreen with Classic's stepped rack", () => {
-  it("draws the rack at the displayed round's capacity, so a seal closes a socket without resizing it", async () => {
-    const { createInitialInventory } = await import("../../game/factories");
-    const { sequentialIds } = await import("../../test/fixtures");
-    // Feedback after the second submission: live capacity 19, the rack still
-    // drawn at 20 until the round change (§1.7a).
-    const state = makeFeedbackState(makeEquation(3, 3), {
-      mode: "classic",
-      round: 2,
-      totalRounds: 2,
-      inventory: createInitialInventory(sequentialIds(), 19),
-    });
-    const { container } = render(
-      <I18nProvider initialLanguage="en">
-        <GameScreen state={state} dispatch={vi.fn()} onSubmit={vi.fn()} onNextRound={vi.fn()} />
-      </I18nProvider>,
-    );
-    // Cell 19 is the socket this seal closed; cell 20 the house plug.
-    const cell = (index: number) => container.querySelector(`[data-cell="${index}"]`)!;
-    expect(cell(18).className).not.toMatch(/plug/);
-    expect(cell(19).className).toMatch(/plug/);
-    expect(cell(20).className).toMatch(/plug/);
-  });
-});
-
 
 describe("GameScreen in Puzzle", () => {
-  // The gallery's answering-puzzle state: the sample at row 1, its hand dealt.
-  const SAMPLE_AT_ROW_1 = makeAnsweringState(PUZZLE_SAMPLE.rows[0].equation, {
-    mode: "puzzle",
-    table: PUZZLE_SAMPLE,
-    rowResults: [],
-    inventory: sortTiles(createTiles(PUZZLE_SAMPLE.hand, sequentialIds())),
-  });
-
-  it("shows the ledger and par, and no capacity meter", () => {
-    renderScreen(SAMPLE_AT_ROW_1);
+  it("shows the ledger and par", () => {
+    renderScreen(makeAnsweringState());
     expect(screen.getByRole("list", { name: "Table" })).toBeInTheDocument();
-    expect(screen.queryByRole("img", { name: /^Capacity/ })).not.toBeInTheDocument();
     expect(screen.getByText("Par").nextElementSibling).toHaveTextContent("7");
   });
 
   it("draws the rack as one row of exactly five sockets", () => {
-    renderScreen(SAMPLE_AT_ROW_1);
+    renderScreen(makeAnsweringState());
     const rack = screen.getByRole("button", { name: "Digit 1" }).closest(`.${rackStyles.rack}`);
     expect(rack).toHaveAttribute("data-size", "row");
     expect(rack!.querySelector(`.${rackStyles.inventory}`)!.children).toHaveLength(5);
@@ -863,19 +569,11 @@ describe("GameScreen in Puzzle", () => {
       rows: [makePuzzleRow(2, 6, [1, 3, 5]), makePuzzleRow(4, 2, [6, 0])],
       par: 1,
     };
-    const over = makeGameOverState(PUZZLE_SAMPLE.rows[3].equation, {
-      mode: "puzzle",
-      table: PUZZLE_SAMPLE,
-      rowResults: ["incorrect", "correct", "correct"],
-      round: 4,
-      totalRounds: 3,
-    });
     renderScreen(
-      gameReducer(over, {
+      gameReducer(makeGameOverState(), {
         type: "RESTART_RUN",
-        equation: next.rows[0].equation,
-        inventory: sortTiles(createTiles(next.hand, sequentialIds())),
         table: next,
+        inventory: sortTiles(createTiles(next.hand, sequentialIds())),
       }),
     );
 

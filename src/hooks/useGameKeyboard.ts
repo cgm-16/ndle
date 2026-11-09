@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import type { Digit, GameAction, GameState, Tile } from "../game/types";
-import { getAnswerLength, getOverflowCount, isSubmissionReady, tileDigits } from "../game/selectors";
+import type { Digit, GameAction, GameState } from "../game/types";
+import { getAnswerLength, getOverflowCount, isSubmissionReady } from "../game/selectors";
 
 const DIGIT_KEY_PATTERN = /^[0-9]$/;
 
@@ -8,17 +8,6 @@ const DIGIT_KEY_PATTERN = /^[0-9]$/;
 // HTML rather than of this screen's current markup, so it names the whole set
 // and not only the buttons that happen to be mounted today.
 const ENTER_ACTIVATES = "a[href], button, input, select, textarea";
-
-// The face with the smallest set holding the digit; the strict `<` keeps the
-// leftmost in rack order on a tie (§1.4a).
-function narrowestFaceHolding(inventory: readonly Tile[], digit: Digit): Tile | undefined {
-  let narrowest: Tile | undefined;
-  for (const tile of inventory) {
-    if ("digit" in tile || !tileDigits(tile).includes(digit)) continue;
-    if (!narrowest || tileDigits(tile).length < tileDigits(narrowest).length) narrowest = tile;
-  }
-  return narrowest;
-}
 
 export interface UseGameKeyboardArgs {
   state: GameState;
@@ -53,9 +42,7 @@ export function useGameKeyboard({ state, dispatch, onSubmit, onNextRound }: UseG
           if (state.equation === null) return;
           if (state.selectedTiles.length >= getAnswerLength(state.equation)) return;
           const digit = Number(event.key) as Digit;
-          const tile =
-            state.inventory.find((item) => "digit" in item && item.digit === digit) ??
-            narrowestFaceHolding(state.inventory, digit);
+          const tile = state.inventory.find((item) => item.digit === digit);
           if (!tile) return;
           event.preventDefault();
           dispatch({ type: "SELECT_TILE", tileId: tile.id });
@@ -93,7 +80,7 @@ export function useGameKeyboard({ state, dispatch, onSubmit, onNextRound }: UseG
           // Skip tiles already marked, so repeated presses walk through duplicates
           // instead of toggling one tile on and off.
           const tile = state.inventory.find(
-            (item) => "digit" in item && item.digit === digit && !state.pendingDiscards.includes(item.id),
+            (item) => item.digit === digit && !state.pendingDiscards.includes(item.id),
           );
           if (!tile) return;
           event.preventDefault();

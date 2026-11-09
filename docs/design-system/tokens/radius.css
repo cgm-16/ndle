@@ -1,7 +1,0 @@
-:root {
-  --radius-sm: 5px;    /* compact tile, small well */
-  --radius-md: 8px;    /* tile, button */
-  --radius-lg: 12px;   /* panel */
-  --radius-xl: 14px;   /* screen frame */
-  --radius-pill: 999px;
-}

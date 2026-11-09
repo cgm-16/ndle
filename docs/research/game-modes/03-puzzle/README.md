@@ -255,7 +255,7 @@ Thesis: does face-up planning against par feel different from Classic?
 - `docs/spec/product.md` §1.1–§1.17
 - `docs/spec/ui-i18n.md` §1.12, §1.15, §1.16
 - [`docs/superpowers/specs/2026-08-09-endless-mode-polish-design.md`](https://github.com/cgm-16/ndle/blob/3ccd37b/docs/superpowers/specs/2026-08-09-endless-mode-polish-design.md) §1–2
-- `docs/design-system/decisions.md` (Classic)
+- [`docs/design-system/decisions.md`](https://github.com/cgm-16/ndle/blob/3ccd37b/docs/design-system/decisions.md) (Classic)
 - [`docs/journal/journal-2026-09-27.md`](https://github.com/cgm-16/ndle/blob/3ccd37b/docs/journal/journal-2026-09-27.md) (T84 bot)
 - [`docs/tasks/T08-title-screen.md`](https://github.com/cgm-16/ndle/blob/3ccd37b/docs/tasks/T08-title-screen.md)
 - `src/game/{balance,types,selectors,generators,factories,gameReducer}.ts`

@@ -1,8 +1,10 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useReducer, useRef, type ReactNode } from "react";
 import { ActionButton } from "../components/ActionButton/ActionButton";
 import { AnswerSlots } from "../components/AnswerSlots/AnswerSlots";
-import { Tile, type TileState } from "../components/Tile/Tile";
-import type { TileValue } from "../game/types";
+import { GameScreen } from "../components/GameScreen/GameScreen";
+import { Tile } from "../components/Tile/Tile";
+import { gameReducer } from "../game/gameReducer";
+import type { GameState } from "../game/types";
 import { useI18n } from "../i18n/I18nContext";
 import { makeTile } from "../test/fixtures";
 import styles from "./Gallery.module.css";
@@ -19,8 +21,8 @@ const noop = () => {};
 
 // GameOverScreen holds the share outcome in local state, so the copied and
 // failed confirmations exist only once Copy Result has been pressed: rendered
-// at rest, both entries showed the idle screen and 11C's chop had no gallery
-// surface at all. The press happens on mount rather than a stand-in being
+// at rest, both entries showed the idle screen and the confirmations had no
+// gallery surface at all. The press happens on mount rather than a stand-in being
 // drawn, so what those entries show is the component's own state, reached the
 // way a player reaches it. Matched on the button's own text, which is what
 // makes it the Copy button in either language.
@@ -39,6 +41,16 @@ export function CopyPressedOnMount({ children }: { children: ReactNode }) {
   }, [t]);
 
   return <div ref={stage}>{children}</div>;
+}
+
+// The slide-off (8c) exists only once a discard completes, and only the
+// reducer completes one, so the overflow entry runs a real reducer: a tap on a
+// tile plays the discard the way a player reaches it. It rests on the overflow
+// itself, and nothing advances past the discard's feedback, so the round never
+// moves on.
+export function LiveGameScreen({ initial }: { initial: GameState }) {
+  const [state, dispatch] = useReducer(gameReducer, initial);
+  return <GameScreen state={state} dispatch={dispatch} onSubmit={noop} onNextRound={noop} />;
 }
 
 // Hover, focus-visible and the press are pseudo-class states: no fixture can
@@ -110,41 +122,6 @@ export function ReducedMotionBoard({ note }: { note: string }) {
       <div className={styles.boardRow}>
         <ActionButton onClick={noop}>{t("action.next")}</ActionButton>
         <Tile value={{ digit: 4 }} onClick={noop} />
-      </div>
-    </div>
-  );
-}
-
-// Every face kind, in rack order, beside the digit tile it is set against.
-const FACE_BOARD_VALUES: readonly TileValue[] = [
-  { digit: 4 },
-  { face: "wild" },
-  { face: "odd" },
-  { face: "even" },
-  { face: "low" },
-  { face: "nbr", centre: 4 },
-  { face: "high" },
-];
-const FACE_BOARD_STATES: readonly TileState[] = ["resting", "lifted", "reward", "marked", "disabled"];
-
-// §1.12: a face tile's states are the digit tile's exactly, so each row sets
-// one state across every kind, and the last row is the compact size the reward
-// strip and the final hand draw.
-export function FaceBoard({ note }: { note: string }) {
-  return (
-    <div className={styles.board}>
-      <p className={styles.boardNote}>{note}</p>
-      {FACE_BOARD_STATES.map((state) => (
-        <div key={state} className={styles.boardRow}>
-          {FACE_BOARD_VALUES.map((value, index) => (
-            <Tile key={index} value={value} state={state} onClick={noop} />
-          ))}
-        </div>
-      ))}
-      <div className={styles.boardRow}>
-        {FACE_BOARD_VALUES.map((value, index) => (
-          <Tile key={index} value={value} size="sm" />
-        ))}
       </div>
     </div>
   );
