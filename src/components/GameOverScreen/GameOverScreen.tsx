@@ -95,16 +95,7 @@ export function GameOverScreen({
           </ActionButton>
         </div>
       </div>
-      {/* The chop is reinforcement, never the confirmation itself: §1.12 asks
-          for colour plus shape or text, and a mark carries no announcement.
-          The status region beside it stays the accessible confirmation, so the
-          chop is hidden from it. */}
       <div className={styles.confirmation}>
-        {status === "copied" ? (
-          <span className={styles.chop} aria-hidden="true">
-            ✳
-          </span>
-        ) : null}
         <p className={styles.status} role="status" aria-live="polite">
           {status === "copied" ? t("share.copied") : status === "failed" ? t("share.failed") : ""}
         </p>

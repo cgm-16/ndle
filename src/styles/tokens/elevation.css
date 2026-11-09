@@ -1,25 +1,25 @@
 :root {
-  /* Tiles are fired ceramic: a hard bottom edge (thickness) plus a soft
+  /* Tiles are raised: a hard bottom edge (thickness) plus a soft
      contact shadow. Never a blurred all-round drop shadow. */
   --shadow-tile: 0 5px 0 var(--clay-400), 0 10px 18px rgb(0 0 0 / 45%);
   --shadow-tile-sm: 0 3px 0 var(--clay-400);
   --shadow-tile-lifted: 0 9px 0 var(--clay-400), 0 16px 26px rgb(0 0 0 / 50%);
   --shadow-tile-pressed: 0 2px 0 var(--clay-400), 0 4px 8px rgb(0 0 0 / 40%);
 
-  /* Sockets are cut into the felt: inset only, plus a hairline rim. */
+  /* Sockets are cut into the field: inset only, plus a hairline rim. */
   --shadow-socket: inset 0 4px 9px rgb(0 0 0 / 70%);
   --shadow-socket-sm: inset 0 3px 7px rgb(0 0 0 / 70%);
   --rim-socket: inset 0 0 0 1px var(--hair-200);
 
   /* A socket whose tile is out in the answer slots — owed back, not lost. It
-     wears --rim-socket like any socket, plus a dashed gold rule drawn as an
+     wears --rim-socket like any socket, plus a dashed accent rule drawn as an
      inset outline: dashed already means "something belongs here and does not
      yet" on the empty answer slot, so the lifted socket says it in the same
-     words instead of just louder gold. */
-  --outline-socket-lifted: 1px dashed rgb(201 165 74 / 72%);
+     words instead of just louder accent. */
+  --outline-socket-lifted: 1px dashed rgb(91 155 255 / 72%);
   --outline-socket-lifted-offset: -3px;
 
-  /* Buttons are fired ceramic too, but flat-topped: a hard bottom edge with
+  /* Buttons are raised too, but flat-topped: a hard bottom edge with
      no contact shadow. The depth halves on press; the colour is each
      variant's own (--btn-edge, set per variant), never shared, so a
      pressed secondary can never show another variant's edge colour. */
@@ -27,25 +27,26 @@
   --btn-edge-depth-pressed: 0 2px 0;
 
   /* Focus is an inset bezel, not a halo: the ring lives inside the object and
-     follows its radius, so focus reads as a gold edge fired into the tile.
+     follows its radius, so focus reads as an accent edge inset into the tile.
      Compose it after the object's own shadow —
      box-shadow: var(--shadow-tile), var(--ring-focus).
 
      Two tones, because the palette spans both ends and no single tone clears it.
-     Gold reaches 3:1 on felt (8.69), socket (11.56) and vermilion (3.55) but not
-     on the ceramic face (1.10 at --clay-200) or the gold toggle segment (1.51).
-     --clay-900 is the mirror image — 9.37 on ceramic, 5.68 on the segment, 1.02
-     on felt — so carrying both means every surface is cleared by whichever line
-     suits it, which is what ui-i18n.md §1.12 asks for. The two tones read
-     against each other at 8.56, so the bezel never blurs into a single band.
+     The accent reaches 3:1 on the field (9.59 on felt-700) and socket (10.49)
+     but not on the tile face (1.22 at --clay-200), the accent toggle segment
+     (1.53) or the wrong orange (2.64). --clay-900 is the mirror image — 12.21 on
+     the tile face, 6.53 on the segment, 3.78 on the orange, 1.04 on the field —
+     so carrying both means every surface is cleared by whichever line suits it,
+     which is what ui-i18n.md §1.12 asks for. The two tones read against each
+     other at 9.97, so the bezel never blurs into a single band.
 
      The inner line is not a separator laid onto the tile: --clay-900 and
-     --felt-700 differ by two values per channel, so it reads as the felt showing
-     through the bezel — the same dark the tile's own socket is cut from. That is
-     also why vermilion needs no variant of its own: the gold line clears red at
-     3.55, and the dark line is what sits between them. */
+     --felt-700 are within four values per channel, so it reads as the field
+     showing through the bezel — the same dark the tile's own socket is cut
+     from. That is also why the wrong orange needs no variant of its own: the
+     dark line is what sits between it and the accent line. */
   --ring-focus: inset 0 0 0 2px var(--focus-ring), inset 0 0 0 3px var(--clay-900);
 
   --shadow-panel: 0 24px 60px rgb(0 0 0 / 45%);
-  --glow-reward: 0 0 12px rgb(201 165 74 / 60%);
+  --glow-reward: 0 0 12px rgb(91 155 255 / 60%);
 }

@@ -47,7 +47,7 @@ for (const locale of LOCALES) {
     // Set before the first load: switching locale at runtime hangs the
     // renderer on the lazy Hangul font import.
     await page.addInitScript(
-      (lang) => window.localStorage.setItem("one-zero.language", lang),
+      (lang) => window.localStorage.setItem("ndle.language", lang),
       locale,
     );
 

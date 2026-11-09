@@ -8,7 +8,7 @@ type MessageShape<T> = T extends string
 
 const en = {
   title: {
-    name: "ozterisk",
+    name: "9dle",
     summary:
       "A daily multiplication puzzle. Spell each row's answer with tiles from your hand. A correct answer pays the digits printed on its row, and your hand holds five. Par is the best score the table allows.",
     more: "More",
@@ -91,7 +91,7 @@ const en = {
 
 const ko = {
   title: {
-    name: "ozterisk",
+    name: "구들",
     summary:
       "매일 한 판, 곱셈 퍼즐. 손에 든 숫자 타일로 각 줄의 답을 만드세요. 정답이면 그 줄에 적힌 숫자 타일을 받고, 손에는 다섯 개까지 들 수 있습니다. 목표는 이 판에서 낼 수 있는 최고 점수입니다.",
     more: "더 보기",

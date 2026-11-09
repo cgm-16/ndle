@@ -3,7 +3,6 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { I18nProvider } from "../../i18n/I18nContext";
 import { TitleScreen } from "./TitleScreen";
-import styles from "./TitleScreen.module.css";
 
 describe("TitleScreen", () => {
   it("starts a run with no mode to choose", async () => {
@@ -25,7 +24,7 @@ describe("TitleScreen", () => {
         <TitleScreen onStart={onStart} />
       </I18nProvider>,
     );
-    expect(screen.getByRole("heading", { name: "ozterisk" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "9dle" })).toBeVisible();
     await userEvent.click(screen.getByRole("button", { name: "Start Run" }));
     expect(onStart).toHaveBeenCalledTimes(1);
   });
@@ -135,7 +134,7 @@ describe("TitleScreen", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "한국어" }));
 
-    expect(screen.getByRole("heading", { name: "ozterisk" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "구들" })).toBeVisible();
     expect(screen.getByRole("button", { name: "게임 시작" })).toBeInTheDocument();
     expect(screen.getByText("더 보기")).toBeInTheDocument();
     expect(screen.getByRole("group", { name: "언어" })).toBeInTheDocument();
@@ -145,25 +144,27 @@ describe("TitleScreen", () => {
     expect(screen.getByRole("button", { name: "Start Run" })).toBeInTheDocument();
   });
 
-  // 11C. Cascade resolution, which jsdom does decide; that the mark actually
-  // settles, and over how long, is T56's to measure in a browser.
-  it("settles the mark on entrance and animates nothing else on the screen", () => {
+  it("names the game 9dle in plain text, with no mark", () => {
     const { container } = render(
       <I18nProvider initialLanguage="en">
         <TitleScreen onStart={vi.fn()} />
       </I18nProvider>,
     );
 
-    const mark = container.querySelector(`.${styles.markTile}`);
-    expect(mark).not.toBeNull();
-    expect(getComputedStyle(mark as Element).animationName).toBe("oz-title-settle");
+    expect(screen.getByRole("heading", { name: "9dle" })).toHaveTextContent(/^9dle$/);
+    expect(container).not.toHaveTextContent("\u2733");
+  });
 
-    // The mark settles; the screen does not. A staggered sequence across the
-    // wordmark, the rules and the button would be decorative motion outside
-    // §1.12's named inventory, and the rules are the first thing a new player
-    // reads.
+  // Cascade resolution, which jsdom does decide. The screen carries no motion
+  // of its own: §1.12's inventory names no title entrance.
+  it("animates nothing on the screen", () => {
+    const { container } = render(
+      <I18nProvider initialLanguage="en">
+        <TitleScreen onStart={vi.fn()} />
+      </I18nProvider>,
+    );
+
     for (const element of container.querySelectorAll("*")) {
-      if (element === mark) continue;
       expect(getComputedStyle(element).animationName).toBe("none");
     }
   });

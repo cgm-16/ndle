@@ -21,8 +21,8 @@ const noop = () => {};
 
 // GameOverScreen holds the share outcome in local state, so the copied and
 // failed confirmations exist only once Copy Result has been pressed: rendered
-// at rest, both entries showed the idle screen and 11C's chop had no gallery
-// surface at all. The press happens on mount rather than a stand-in being
+// at rest, both entries showed the idle screen and the confirmations had no
+// gallery surface at all. The press happens on mount rather than a stand-in being
 // drawn, so what those entries show is the component's own state, reached the
 // way a player reaches it. Matched on the button's own text, which is what
 // makes it the Copy button in either language.

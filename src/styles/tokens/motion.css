@@ -1,5 +1,5 @@
 :root {
-  /* Durations are named by the moment they belong to, because ozterisk's
+  /* Durations are named by the moment they belong to, because the
      motion budget is allocated by frequency: the things that happen every
      round are the fastest. */
   --dur-select: 130ms;    /* 9b flat slide, tile to slot */
@@ -11,7 +11,7 @@
   --dur-bloom: 420ms;     /* 2a answer bloom + streak ring */
   --dur-crack: 520ms;     /* 9f crack and dust */
   --dur-break: 520ms;     /* 10e streak counter falls */
-  --dur-share: 900ms;     /* share chop stamp, holds then fades */
+  --dur-share: 900ms;     /* share confirmation, holds then fades */
   --dur-burst: 720ms;     /* 2d tier-3 six-chip ceramic fan, on --ease-fall */
   --dur-discard: 420ms;   /* 8c a discarded tile slides off the table, on --ease-fall */
   --dur-perch: 220ms;     /* 8a·2 the perched tile drops into the freed seat, on --ease-fall */

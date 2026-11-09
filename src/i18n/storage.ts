@@ -1,6 +1,6 @@
 import type { Language } from "../game/types";
 
-export const LANGUAGE_STORAGE_KEY = "one-zero.language";
+export const LANGUAGE_STORAGE_KEY = "ndle.language";
 
 function isValidLanguage(value: unknown): value is Language {
   return value === "en" || value === "ko";

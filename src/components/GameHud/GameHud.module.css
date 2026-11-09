@@ -24,10 +24,9 @@
   letter-spacing: 0.02em;
 }
 
-/* typography.css names HUD values as display-serif territory alongside
-   equations and tile faces — "ozterisk's numbers are objects, not data".
-   Family only: the sizes below stay literal rem, because the guard below
-   compares two computed font sizes and jsdom does not substitute var(). */
+/* HUD values take --font-numeral, as equations and tile faces do. Family only:
+   the sizes below stay literal rem, because the guard below compares two
+   computed font sizes and jsdom does not substitute var(). */
 .entry dd {
   font-family: var(--font-numeral);
   font-size: 1.25rem;

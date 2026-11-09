@@ -31,21 +31,7 @@ export function TitleScreen({ onStart }: TitleScreenProps) {
 
   return (
     <main className={styles.screen}>
-      {/* Ref 11C's mark tile. It wears the resting tile's tokens without being
-          a Tile: the primitive's `digit` is a number (M5.5c), and ✳ is not one.
-          Hidden from the accessibility tree so the glyph cannot be announced
-          twice, once here and once inside the wordmark. */}
-      <span className={styles.markTile} aria-hidden="true">
-        &#10035;
-      </span>
-      {/* The visible wordmark is oz✳terisk; the accessible name is ozterisk.
-          The two diverge on purpose — the ✳ is the brand's ornament, not a
-          letter of the word, and a screen reader announcing "oz asterisk
-          terisk" would be reading the decoration aloud. The label comes from
-          the catalogue so `title.name` stays the single source of the word. */}
-      <h1 className={styles.wordmark} aria-label={t("title.name")}>
-        oz<span className={styles.mark}>&#10035;</span>terisk
-      </h1>
+      <h1 className={styles.wordmark}>{t("title.name")}</h1>
       <p className={styles.summary}>{t("title.summary")}</p>
       <ul className={styles.materialRules}>
         {MATERIAL_RULES.map(({ swatch, topic }) => (

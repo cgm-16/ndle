@@ -1,7 +1,6 @@
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import slotStyles from "../components/AnswerSlots/AnswerSlots.module.css";
-import gameOverStyles from "../components/GameOverScreen/GameOverScreen.module.css";
 import { PUZZLE_CAPACITY } from "../game/balance";
 import type { Language } from "../game/types";
 import { I18nProvider } from "../i18n/I18nContext";
@@ -132,18 +131,16 @@ describe("gallery catalogue", () => {
     expect(streakEight.container.querySelectorAll(`.${slotStyles.rim}`)).toHaveLength(0);
   });
 
-  // 11C's chop and the status beside it are GameOverScreen's own local state,
-  // reached only by pressing Copy Result. Both copy entries have to arrive at
+  // The status is GameOverScreen's own local state, reached only by pressing
+  // Copy Result. Both copy entries have to arrive at
   // rest showing the outcome they are named for.
   it("shows each game-over copy outcome at rest", async () => {
-    const copied = await renderEntry(entryById("game-over-copy-succeeded"));
+    await renderEntry(entryById("game-over-copy-succeeded"));
     expect(screen.getByRole("status")).toHaveTextContent("Result copied.");
-    expect(copied.container.querySelector(`.${gameOverStyles.chop}`)).not.toBeNull();
     cleanup();
 
-    const failed = await renderEntry(entryById("game-over-copy-failed"));
+    await renderEntry(entryById("game-over-copy-failed"));
     expect(screen.getByRole("status")).toHaveTextContent("Could not share or copy the result.");
-    expect(failed.container.querySelector(`.${gameOverStyles.chop}`)).toBeNull();
   });
 
   // Four rules in the system draw a focus ring, and LanguageToggle's is the

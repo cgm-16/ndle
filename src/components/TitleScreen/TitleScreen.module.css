@@ -9,49 +9,10 @@
   text-align: center;
 }
 
-/* The ✳ mark above the wordmark. It carries the resting tile's tokens without
-   being a Tile: the primitive takes a numeric `digit` (M5.5c) and ✳ is not a
-   digit, so the mark borrows the material rather than claiming the component. */
-.markTile {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--tile-w);
-  height: var(--tile-h);
-  border-radius: var(--radius-md);
-  background: var(--surface-tile);
-  color: var(--text-on-tile);
-  box-shadow: var(--shadow-tile);
-  text-shadow: 0 1px 0 rgb(255 255 255 / 85%);
-  font: var(--weight-semibold) var(--size-tile) / var(--leading-tight) var(--font-numeral);
-
-  /* 11C, the title entrance. The mark settles and the screen does not: a
-     staggered sequence across the wordmark, the rules and the button would be
-     decorative motion outside §1.12's named inventory, and the four material
-     rules are the first thing a new player reads — nothing here may arrive
-     late enough to be missed.
-     Longhands rather than the `animation` shorthand: jsdom expands no
-     shorthand, so the shorthand form reads back as animationName `none` and no
-     test can tell a placed animation from a misplaced one. `global()` because
-     keyframes.css is not a CSS Module and this file is: without the escape the
-     name is rewritten to a locally scoped one that matches no @keyframes
-     anywhere, and an animation naming a keyframe nothing defines fails
-     silently.
-     --ease-settle, not --ease-snap: oz-title-settle already draws its own
-     rebound, and an overshooting easing on top of it would double the bounce. */
-  animation-name: global(oz-title-settle);
-  animation-duration: var(--dur-entrance);
-  animation-timing-function: var(--ease-settle);
-}
-
 .wordmark {
   font: var(--weight-medium) var(--size-wordmark) / var(--leading-tight) var(--font-display);
   letter-spacing: var(--track-wordmark);
   color: var(--text-primary);
-}
-
-.mark {
-  color: var(--accent);
 }
 
 .summary {

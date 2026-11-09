@@ -137,7 +137,7 @@ for (const width of CONTENT_WIDTHS) {
       // Set before the first load: switching locale at runtime hangs the
       // renderer on the lazy Hangul font import.
       await page.addInitScript(
-        (lang) => window.localStorage.setItem("one-zero.language", lang),
+        (lang) => window.localStorage.setItem("ndle.language", lang),
         locale,
       );
       await page.goto("/gallery.html");
@@ -242,7 +242,7 @@ for (const locale of LOCALES) {
       page,
     }) => {
       await page.addInitScript(
-        (lang) => window.localStorage.setItem("one-zero.language", lang),
+        (lang) => window.localStorage.setItem("ndle.language", lang),
         locale,
       );
       await page.goto("/");
@@ -380,7 +380,7 @@ for (const width of OVERFLOW_WIDTHS) {
   test(`an overflow and its discard stay inside a ${width}px content box`, async ({
     page,
   }) => {
-    await page.addInitScript(() => window.localStorage.setItem("one-zero.language", "en"));
+    await page.addInitScript(() => window.localStorage.setItem("ndle.language", "en"));
     await page.goto("/gallery.html");
     await setContentWidth(page, width);
     await page.evaluate(() => document.fonts.ready);

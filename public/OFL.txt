@@ -1,21 +1,10 @@
-ozterisk serves four typefaces from its own origin, under /assets/. Each is
-licensed under the SIL Open Font License, Version 1.1, whose section 2 requires
-that every copy travel with its copyright notice and the licence. Both are
-below: the four notices, then the licence they share, reproduced verbatim.
+9dle serves one typeface from its own origin, under /assets/: Gothic A1, in
+its Korean subset. It is licensed under the SIL Open Font License, Version 1.1,
+whose section 2 requires that every copy travel with its copyright notice and
+the licence. Both are below: the notice, then the licence, reproduced verbatim.
 
-EB Garamond
-Copyright 2017 The EB Garamond Project Authors
-(https://github.com/octaviopardo/EBGaramond12)
-
-IBM Plex Mono
-Copyright 2017 IBM Corp. All rights reserved.
-
-Zen Kaku Gothic New
-Copyright 2022 The Zen Project Authors
-(https://github.com/googlefonts/zen-kakugothic)
-
-Noto Sans KR
-Google Inc.
+Gothic A1
+(C) Copyright HanYang I&C Co.,Ltd. All rights reserved. GothicA1-ExtraLight.ttf: (C) Copyright HanYang I&C Co.,Ltd. All rights reserved. GothicA1-Light.ttf: (C) Copyright HanYang I&C Co.,Ltd. All rights reserved. GothicA1-Regular.ttf: (C) Copyright HanYang I&C Co.,Ltd. All rights reserved. GothicA1-Medium.ttf: (C) Copyright HanYang I&C Co.,Ltd. All rights reserved. GothicA1-SemiBold.ttf: (C) Copyright HanYang I&C Co.,Ltd. All rights reserved. GothicA1-Bold.ttf: (C) Copyright HanYang I&C Co.,Ltd. All rights reserved. GothicA1-ExtraBold.ttf: (C) Copyright HanYang I&C Co.,Ltd. All rights reserved. GothicA1-Black.ttf: (C) Copyright HanYang I&C Co.,Ltd. All rights reserved.
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:

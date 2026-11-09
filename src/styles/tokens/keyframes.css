@@ -130,28 +130,6 @@
   100% { transform: translateY(0); opacity: 1; }
 }
 
-/* 11C — the title drops in and settles, with one small rebound the frame draws.
-   From `sb-settle`, renormalised from its useful 14%–72% span. */
-@keyframes oz-title-settle {
-  0%   { transform: translateY(-24px); opacity: 0; }
-  45%  { transform: translateY(2px); opacity: 1; }
-  76%  { transform: translateY(-2px); }
-  100% { transform: translateY(0); opacity: 1; }
-}
-
-/* 11C — the share chop lands like a stamp: oversized and turned, it comes down
-   square, holds while it is read, then lifts. From `sb-stamp`, renormalised
-   from 16%; that shape spends its own tail fading, so 100% is unmoved. No
-   transform after the landing frame is deliberate — an unspecified property
-   holds its last value, so the chop keeps the pose it struck while the opacity
-   tail runs. */
-@keyframes oz-chop {
-  0%   { transform: scale(1.5) rotate(-14deg); opacity: 0; }
-  19%  { transform: scale(1) rotate(-7deg); opacity: 1; }
-  69%  { opacity: 1; }
-  100% { opacity: 0; }
-}
-
 /* 8a aftermath — the perched eleventh tile takes the seat a discard just
    freed. `oz-fire` was the other candidate and was rejected: firing in place
    is for a tile that arrives from nowhere, and this one has been visibly

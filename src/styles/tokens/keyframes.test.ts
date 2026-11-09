@@ -61,7 +61,7 @@ describe("keyframes.css", () => {
     expect(keyframesUsedIn(".a { animation: oz-bloom var(--dur-bloom) both; }")).toEqual([
       "oz-bloom",
     ]);
-    expect(keyframesUsedIn('<i style={{ animation: "oz-chop 900ms" }} />')).toEqual(["oz-chop"]);
+    expect(keyframesUsedIn('<i style={{ animation: "oz-bloom 900ms" }} />')).toEqual(["oz-bloom"]);
     // global.css retires motion by duration alone, and naming no keyframe is
     // not a missing one. Widening the pattern to match this reintroduces the
     // false positives the oz- prefix exists to avoid.

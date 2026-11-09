@@ -5,7 +5,7 @@ import { copyResult, formatShareText, getShareStats, shareResult } from "./shari
 import type { ShareDependencies } from "./sharing";
 
 const MADE_PAR_TEXT =
-  "ozterisk — Made par — Score: 7/8 · par 7\nLongest streak: 7\n\nCan you make par?\nhttps://example.test/";
+  "9dle — Made par — Score: 7/8 · par 7\nLongest streak: 7\n\nCan you make par?\nhttps://example.test/";
 
 describe("getShareStats", () => {
   const madePar = makeGameOverState();
@@ -28,7 +28,7 @@ describe("formatShareText", () => {
 
     expect(text).toBe(MADE_PAR_TEXT);
     expect(formatShareText(getShareStats({ ...madePar, score: 4 }), "en", "https://example.test/")).toMatch(
-      /^ozterisk — 3 short of par — Score: 4\/8 · par 7\n/,
+      /^9dle — 3 short of par — Score: 4\/8 · par 7\n/,
     );
 
     const lines = text.split("\n");
@@ -39,10 +39,10 @@ describe("formatShareText", () => {
 
   it("formats the Korean share text exactly", () => {
     expect(formatShareText(getShareStats(madePar), "ko", "https://example.test/")).toBe(
-      "ozterisk — 목표 달성 — 점수: 7/8 · 목표 7\n최장 연속 정답: 7\n\n목표를 달성할 수 있나요?\nhttps://example.test/",
+      "구들 — 목표 달성 — 점수: 7/8 · 목표 7\n최장 연속 정답: 7\n\n목표를 달성할 수 있나요?\nhttps://example.test/",
     );
     expect(formatShareText(getShareStats({ ...madePar, score: 4 }), "ko", "https://example.test/")).toMatch(
-      /^ozterisk — 목표까지 3점 부족 — 점수: 4\/8 · 목표 7\n/,
+      /^구들 — 목표까지 3점 부족 — 점수: 4\/8 · 목표 7\n/,
     );
   });
 });

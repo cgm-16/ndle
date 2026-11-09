@@ -13,9 +13,9 @@ const STATS = { won: false, par: 7, rows: 8, score: 5, longestStreak: 4 } as con
 const EQUATION = makeEquation(2, 3);
 const URL = "https://example.test/";
 const EN_TEXT =
-  "ozterisk — 2 short of par — Score: 5/8 · par 7\nLongest streak: 4\n\nCan you make par?\nhttps://example.test/";
+  "9dle — 2 short of par — Score: 5/8 · par 7\nLongest streak: 4\n\nCan you make par?\nhttps://example.test/";
 const KO_TEXT =
-  "ozterisk — 목표까지 2점 부족 — 점수: 5/8 · 목표 7\n최장 연속 정답: 4\n\n목표를 달성할 수 있나요?\nhttps://example.test/";
+  "구들 — 목표까지 2점 부족 — 점수: 5/8 · 목표 7\n최장 연속 정답: 4\n\n목표를 달성할 수 있나요?\nhttps://example.test/";
 
 function renderScreen(overrides: Partial<GameOverScreenProps> = {}) {
   const onPlayAgain = vi.fn();
@@ -176,21 +176,6 @@ describe("GameOverScreen", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Result copied.");
   });
 
-  // Queried by the CSS Modules key rather than by role: the chop is
-  // aria-hidden, and a key that does not exist would render class="undefined"
-  // with no error, so the selector is the guard.
-  it("stamps the chop when a copy succeeds, with the status region still announcing", async () => {
-    const writeClipboard = vi.fn().mockResolvedValue(undefined);
-    const { container } = renderScreen({ dependencies: { writeClipboard } });
-
-    expect(container.querySelector(`.${styles.chop}`)).toBeNull();
-
-    await userEvent.click(screen.getByRole("button", { name: "Copy Result" }));
-
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Result copied."));
-    expect(container.querySelector(`.${styles.chop}`)).toBeInTheDocument();
-  });
-
   it("shows an inline failure status when the clipboard write rejects", async () => {
     const writeClipboard = vi.fn().mockRejectedValue(new Error("denied"));
     renderScreen({ dependencies: { writeClipboard } });
@@ -227,44 +212,6 @@ describe("GameOverScreen", () => {
 
     await waitFor(() => expect(nativeShare).toHaveBeenCalledTimes(2));
     expect(nativeShare).toHaveBeenNthCalledWith(2, { text: KO_TEXT, url: URL });
-  });
-
-  // 11C. Cascade resolution, which jsdom does decide; that the stamp actually
-  // plays, how long it holds and what it looks like are T56's to measure in a
-  // browser. The animation names are longhands rather than the `animation`
-  // shorthand precisely so this read is possible at all.
-  it("stamps the chop only once a copy has succeeded", async () => {
-    const { container } = renderScreen({
-      dependencies: { writeClipboard: vi.fn().mockResolvedValue(undefined) },
-    });
-
-    expect(container.querySelector(`.${styles.chop}`)).toBeNull();
-
-    await userEvent.click(screen.getByRole("button", { name: "Share" }));
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Result copied."));
-
-    const chop = container.querySelector(`.${styles.chop}`);
-    expect(chop).not.toBeNull();
-    expect(getComputedStyle(chop as Element).animationName).toBe("oz-chop");
-    // The chop is reinforcement; the status region is the confirmation. A
-    // screen reader must hear the copy from the region and never from here.
-    expect(chop).toHaveAttribute("aria-hidden", "true");
-  });
-
-  it("leaves the chop unstamped when the share fails", async () => {
-    const { container } = renderScreen({
-      dependencies: {
-        nativeShare: vi.fn().mockRejectedValue(new Error("cancelled")),
-        writeClipboard: vi.fn().mockResolvedValue(undefined),
-      },
-    });
-
-    await userEvent.click(screen.getByRole("button", { name: "Share" }));
-    await waitFor(() =>
-      expect(screen.getByRole("status")).toHaveTextContent("Could not share or copy the result."),
-    );
-
-    expect(container.querySelector(`.${styles.chop}`)).toBeNull();
   });
 });
 
@@ -332,7 +279,7 @@ describe("GameOverScreen verdicts", () => {
 
     await waitFor(() => expect(dependencies.writeClipboard).toHaveBeenCalledTimes(1));
     expect(dependencies.writeClipboard).toHaveBeenCalledWith(
-      "ozterisk — Made par — Score: 7/8 · par 7\nLongest streak: 4\n\nCan you make par?\nhttps://example.test/",
+      "9dle — Made par — Score: 7/8 · par 7\nLongest streak: 4\n\nCan you make par?\nhttps://example.test/",
     );
   });
 });

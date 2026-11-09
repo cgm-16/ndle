@@ -1,42 +1,46 @@
+/* Neutral placeholder palette: a dark grey field, a light grey tile face, one
+   blue accent and one orange for wrong. Every ramp name below is kept so the
+   components that reference it need no change; the values are placeholders
+   until the identity replaces them. Ratios are WCAG 2 relative-luminance
+   contrasts, computed by script. */
 :root {
   color-scheme: dark;
 
-  /* ---- Felt field (base) ------------------------------------------------
-     The table. Five steps from the deepest surround to the raised rail.
-     Never more than two of these in one view. */
-  --felt-900: #071711;   /* surround, behind the table */
-  --felt-800: #0b211b;   /* panel, modal, rail */
-  --felt-700: #14342a;   /* the felt itself — the default canvas */
-  --felt-600: #1b4436;   /* raised felt, hover on felt */
-  --well-900: #081a14;   /* recessed socket interior */
+  /* ---- Field (base) -----------------------------------------------------
+     Four steps of dark grey, from the deepest surround to the raised step. */
+  --felt-900: #0e0e0e;   /* surround; ink-000 18.50:1 */
+  --felt-800: #141414;   /* panel, modal, rail; ink-000 17.65:1 */
+  --felt-700: #1a1a1a;   /* the default canvas; ink-000 16.67:1 */
+  --felt-600: #242424;   /* raised step, hover; ink-000 14.87:1 */
+  --well-900: #101010;   /* recessed socket interior */
 
-  /* ---- Ceramic (tile) --------------------------------------------------- */
-  --clay-050: #fdf8ec;   /* tile face highlight */
-  --clay-100: #f0e7d6;   /* light field / paper */
-  --clay-200: #e6d7ba;   /* tile face shadow */
-  --clay-400: #b3a184;   /* fired tile edge — the 'thickness' colour */
-  --clay-900: #16352b;   /* engraved digit on a tile face */
+  /* ---- Tile face (light grey) ------------------------------------------- */
+  --clay-050: #f5f5f5;   /* tile face highlight; clay-900 on it 16.60:1 */
+  --clay-100: #e8e8e8;   /* light field / paper */
+  --clay-200: #d4d4d4;   /* tile face shadow; clay-900 on it 12.21:1 */
+  --clay-400: #8a8a8a;   /* tile edge, the 'thickness' colour */
+  --clay-900: #161616;   /* digit on a tile face; 9.97:1 against the focus ring */
 
-  /* ---- Gold (brand, streak, capacity) ---------------------------------- */
-  --gold-700: #9a7f36;
-  --gold-500: #c9a54a;   /* the brand accent */
-  --gold-300: #e8cd85;   /* hover / link hover */
+  /* ---- Accent (blue: focus, the current row, reward) ------------------- */
+  --gold-700: #2a5db0;
+  --gold-500: #5b9bff;   /* the accent; 6.28:1 on felt-700, 5.60:1 on felt-600 */
+  --gold-300: #9cc2ff;   /* hover and the focus ring; ring 9.59:1 on felt-700, 8.56:1 on felt-600 */
 
-  /* ---- Jade (correct) --------------------------------------------------- */
-  --jade-500: #4f9d7c;
+  /* ---- Correct ---------------------------------------------------------- */
+  --jade-500: #5b9bff;   /* shares the accent; 6.28:1 on felt-700 */
 
-  /* ---- Vermilion (incorrect, discard, capacity danger) ------------------ */
-  --verm-800: #7d2d1f;   /* primary button edge — the fired 'thickness' colour */
-  --verm-600: #b5432f;
-  --verm-400: #e2795f;
+  /* ---- Wrong (orange: incorrect, discard) ------------------------------- */
+  --verm-800: #6e2e00;   /* primary button edge */
+  --verm-600: #bf5100;   /* ink-000 on it 4.58:1; 3.64:1 on felt-700, 3.25:1 on felt-600 */
+  --verm-400: #ff9a4d;   /* text on the field; 8.27:1 on felt-700, 9.18:1 on felt-900 */
 
   /* ---- Ink on the dark field ------------------------------------------- */
-  --ink-000: #f7f0e2;
-  --ink-100: rgb(240 231 214 / 72%);
-  --ink-200: rgb(240 231 214 / 55%);
-  --ink-300: rgb(240 231 214 / 40%);
-  --hair-100: rgb(240 231 214 / 10%);
-  --hair-200: rgb(240 231 214 / 7%);
+  --ink-000: #fafafa;
+  --ink-100: rgb(250 250 250 / 72%);   /* 9.07:1 on felt-700 */
+  --ink-200: rgb(250 250 250 / 55%);   /* 5.81:1 on felt-700 */
+  --ink-300: rgb(250 250 250 / 40%);   /* disabled, exempt; 3.72:1 on felt-700 */
+  --hair-100: rgb(250 250 250 / 10%);
+  --hair-200: rgb(250 250 250 / 7%);
 
   /* ---- Semantic aliases ------------------------------------------------
      Components reference THESE, not the ramps above. */
@@ -64,9 +68,9 @@
   --state-reward: var(--gold-500);
 
   --border-hairline: var(--hair-100);
-  --border-accent: rgb(201 165 74 / 45%);
-  --border-danger: rgb(181 67 47 / 45%);
-  --border-slot-empty: rgb(201 165 74 / 75%); /* dashed, the awaiting-input rim */
+  --border-accent: rgb(91 155 255 / 45%);
+  --border-danger: rgb(191 81 0 / 45%);
+  --border-slot-empty: rgb(91 155 255 / 75%); /* dashed, the awaiting-input rim */
 
-  --focus-ring: var(--gold-300);
+  --focus-ring: var(--gold-300);   /* 3:1 or better on every felt step and against the bezel line */
 }
