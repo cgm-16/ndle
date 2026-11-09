@@ -40,7 +40,7 @@
    ties at (0,2,0), clearly above the global rule's (0,1,0) in global.css, so
    this wins on specificity alone and does not need the source-order rescue
    Tile.module.css needed. Checked in the browser, not assumed: see
-   https://github.com/cgm-16/ozterisk/blob/main/docs/tasks/T41-language-toggle.md for the measured reading.
+   https://github.com/cgm-16/ndle/blob/3ccd37b/docs/tasks/T41-language-toggle.md for the measured reading.
 
    --ring-focus composes cleanly here because neither segment carries a
    resting box-shadow of its own to be replaced (R1) — the active segment's

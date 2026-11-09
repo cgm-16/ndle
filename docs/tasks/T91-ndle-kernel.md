@@ -57,7 +57,7 @@ Until these are rewritten, every later task would be refused.
     geometry-only rule, no sound, Vercel and test-first. Then:
     - add "and never read the clock" to the pure-reducer line;
     - replace `Product name is \`ozterisk\`.` with `Product name is **9dle** (Korean **구들**); the slug is \`ndle\`.`;
-    - replace line 57 with: `Persist only the language preference and today's daily (its table number, its moves so far, its outcome) in \`localStorage\`; never persist a Practice run, a past daily, a streak, or any record across days.`;
+    - replace line 57 with: `Persist only the language preference and today's daily (its table number, its moves so far, its outcome) in \`localStorage\`. A record from an earlier day is never shown, and the next Daily overwrites it. Never persist a Practice run, a streak, or a history of past dailies.`;
     - replace line 63 with: `Practice uses ordinary browser randomness. The daily list is chosen offline and ships as numbered tables, never as seeds; a seeded PRNG may exist only in tests and in the offline generator under \`scripts/\`, never in code \`src/main.tsx\` reaches.`;
     - replace line 66 with: `Do not implement a leaderboard, result URLs, accounts, a daily streak, tutorials, or backend validation. A shared Daily names its table number; a Practice table is never named, replayed or shared.`
   - **§4.4–§7.7:** keep them, with these changes:

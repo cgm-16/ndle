@@ -19,7 +19,7 @@ states the contract any values must satisfy.
 - Mobile changes spacing, wrapping, and control size, not information architecture.
 - **Back** (`action.back`, `Back` / `뒤로`) is the first focusable element of the game screen and of the game-over screen, for Daily and Practice alike. It is at least `44 px` tall and carries an `aria-hidden` inline-SVG arrow. It has no key binding, because `Escape` already clears the selection. It dispatches `RETURN_TO_TITLE`, with no confirmation. Back is not a move: a Daily keeps its record and resumes from the title, and a Practice run is dropped.
 - **The ledger** lists the table's 8 rows. Each row shows its equation and the tiles it pays, and a mark once answered: correct or missed, in text or shape as well as colour. The current row is marked by more than colour. Each row is one accessible string (`ledger.row`).
-- **The rack** is five fixed sockets in a single row at every breakpoint (`PUZZLE_CAPACITY`). The grid never resizes; an empty socket is a tile spent.
+- **The rack** is five fixed sockets in a single row at every breakpoint (`PUZZLE_CAPACITY`). The grid never resizes; an empty socket is a tile spent, and a socket whose tile is lifted is on loan: it stays held for that tile, visibly distinct from an empty one, and the rack does not re-sort until the round resolves.
 - **The rail.** The tile past capacity (the newest arrival, `product.md` §1.7) perches on a band one tile high above the rack with a `1px` `--border-accent` top rule, right-aligned and drawn at the rack's tile size (where the rack's tracks shrink below it, a dropping tile narrows by a few pixels as it lands). The rail exists while a tile is past capacity, and until the tile it held has landed in a freed socket (`8a·2`). It never adds a row to the rack.
 - **Discard scroll.** When a discard starts, the rack scrolls into view once, with `scrollIntoView({ block: "nearest", behavior: "instant" })`. If the rack is already in view, it does nothing. It is a jump, not a motion moment, so it has nothing for reduced motion to neutralise.
 - Answer slots are `64 × 80` at the arena's widest tier.
@@ -33,14 +33,14 @@ states the contract any values must satisfy.
 
 - **Answering.** Selecting a tile moves it into the leftmost empty slot; a filled slot returns its tile. Submit is enabled only when every slot is filled (`product.md` §1.4). The remaining rows stay visible in the ledger.
 - **Feedback.** The verdict reads **Correct** or **Incorrect** in text. A correct answer shows the tiles received (`result.rewards`); an incorrect answer shows the submitted and the correct answer (`result.submitted`, `result.answer`). **Next Round** advances; `Enter` does the same.
-- **Overflow.** A correct answer at a full hand leaves one tile on the rail, and the prompt reads `overflow.instructionOne`. Any owned tile can be marked, by click or by digit key, and a mark can be taken back until the discard completes. The mark completes the discard, and no confirmation control is rendered. The marked tile leaves the rack, the rail tile takes the freed socket, and the round advances on its own once the discard and the verdict's celebration have both visibly finished.
+- **Overflow.** A correct answer at a full hand leaves one tile on the rail, and the prompt reads `overflow.instructionOne`. Any owned tile can be marked, by click or by digit key. The mark completes the discard, and no confirmation control is rendered. The marked tile leaves the rack, the rail tile takes the freed socket, and the round advances on its own once the discard and the verdict's celebration have both visibly finished.
 - **Game over.** The verdict is **Made par** (`gameOver.parTitle`) or `{short} short of par` (`gameOver.shortTitle`), in text. The screen shows the score as `7 / 8`, Par, and Longest streak (within the table), then Share and Copy Result. After an early end the terminal row stays visible with `gameOver.reason`; after row 8 the line is `gameOver.tableReason`.
   - **Daily** also shows `gameOver.dailyNumber`, `gameOver.nextTable`, and a **Practice** button. It has no Play Again, and `R` does nothing.
   - **Practice** shows **Play Again** with its `R` hint, which deals a new table.
 
 **Material and colour**
 
-- Tiles carry the light values of the system, with a hard bottom edge that reads as the tile's thickness, never a blurred all-round shadow.
+- Tiles carry the light values of the system, with a hard bottom edge that reads as the tile's thickness, never a blurred all-round shadow. This treatment is provisional; the identity replaces it.
 - One meaning per hue: one accent for focus and the current row, one for correct, one for wrong or a tile leaving.
 - Semantic colour appears only at the moment of the event and only on the object concerned. There is no full-screen colour wash.
 - Transparency is used only for ink and hairlines. No backdrop blur.
@@ -200,7 +200,7 @@ and `gameOver.shortTitle`, and a Practice run that falls short uses
 
 - Persist language on every valid language change.
 - Read language once during i18n initialization.
-- Storage holds the language and today's daily, and nothing else.
+- Storage holds the language and today's daily, and nothing else. A record from an earlier day is inert: it is never shown, and the next Daily overwrites it.
 - The daily is one record under `localStorage["ndle.daily"]`, which each save overwrites:
 
   ```ts

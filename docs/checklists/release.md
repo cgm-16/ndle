@@ -8,6 +8,7 @@
 - [ ] Exact release commit is deployed.
 - [ ] Production URL opens the title screen, offering Daily and Practice.
 - [ ] The launch date is set once and matches the shipped daily list.
+- [ ] A refreshed daily list ships within a day of being generated, or is regenerated first.
 - [ ] A reload mid-Daily resumes at the same row, and a finished Daily shows
       its result until the next table.
 - [ ] The daily share text gives the table number, the score against par and

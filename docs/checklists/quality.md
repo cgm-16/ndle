@@ -14,12 +14,13 @@ Done (§9) live in `docs/checklists/release.md`.
       digits plays on.
 - [ ] No dial changes value: `PUZZLE_MIN_PAR` is 7 and `PUZZLE_MIN_ONLY_MOVES`
       is 2 for both Practice and the daily list.
-- [ ] Practice deals live with `dealPuzzle(Math.random)` and a Practice table
-      can never be replayed or shared.
+- [ ] Practice deals live with `dealPuzzle(Math.random)`. A Practice table is
+      never named or replayed, and its share text gives only the score against
+      par.
 - [ ] The same local date gives the same daily table number.
 - [ ] Every daily table is in band and needs a sacrifice.
-- [ ] A daily slot freezes once its date arrives, and a veto touches only
-      future slots.
+- [ ] A daily slot freezes two days before its date arrives, nothing freezes
+      before launch, and a veto touches only unfrozen slots.
 - [ ] A daily is one attempt that resumes after a reload.
 - [ ] The daily share text gives the table number, the score against par and
       the game's link, and never the rows.
@@ -48,8 +49,8 @@ Done (§9) live in `docs/checklists/release.md`.
 - [ ] Enter submits only when every slot is filled, and advances from
       feedback (docs/spec/product.md §1.11).
 - [ ] Disabled keyboard actions are no-ops.
-- [ ] An overflow discard is reversible until it completes, and the next row
-      starts on its own afterwards.
+- [ ] The mark completes the overflow discard, and the next row starts on its
+      own afterwards.
 - [ ] Back mid-Daily returns to the title, and Daily resumes at the same row.
 - [ ] Language switches live without resetting the run.
 
@@ -73,7 +74,7 @@ Done (§9) live in `docs/checklists/release.md`.
 - [ ] Semantic buttons for all actions/tiles/slots.
 - [ ] Logical focus order follows visual hierarchy.
 - [ ] Visible focus on every control, at `3:1` or better against every surface the
-      indicator can appear on, including the ceramic tile face.
+      indicator can appear on, including the tile face.
 - [ ] Status feedback is announced.
 - [ ] State does not rely only on color.
 - [ ] Minimum target size is 44px.

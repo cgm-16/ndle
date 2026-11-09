@@ -25,7 +25,8 @@ paths:
 "Today" is the player's local date, and tables are numbered from launch day,
 which is #1. Two browsers on the same local date must get the same number,
 whatever time of day it is and across DST. The generator needs the reverse
-mapping, number to date, for the freeze rule.
+mapping, number to date, for the freeze rule. `DAILY_LAUNCHED` affects only the generator (T102); previews
+still show Daily #N counting from the placeholder date.
 
 ## Interfaces
 
@@ -36,6 +37,7 @@ mapping, number to date, for the freeze rule.
 export interface LocalDate { year: number; month: number; day: number } // month 1–12
 /** Table #1's date. Ori sets it once at release (M16); changing it after launch renumbers every table. */
 export const DAILY_LAUNCH_DATE: LocalDate; // placeholder { year: 2026, month: 11, day: 9 } until M16
+export const DAILY_LAUNCHED = false; // M16 sets the real DAILY_LAUNCH_DATE and flips this
 export function localDateOf(now: Date): LocalDate;                 // getFullYear, getMonth() + 1, getDate()
 export function daysFrom(from: LocalDate, to: LocalDate): number;  // via Date.UTC, so no DST hour leaks in
 export function dailyNumberOn(date: LocalDate, launch?: LocalDate): number; // daysFrom(launch, date) + 1; ≤ 0 before launch

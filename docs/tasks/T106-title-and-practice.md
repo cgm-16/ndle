@@ -99,6 +99,8 @@ In `main.tsx`:
 
 `title.dailyNone` renders as a disabled button that still has its text.
 
+The key `action.start` is deleted, because its button is gone.
+
 ## Steps
 
 - [ ] **Tests** in `gameReducer.test.ts`:

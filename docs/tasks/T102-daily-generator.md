@@ -63,6 +63,8 @@ export function plantDailyTable(random: RandomSource, attempts: number): PuzzleT
 export interface FillOptions { count: number; frozenThrough: number; vetoed: ReadonlySet<number>;
   random: RandomSource; attemptsPerSlot: number }
 export function fillDailySlots(existing: readonly PuzzleTable[], options: FillOptions): PuzzleTable[];
+export function frozenThroughOn(today: LocalDate, existingLength: number, launched: boolean): number;
+// launched ? min(existingLength, max(0, dailyNumberOn(today) + 2)) : 0
 export function describeDaily(number: number, date: LocalDate, table: PuzzleTable): string; // one review-file block
 ```
 
@@ -84,7 +86,7 @@ candidate after `attemptsPerSlot` plants.
   - `scripts/daily/vetoes.json`, shaped
     `{ "pending": [{ "number": 12, "reason": "…" }], "done": [] }`.
 - **It sets** `frozenThrough` to
-  `min(existing.length, max(0, dailyNumberOn(localDateOf(new Date()))))`.
+  `frozenThroughOn(localDateOf(new Date()), existing.length, DAILY_LAUNCHED)`.
 - **It uses `Math.random`.** No seeded PRNG is needed, because the list
   itself is committed.
 - **It writes:**
@@ -123,6 +125,12 @@ with `root` set to the repo root.
   - `it("refuses to veto a frozen slot")`: `vetoed: {1}` with
     `frozenThrough: 1` throws `RangeError`.
   - `it("appends candidates up to count and never repeats a table")`.
+  - `it("freezes nothing before launch")`: `launched: false` gives 0 for any
+    date.
+  - `it("freezes through two days past today after launch")`: with
+    `launched: true` and 365 slots, on the launch date (#1) it gives 3, two
+    days before the launch date it gives 1, and three days before it gives 0.
+    With only 2 slots, on the launch date it gives 2.
   - `it("marks the sacrifice rows in the review block")`. The rows marked
     sacrifice are exactly the par-line misses whose product the hand could
     spell, recomputed in the test.

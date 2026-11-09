@@ -4,7 +4,7 @@ Date: 2026-10-19
 Status: sections approved in session; written spec awaiting review
 Tracking: #196 (milestone `M8 — Puzzle Prototype`)
 Research draft: `docs/research/game-modes/03-puzzle/README.md` (cited below as "the draft")
-Decision record: `https://github.com/cgm-16/ozterisk/blob/main/docs/journal/journal-2026-10-19.md` (#198)
+Decision record: `https://github.com/cgm-16/ozterisk/blob/c212fcd/docs/journal/journal-2026-10-19.md` (#198)
 Supersedes: nothing. Amends nothing until the playtest passes; §9.3 lists the
 amendments the merge then needs.
 

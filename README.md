@@ -8,7 +8,7 @@ A table is five distinct digit tiles and eight multiplication rows, dealt face
 up. Each row pays new digits for a correct answer: two for a one-digit product
 and three for a two-digit one. Answering spends the tiles that spell the
 answer, the hand holds five, and a wrong answer is legal: it spends the tiles
-and pays nothing, which makes it a deliberate sacrifice. The run ends after row
+and pays nothing, and a deliberate wrong answer is a sacrifice. The run ends after row
 eight, or earlier when the hand holds fewer tiles than the next answer needs.
 Par is the solver's best score for the table, shown before the first move, and
 a score equal to par is Made par.

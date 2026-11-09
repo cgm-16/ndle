@@ -210,6 +210,16 @@ export const PUZZLE_MIN_ONLY_MOVES = 2;
 // game/constants.ts — domain definitions
 export const OPERAND_MIN = 1;
 export const OPERAND_MAX = 9;
+export const REWARD_DIGIT_COUNT = 10; // the digits 0–9; puzzle.ts draws its digits from it
+
+// game/generators.ts — the exports that survive T99; puzzle.ts uses them
+export const EQUATION_PAIRS: ReadonlyArray<readonly [number, number]>; // the 45 unordered pairs
+export function readRandomSample(random: RandomSource): number;
+export function sampleBinIndex(value: number, binCount: number): number;
+export function orientPair(pair: readonly [number, number], orderSample: number): Equation;
+
+// services/sharing.ts
+export function getShareStats(state: GameState): ShareStats; // the figures a finished run shows and shares
 
 // game/factories.ts
 export function createTitleState(): GameState;
@@ -268,6 +278,8 @@ export interface FillOptions {
   attemptsPerSlot: number;
 }
 export function fillDailySlots(existing: readonly PuzzleTable[], options: FillOptions): PuzzleTable[];
+export function frozenThroughOn(today: LocalDate, existingLength: number, launched: boolean): number;
+// launched ? min(existingLength, max(0, dailyNumberOn(today) + 2)) : 0 — a slot freezes two days before its date; nothing freezes before launch
 export function describeDaily(number: number, date: LocalDate, table: PuzzleTable): string; // one review-file block
 
 // game/dailyTables.ts (T103) — dailyTables.json is compact; table #n is index n − 1; product = left × right
@@ -309,7 +321,7 @@ The offline generator is run with
 It reads `src/game/dailyTables.json` (a missing file means `[]`) and
 `scripts/daily/vetoes.json`, shaped `{ "pending": [{ "number": 12, "reason": "…" }], "done": [] }`.
 It sets `frozenThrough` to
-`min(existing.length, max(0, dailyNumberOn(localDateOf(new Date()))))`, uses
+`frozenThroughOn(localDateOf(new Date()), existing.length, DAILY_LAUNCHED)`, so a slot freezes two days before its date arrives and nothing freezes before launch. It uses
 `Math.random`, and writes `dailyTables.json`, the committed review file
 `scripts/daily/review.md` (one `describeDaily` block per table), and
 `vetoes.json`, moving the pending vetoes it handled into `done`. The review file
@@ -325,6 +337,8 @@ The values that decide how the game *feels* live in one data-only module,
 | Feel | `game/balance.ts` | Retuning a shipped game. Safe to edit by hand, within the range each dial documents. |
 | Domain | `game/constants.ts` | Changing what the game *is* — operand range. Not a tuning knob. |
 | Motion and metrics | `styles/global.css` tokens | Retuning press feel and hairlines in one place; no module hardcodes them. |
+
+After launch, `PUZZLE_CAPACITY`, `PUZZLE_ROWS` and `REWARD_BONUS` are baked into every frozen table and stored record, so changing one needs a new list.
 
 Rules that keep the surface durable:
 
@@ -482,7 +496,7 @@ sibling root HTML files. `npm run build && ls dist/` confirms `dist/` holds
 only `assets/`, `favicon.svg`, and `index.html` — `gallery.html` never ships.
 The dev server serves it anyway, since `vite dev` transforms any HTML file
 under the project root on request, not just the configured build input. (Full
-probe record: `https://github.com/cgm-16/ozterisk/blob/main/docs/journal/journal-2026-08-12.md`.)
+probe record: `https://github.com/cgm-16/ndle/blob/3ccd37b/docs/journal/journal-2026-08-12.md`.)
 
 The catalogue, `src/gallery/states.tsx`, exports
 `GALLERY_STATES: Record<GamePhase, GalleryEntry[]>`. Keying by phase rather

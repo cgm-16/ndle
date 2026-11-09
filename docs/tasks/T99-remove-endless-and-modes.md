@@ -102,7 +102,9 @@ Deleted:
 - the message keys `mode.endless`, `mode.endlessHint`, `title.mode`,
   `hud.capacity`, `hud.capacityStatus`, `overflow.instruction`,
   `gameOver.title` and `gameOver.rounds`, and the whole `mode` group
-  (`mode.puzzle`, `mode.puzzleHint`).
+  (`mode.puzzle`, `mode.puzzleHint`);
+- the message key `howToPlay.puzzle`, and its entry in `TitleScreen.tsx`'s
+  `MORE_TOPICS`.
 
 **Copy rewritten for Puzzle** (en / ko), because these strings state
 Endless's rules:
@@ -113,6 +115,7 @@ Endless's rules:
 | `howToPlay.correct` | `A correct answer spends its tiles and pays the digits printed on its row.` | `정답이면 사용한 타일이 빠지고 그 줄에 적힌 숫자 타일을 받습니다.` |
 | `howToPlay.capacity` | `Your hand holds at most five tiles.` | `손에는 타일을 최대 다섯 개까지 들 수 있습니다.` |
 | `howToPlay.overflow` | `If a pay would push your hand past five tiles, choose one tile to discard before play continues.` | `받은 타일로 손이 다섯 개를 넘으면, 계속하기 전에 버릴 타일 1개를 선택해야 합니다.` |
+| `howToPlay.progress` | `Round shows which row of the table is current, score counts correct answers, and streak counts consecutive correct answers. The table ends after row 8, or sooner once you hold fewer tiles than the next answer needs.` | `라운드는 지금 풀고 있는 판의 줄을, 점수는 정답 횟수를, 연속 정답은 이어지는 정답 횟수를 나타냅니다. 판은 8번째 줄을 풀면 끝나고, 다음 답에 필요한 타일보다 보유한 타일이 적어지면 더 일찍 끝납니다.` |
 
 `REWARD_BONUS` stays. Its comment is rewritten for Puzzle's pay, and its
 value is unchanged.

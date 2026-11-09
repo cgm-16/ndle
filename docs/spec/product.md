@@ -11,7 +11,7 @@ and persistence contracts (§1.12–§1.16) live in `docs/spec/ui-i18n.md`.
 2. a consumable spent on every submission; and
 3. an inventory-management choice because correct play returns one net tile before capacity resolution.
 
-It has two modes: **Daily**, one shared table a day, and **Practice**, a table dealt live on demand. The PoC validates whether this loop is understandable and engaging. It does not validate competition, retention, monetization, anti-cheat, or online services.
+It has two modes: **Daily**, one shared table a day, and **Practice**, a table dealt live on demand. 9dle is a daily puzzle built on this loop. It has no competition, retention mechanics, monetization, anti-cheat, or online services.
 
 ### 1.2 The table
 
@@ -23,7 +23,7 @@ It has two modes: **Daily**, one shared table a day, and **Practice**, a table d
 
 ### 1.2a Practice deals
 
-- A Practice table is dealt live with `dealPuzzle(Math.random)`: a table is planted, solved, and accepted when it is in band (`par ≥ PUZZLE_MIN_PAR`, the myopic bot scoring below par, and `onlyMoves ≥ PUZZLE_MIN_ONLY_MOVES`), with at most `PUZZLE_DEAL_ATTEMPTS` tries.
+- A Practice table is dealt live with `dealPuzzle(Math.random)`: a table is planted, solved, and accepted when it is in band (`par ≥ PUZZLE_MIN_PAR`, the myopic bot scoring below par, and `onlyMoves ≥ PUZZLE_MIN_ONLY_MOVES`), with at most `PUZZLE_DEAL_ATTEMPTS` tries. If no plant is accepted within that bound, `dealPuzzle` returns the last table planted, with its par solved, so only the band is skipped.
 - **Play Again** deals a new table.
 - A Practice table is never replayed or shared: there is no way to replay it, and no share text gives its rows. Its run still has a share text with the score against par (`ui-i18n.md` §1.15).
 - Tests provide deterministic `RandomSource` functions.
@@ -33,7 +33,7 @@ It has two modes: **Daily**, one shared table a day, and **Practice**, a table d
 - Daily tables are numbered from launch day, which is #1. The player's local date picks the number.
 - Each table is in the same band as a Practice deal and has `sacrificeRequired`.
 - The list is chosen offline by `scripts/daily/generate.ts`. The generator's review file, `scripts/daily/review.md`, is committed.
-- **Freeze rule.** A slot freezes once its date arrives. A **veto** touches only future slots, and the generator refills the vetoed slot.
+- **Freeze rule.** A slot freezes two days before its date arrives, so no time zone and no day of release lag can see it change. Before launch nothing is frozen, so every slot can be vetoed. A **veto** touches only unfrozen slots, and the generator refills the vetoed slot.
 - **Launch-date rule.** The launch date is set once and never changed after launch.
 - More tables are generated before the list runs out. Before launch, or past the list's end, there is no Daily that day.
 - **Known limit** (Ori, 2026-11-09): the shipped bundle holds every future table, and the solver ships with Practice, so anyone can read ahead and solve. The committed review file adds convenience, not information. Seeding would not change this, because the generator would ship too. Only a server releasing each day's table would hide it, and the game is client-only.
@@ -68,7 +68,7 @@ It has two modes: **Daily**, one shared table a day, and **Practice**, a table d
 
 ### 1.4a Face tiles
 
-Removed with Classic (T97).
+Removed with Classic (T96).
 
 ### 1.5 Correct submission
 
@@ -108,7 +108,7 @@ An incorrect answer is legal even when the correct answer cannot be constructed 
 - A correct answer at a full hand leaves the hand one over capacity, so `excess = inventory.length - capacity` is `1`.
 - The newest arrival waits on the rail, and one discard completes it and advances the round.
 - The player may mark any owned tile: a seated tile, or a tile on the rail.
-- A mark can be taken back until the discard completes.
+- The mark completes the discard.
 - **The mark that reaches `excess` completes the discard.** No confirmation control is rendered. The collapse is driven by the player's action, never by a render.
 - Completing the discard removes the marked tile. A rail tile that survives takes the socket the discard freed; the rest of the rack neither compacts nor re-sorts.
 - Sort only what fits: the next round re-sorts the whole hand (§1.8).
@@ -125,10 +125,10 @@ The run ends after row 8, or earlier when the hand holds **fewer tiles than the 
 
 When the player advances:
 
-1. If row 8 has been submitted, enter `gameOver`.
-2. Clear `isNew` on surviving inventory tiles, and sort the whole inventory — the one re-sort per round.
-3. Clear the previous answer selection, pending discards, and prior result.
-4. Increment the row ordinal.
+1. Clear `isNew` on surviving inventory tiles, and sort the whole inventory — the one re-sort per round.
+2. Clear the previous answer selection, pending discards, and prior result.
+3. Increment the row ordinal.
+4. If row 8 has been submitted, enter `gameOver`.
 5. Compare `inventory.length` with the next row's answer-slot count.
 6. If the hand has enough tiles, enter `answering`.
 7. If the hand holds fewer tiles than the answer needs, enter `gameOver`.
@@ -157,10 +157,13 @@ inventory.length < getAnswerLength(equation)
 
 - The title offers **Daily** and **Practice**.
 - The game screen has the HUD (round, score, streak, par), the ledger, the slots, the actions and the rack.
-- Two game-over variants follow, one for Daily and one for Practice; their content is T108's.
+- Two game-over variants follow, one for Daily and one for Practice; their content is in `ui-i18n.md` §1.12.
 - A Daily resumes when opened again that day, and once finished it shows its result until the next table.
 - Every game and game-over screen has **Back** at the top, which returns to the title (Ori, 2026-11-09). Back is not a move: a Daily keeps its record and resumes, and a Practice run is dropped.
 - Round, score, streak and par are never shown by colour alone.
+- `gameOver` is the only phase that prints the product; during play the board shows `left × right = ?`, so the answer is never given away.
+- Clear is disabled while no tile is selected.
+- A lifted tile's socket is on loan: it stays held for that tile, visibly distinct from a socket emptied by a spent tile, and the rack does not re-sort until the round resolves.
 
 ### 1.11 Keyboard contract
 

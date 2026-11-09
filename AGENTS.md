@@ -31,8 +31,8 @@ is read on demand through the routing map below.
 2. `docs/tasks/**` and `docs/plan/**` defer to spec on conflict. If they
    disagree, stop and report the conflict; do not patch around it.
 
-Section numbers (§1.x, §2.x, §4.x, §7.x, §8.x) are preserved from the original
-plan, so cross-references resolve across files.
+Section numbers (§1.x, §2.x, §4.x, §7.x, §8.x) are stable, so
+cross-references resolve across files.
 
 ## Global Constraints
 
@@ -52,7 +52,7 @@ plan, so cross-references resolve across files.
   permitted; extending it amends §1.12 first.
 - Support responsive desktop and mobile layouts with mouse, touch, and keyboard input.
 - Support English and Korean through a typed in-code dictionary; do not add an i18n dependency.
-- Persist only the language preference and today's daily (its table number, its moves so far, its outcome) in `localStorage`; never persist a Practice run, a past daily, a streak, or any record across days.
+- Persist only the language preference and today's daily (its table number, its moves so far, its outcome) in `localStorage`. A record from an earlier day is never shown, and the next Daily overwrites it. Never persist a Practice run, a streak, or a history of past dailies.
 - Use Vitest and React Testing Library for behavior: game rules, reducer
   transitions, component interaction, and accessibility semantics are tested
   there and never in a browser. A browser suite is permitted only for
@@ -105,10 +105,8 @@ Closes #<issue>
 - [ ] Relevant acceptance path exercised
 ```
 
-M0–M3 used one branch and PR *per task* (`feat/T##-…`, `[T##] …`), which was
-right for fourteen tasks building a codebase from nothing. From M4 the suite
-is comprehensive and milestones are small, so the merge unit is the
-milestone. Older PR history reflects the previous convention.
+The merge unit is the milestone, not the task: the suite is comprehensive and
+milestones are small.
 
 ### 4.5 Tuning values
 
@@ -119,7 +117,7 @@ use `tune(balance):`; feature commits never carry value changes.
 
 ### 4.6 Base branch and release
 
-`main` is where work lands, unchanged. **`prod` is what the public runs.**
+`main` is where work lands. **`prod` is what the public runs.**
 
 - Task work is unaffected: cut feature branches from `main`, open PRs
   against `main`, squash-merge them. `main` is still the default branch.
@@ -137,8 +135,7 @@ use `tune(balance):`; feature commits never carry value changes.
   commit is a *descendant* of `main`, so from then on each branch is ahead
   of the other by those merges. Nothing breaks, but ask "is this commit
   deployed?" by testing against `prod` — never by assuming `prod` is behind.
-- `prod` therefore answers "what is actually deployed", which is a question
-  this project could not answer before.
+- `prod` therefore answers "what is actually deployed".
 
 ## Loop-Agent Operating Protocol
 
