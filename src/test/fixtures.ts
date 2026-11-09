@@ -5,6 +5,7 @@ import type {
   Digit,
   Equation,
   GameState,
+  PuzzleMove,
   PuzzleRow,
   PuzzleTable,
   RandomSource,
@@ -63,11 +64,7 @@ export const PUZZLE_SAMPLE: PuzzleTable = {
   par: 7,
 };
 
-/** One row's play: the tiles spent, in slot order, and the overflow discard. */
-export interface PuzzleMove {
-  spend: Digit[];
-  discard?: Digit;
-}
+export type { PuzzleMove };
 
 // The sample's canonical par line. Row 1 is the sacrifice: 57 for 15.
 export const PUZZLE_SAMPLE_PAR_LINE: PuzzleMove[] = [
