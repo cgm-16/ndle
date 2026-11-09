@@ -3,7 +3,7 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
 > `superpowers:subagent-driven-development` (recommended) or
 > `superpowers:executing-plans` to implement this plan task-by-task.
-> Task steps live in `docs/tasks/T85..T90.md` and use checkbox (`- [ ]`)
+> Task steps live in https://github.com/cgm-16/ozterisk/blob/main/docs/tasks/ (T85..T90) and use checkbox (`- [ ]`)
 > syntax for tracking.
 
 **Goal:** A third mode, Puzzle, that deals five tiles and eight equations face
@@ -75,12 +75,12 @@ test in the owning task.
 
 | Task | Title | Depends on | Parallel-safe |
 |---|---|---|---|
-| [T85](../../tasks/T85-puzzle-solver-and-deal.md) | Puzzle solver and deal | — | no |
-| [T86](../../tasks/T86-puzzle-rules.md) | Puzzle rules in the reducer | T85 | no |
-| [T87](../../tasks/T87-puzzle-app-wiring.md) | App wiring and the playtest set | T86 | no |
-| [T88](../../tasks/T88-puzzle-ledger.md) | HUD, ledger, rack and the layout check | T87 | no |
-| [T89](../../tasks/T89-puzzle-game-over.md) | Game over, sharing and copy | T88 | no |
-| [T90](../../tasks/T90-puzzle-merge-gate.md) | After a pass: strip the set, amend the spec | T89, playtest pass | no |
+| [T85](https://github.com/cgm-16/ozterisk/blob/main/docs/tasks/T85-puzzle-solver-and-deal.md) | Puzzle solver and deal | — | no |
+| [T86](https://github.com/cgm-16/ozterisk/blob/main/docs/tasks/T86-puzzle-rules.md) | Puzzle rules in the reducer | T85 | no |
+| [T87](https://github.com/cgm-16/ozterisk/blob/main/docs/tasks/T87-puzzle-app-wiring.md) | App wiring and the playtest set | T86 | no |
+| [T88](https://github.com/cgm-16/ozterisk/blob/main/docs/tasks/T88-puzzle-ledger.md) | HUD, ledger, rack and the layout check | T87 | no |
+| [T89](https://github.com/cgm-16/ozterisk/blob/main/docs/tasks/T89-puzzle-game-over.md) | Game over, sharing and copy | T88 | no |
+| [T90](https://github.com/cgm-16/ozterisk/blob/main/docs/tasks/T90-puzzle-merge-gate.md) | After a pass: strip the set, amend the spec | T89, playtest pass | no |
 
 ## Dependency order
 

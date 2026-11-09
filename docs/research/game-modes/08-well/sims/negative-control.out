@@ -1,3 +1,0 @@
-instrument: RUNS=1 per row, CAP=1000 rounds, SKILL=1, kind=0.2; rounds = submissions before the loss
-analytic drift at b=0.48: -0.409 (spec: -0.41)
-negative controls (500 runs each): Well with zero rewards max 11 rounds (must be <= 15) | Endless skill 0, runs with no correct answer max 8 (must be <= 10); 72 runs had a forced correct

@@ -1,3 +1,0 @@
-presence test vs real canConstruct: 900000/900000 product checks agree; COV table vs real count: 20000/20000 hands agree
-b(10) from the sim's COV table = 0.479 (repo 0.481); analytic drift at that b = -0.41 (repo -0.41)
-COV[empty hand] = 0 (must be 0)

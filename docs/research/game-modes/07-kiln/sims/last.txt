@@ -1,4 +1,0 @@
-Endless capacity 10, no kiln             rounds 20.0 ±0.3  b' 0.561
-Endless capacity 11, no kiln             rounds 24.6 ±0.5  b' 0.577
-Kiln k=2, best kanchan                   rounds 22.8 ±0.4  b' 0.573
-Kiln k=2, random kanchan                 rounds 21.8 ±0.4  b' 0.563

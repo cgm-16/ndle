@@ -1,8 +1,0 @@
-{"label":"Exact union: 3 4 5 -> 3-5","mean":17.9,"ci":0.3,"b":0.557,"median":16}
-{"label":"Endless today (no kiln)","mean":20,"ci":0.3,"b":0.561,"median":18}
-{"label":"Kanchan, kiln holds 3","mean":21.4,"ci":0.4,"b":0.558,"median":18}
-{"label":"Kanchan, kiln holds 2 (proposed)","mean":22.8,"ci":0.4,"b":0.573,"median":20}
-{"label":"Kanchan, kiln holds 1","mean":25.1,"ci":0.5,"b":0.603,"median":21}
-{"label":"Kanchan, instant","mean":24.8,"ci":0.5,"b":0.625,"median":21}
-{"label":"Endless at capacity 11 (no kiln)","mean":24.6,"ci":0.5,"b":0.577,"median":21}
-{"label":"Seed recipes, instant","mean":26.8,"ci":0.6,"b":0.667,"median":23}

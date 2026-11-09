@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import keyframesSource from "./keyframes.css?raw";
 
 /* An `animation:` naming a keyframe no stylesheet defines fails silently — no
-   error, no warning, no motion (journal-2026-08-09). Nothing catches it at
+   error, no warning, no motion (https://github.com/cgm-16/ozterisk/blob/main/docs/journal/journal-2026-08-09.md). Nothing catches it at
    build time, nothing catches it in review, and a rendering test cannot see it
    either, because jsdom performs no layout. So the whole class is caught here
    instead: read the sources, and require that every keyframe src/ animates is

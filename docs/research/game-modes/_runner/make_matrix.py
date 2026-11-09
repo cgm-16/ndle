@@ -1,4 +1,4 @@
-"""Spec-fit matrix for docs/research/game-modes/README.md.
+"""Spec-fit matrix for https://github.com/cgm-16/ozterisk/blob/main/docs/research/game-modes/README.md.
 
 Data is transcribed from each draft's own §1 "Spec collisions" table:
 2 = the proposed mode needs the line amended, 1 = only an optional variant

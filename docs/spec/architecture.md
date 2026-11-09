@@ -482,7 +482,7 @@ sibling root HTML files. `npm run build && ls dist/` confirms `dist/` holds
 only `assets/`, `favicon.svg`, and `index.html` — `gallery.html` never ships.
 The dev server serves it anyway, since `vite dev` transforms any HTML file
 under the project root on request, not just the configured build input. (Full
-probe record: `docs/journal/journal-2026-08-12.md`.)
+probe record: `https://github.com/cgm-16/ozterisk/blob/main/docs/journal/journal-2026-08-12.md`.)
 
 The catalogue, `src/gallery/states.tsx`, exports
 `GALLERY_STATES: Record<GamePhase, GalleryEntry[]>`. Keying by phase rather

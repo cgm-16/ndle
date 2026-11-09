@@ -1,6 +1,0 @@
-== instrument: engine.ts, fixed 15, deal of 45, aware bot, skill 0.95, 4000 runs (seeds 100000+)
-k0: win 14.9% ±1.1 | eff b 0.608 | won runs: 1-digit facts in last 9 = 2.50 (uniform 2.60), mean answer length there 1.722 (uniform 1.711)
-k0.1: win 22.1% ±1.3 | eff b 0.633 | won runs: 1-digit facts in last 9 = 2.35 (uniform 2.60), mean answer length there 1.739 (uniform 1.711)
-k0.2: win 35.1% ±1.5 | eff b 0.663 | won runs: 1-digit facts in last 9 = 2.24 (uniform 2.60), mean answer length there 1.751 (uniform 1.711)
-k0.3: win 46.9% ±1.5 | eff b 0.692 | won runs: 1-digit facts in last 9 = 2.12 (uniform 2.60), mean answer length there 1.765 (uniform 1.711)
-k0.4: win 58.7% ±1.5 | eff b 0.720 | won runs: 1-digit facts in last 9 = 2.04 (uniform 2.60), mean answer length there 1.773 (uniform 1.711)

@@ -1,7 +1,0 @@
-Endless, cap 10        drift at full rack -0.547 (n=26822) | one below -0.250 (n=7266) | two below -0.256 (n=10555) | b_run 0.550 | s (correct answers netting ≥ +1) 1.000
-Endless, cap 11        drift at full rack -0.537 (n=29265) | one below -0.218 (n=8069) | two below -0.215 (n=11573) | b_run 0.555 | s (correct answers netting ≥ +1) 1.000
-A flushPays, cap 10    drift at full rack -0.557 (n=35833) | one below -0.228 (n=8162) | two below -0.055 (n=13374) | b_run 0.565 | s (correct answers netting ≥ +1) 1.000 | flush share f 0.288
-E flushOnly, cap 11    drift at full rack -0.506 (n=24137) | one below -0.349 (n=6335) | two below -0.340 (n=9790) | b_run 0.551 | s (correct answers netting ≥ +1) 0.721
-E flushOnly, cap 12    drift at full rack -0.475 (n=28268) | one below -0.272 (n=7314) | two below -0.290 (n=10922) | b_run 0.567 | s (correct answers netting ≥ +1) 0.765
-C′ gateAll, cap 12     drift at full rack -0.724 (n=19866) | one below -0.304 (n=6532) | two below -0.286 (n=10513) | b_run 0.504 | s (correct answers netting ≥ +1) 1.000
-Analytic cliffs with miss cost m = 1.711 (uniform) / 1.806 (full hand): Endless 0.631 / 0.644; flushOnly b* = m/(s+m); flushPays b* = m/(1+f+m).
