@@ -10,7 +10,7 @@
    the first time the interface needs it. See loadKoreanFont in
    src/i18n/koreanFont.ts.
 
-   The weights imported there and the weights src/ asks for are one list. A
-   rule asking for a weight no face supplies renders a substitute chosen by the
-   browser, silently and without an error (#138), so changing either changes
-   both. */
+   Hangul loads only 400 and 700, while src/ also asks for 500 (the wordmark,
+   the title, dt) and 600 (dd). The browser substitutes silently, without an
+   error (#138): Hangul at 500 renders the 400 face and at 600 the 700 face.
+   Changing the weights loaded or the weights asked for changes that mapping. */

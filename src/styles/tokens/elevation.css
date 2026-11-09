@@ -8,7 +8,6 @@
 
   /* Sockets are cut into the field: inset only, plus a hairline rim. */
   --shadow-socket: inset 0 4px 9px rgb(0 0 0 / 70%);
-  --shadow-socket-sm: inset 0 3px 7px rgb(0 0 0 / 70%);
   --rim-socket: inset 0 0 0 1px var(--hair-200);
 
   /* A socket whose tile is out in the answer slots — owed back, not lost. It

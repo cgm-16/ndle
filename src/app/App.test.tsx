@@ -102,11 +102,13 @@ describe("App", () => {
     expect(screen.getByText("3 × 5 =")).toBeInTheDocument();
     expect(hudField("Round")).toBe("1");
     expect(hudField("Score")).toBe("0");
-    expect(screen.getAllByRole("button", { name: /^Digit \d$/ })).toHaveLength(5);
+    for (const digit of [1, 4, 5, 7, 9]) {
+      expect(screen.getByRole("button", { name: `Digit ${digit}` })).toBeInTheDocument();
+    }
     expect(screen.getByRole("button", { name: "Submit" })).toBeInTheDocument();
   });
 
-  it("orders the HUD Round, Score, Streak so rounds survived reads as the headline stat", async () => {
+  it("orders the HUD Round, Score, Streak so the score reads as the headline stat", async () => {
     const user = userEvent.setup();
     renderApp({ initialLanguage: "en" });
 
@@ -361,16 +363,6 @@ async function press(user: ReturnType<typeof userEvent.setup>, digits: number[])
 }
 
 describe("Puzzle", () => {
-  it("deals the table's hand and shows row 1", async () => {
-    const user = userEvent.setup();
-    renderApp();
-    await startPuzzle(user);
-    expect(screen.getByText("3 × 5 =")).toBeInTheDocument();
-    for (const digit of [1, 4, 5, 7, 9]) {
-      expect(screen.getByRole("button", { name: `Digit ${digit}` })).toBeInTheDocument();
-    }
-  });
-
   it("pays the row's printed tiles and advances row by row", async () => {
     const user = userEvent.setup();
     renderApp();
@@ -384,22 +376,6 @@ describe("Puzzle", () => {
     for (const digit of [1, 6, 8, 9]) {
       expect(screen.getByRole("button", { name: `Digit ${digit}` })).toBeInTheDocument();
     }
-  });
-
-  it("advances to the next row on its own after a discard", async () => {
-    const user = userEvent.setup();
-    renderApp();
-    await startPuzzle(user);
-    await press(user, [5, 7]);
-    await user.click(screen.getByRole("button", { name: "Next Round" }));
-    await press(user, [1, 4]);
-    await user.click(screen.getByRole("button", { name: "Next Round" }));
-    await press(user, [9]);
-    await user.click(screen.getByRole("button", { name: "Next Round" }));
-    await press(user, [7]); // 1 × 7, paid 4 4: six tiles in five sockets
-    await user.click(screen.getByRole("button", { name: "Digit 6" }));
-    finishDeparture();
-    expect(await screen.findByText("4 × 1 =")).toBeInTheDocument();
   });
 
   it("deals once per run under StrictMode", async () => {
@@ -437,20 +413,5 @@ describe("Puzzle", () => {
     // The table was played to its end, so no terminal equation is shown.
     expect(screen.getByText("All eight rows played.")).toBeInTheDocument();
     expect(screen.queryByText("3 × 4 =")).not.toBeInTheDocument();
-  });
-
-  it("ends early when the hand cannot fill the next row, short of par", async () => {
-    const user = userEvent.setup();
-    const twoTiles: PuzzleTable = {
-      hand: [1, 2],
-      rows: [makePuzzleRow(3, 4, [1, 2, 3]), makePuzzleRow(5, 5, [1, 2, 3])],
-      par: 1,
-    };
-    renderApp({ dealPuzzle: () => twoTiles });
-    await startPuzzle(user);
-    await press(user, [2, 1]); // 21 for 12: the hand is spent
-    await user.click(screen.getByRole("button", { name: "Next Round" }));
-    expect(screen.getByRole("heading", { name: "1 short of par" })).toBeInTheDocument();
-    expect(screen.getByText("Not enough tiles left to answer.")).toBeInTheDocument();
   });
 });

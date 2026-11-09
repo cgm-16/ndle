@@ -63,8 +63,8 @@
    against the floor, which is at the threshold of being seen at all. 2px of
    blur concentrates it into a band 1.399:1 against the floor, under a bottom
    rim 1.686:1 lighter again than the band. Still nowhere near
-   --shadow-socket-sm, which is tuned for a ~34px chip and whose 3px/7px
-   falloff swallows the whole top half of an 18px square. */
+   --shadow-socket, whose 4px/9px falloff swallows the whole top half of an
+   18px square. */
 .socket {
   background: var(--surface-raised);
   box-shadow:

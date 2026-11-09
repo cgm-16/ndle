@@ -13,8 +13,11 @@ import {
   makeGameOverState,
   makeOverflowState,
   parLineAt,
+  play,
+  PUZZLE_SAMPLE,
   PUZZLE_SAMPLE_PAR_LINE,
   playRow,
+  puzzleStart,
   selectDigits,
   sequentialIds,
   tileWith,
@@ -123,6 +126,14 @@ const FEEDBACK_AFTER_DISCARD_STATE = gameReducer(OVERFLOW_REQUIRED_1_STATE, {
 // gold and no equation is shown.
 const GAME_OVER_STATE = makeGameOverState();
 
+// A table that ends early: three misses drain the hand to one tile, and row 4,
+// 1 x 7, needs more tiles than that, so the run stops on that equation, 7
+// short of par.
+const SHORT_GAME_OVER_STATE = (() => {
+  const ids = sequentialIds();
+  return play(puzzleStart(PUZZLE_SAMPLE, ids), [{ spend: [5, 7] }, { spend: [9, 1] }, { spend: [4] }], ids);
+})();
+
 const RESOLVING_SHARE_DEPENDENCIES: ShareDependencies = {
   writeClipboard: async () => {},
 };
@@ -223,6 +234,11 @@ export const GALLERY_STATES: Record<GamePhase | "interaction", GalleryEntry[]> =
       id: "game-over-idle",
       label: "Game over — idle",
       render: () => renderGameOverScreen(GAME_OVER_STATE, RESOLVING_SHARE_DEPENDENCIES),
+    },
+    {
+      id: "game-over-short",
+      label: "Game over — ended early, short of par",
+      render: () => renderGameOverScreen(SHORT_GAME_OVER_STATE, RESOLVING_SHARE_DEPENDENCIES),
     },
     {
       id: "game-over-copy-succeeded",

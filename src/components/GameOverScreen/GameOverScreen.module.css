@@ -52,7 +52,7 @@
   color: var(--gold-500);
 }
 
-/* A Puzzle table that fell short of par is a score to read against its par,
+/* A table that fell short of par is a score to read against its par,
    so it keeps the ink of the figures beneath it. */
 .title.shortOfPar {
   color: var(--text-primary);

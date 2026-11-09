@@ -2,8 +2,8 @@
  * Tuning dials. Changing a value by hand is not automatically safe: each dial
  * documents its effect and the range it was measured at.
  *
- * Domain definitions that change what the game *is* — operand range, digit
- * spread — live in constants.ts instead.
+ * Domain definitions that change what the game *is* — operand range and
+ * the digit pool — live in constants.ts instead.
  */
 
 /**
@@ -12,7 +12,8 @@
  * every row, and the reducer refuses a pay of any other length.
  * Range: 1 = shipped, a pay of 2 for a one-digit product and 3 for a two-digit
  * one. 0 removes overflow entirely, deleting the discard mechanic. Above 1, one
- * answer can push the hand two or more tiles past PUZZLE_CAPACITY.
+ * answer can push the hand two or more tiles past PUZZLE_CAPACITY, and the
+ * overflow prompt, which asks for a single discard, is wrong.
  */
 export const REWARD_BONUS = 1;
 

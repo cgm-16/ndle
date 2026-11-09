@@ -33,7 +33,7 @@ export function createTiles(digits: readonly Digit[], idFactory: TileIdFactory):
   return digits.map((digit) => ({ id: idFactory(), digit, isNew: false }));
 }
 
-// Rack order (§1.4a): digits ascending, then by id.
+// Rack order (§1.3): digits ascending, then by id.
 export function sortTiles(tiles: readonly Tile[]): Tile[] {
   return [...tiles].sort((a, b) => {
     if (a.digit !== b.digit) return a.digit - b.digit;

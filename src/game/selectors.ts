@@ -5,9 +5,9 @@ export function getAnswerLength(equation: Equation): 1 | 2 {
   return equation.product >= 10 ? 2 : 1;
 }
 
-// Single source of truth for the reward count: App.tsx generates this many
-// tiles and gameReducer.ts validates the action against it, so the two can
-// no longer disagree by drifting apart independently.
+// Single source of truth for the reward count: plantTable prints this many
+// tiles on every row and gameReducer.ts validates the action against it, so
+// the two cannot disagree by drifting apart independently.
 export function getRewardCount(spentCount: number): number {
   return spentCount + REWARD_BONUS;
 }
@@ -39,7 +39,7 @@ export function getOverflowCount(state: Pick<GameState, "inventory">): number {
 }
 
 // A run is complete once every row of its table is submitted. The next
-// advance then ends it (§1.8 step 0).
+// advance then ends it (§1.8 step 4).
 export function isRunComplete(state: Pick<GameState, "totalRounds" | "table">): boolean {
   return state.table !== null && state.totalRounds >= state.table.rows.length;
 }

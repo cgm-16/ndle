@@ -5,7 +5,7 @@ import { START_LABEL, type Locale } from "./labels.js";
  * one test per clause.
  *
  * The clause "No horizontal scroll at 320px" is NOT here: `viewport.spec.ts`
- * already owns it across nineteen gallery states, both locales, and the arena
+ * already owns it across twenty gallery states, both locales, and the arena
  * itself. This file owns the other eight, which had only ever been walked by
  * hand — the release walk of 2026-09-17 took a browser session and a page of
  * ad-hoc evaluate calls to produce readings no suite could reproduce.
@@ -266,7 +266,7 @@ test("Korean copy renders in a Hangul face and does not clip", async ({ page }) 
      reach `loaded` — NOT `document.fonts.check()`, which is satisfied by a
      system copy of the same family and therefore passes on a machine that has
      Gothic A1 installed even when the bundle ships none. That is a false
-     pass: it read green on macOS and red on CI, and CI was right. */
+     pass on any machine that has Gothic A1 installed. */
   await page.waitForFunction(() =>
     [...document.fonts].some((face) => /Gothic A1/.test(face.family) && face.status === "loaded"),
   );
