@@ -126,9 +126,8 @@ const FEEDBACK_AFTER_DISCARD_STATE = gameReducer(OVERFLOW_REQUIRED_1_STATE, {
 // gold and no equation is shown.
 const GAME_OVER_STATE = makeGameOverState();
 
-// A table that ends early: three misses drain the hand to one tile, and row 4,
-// 1 x 7, needs more tiles than that, so the run stops on that equation, 7
-// short of par.
+// A table that ends early: three misses drain the hand to none, and row 4, 1 x 7,
+// needs one tile, so the run stops on that equation, 7 short of par.
 const SHORT_GAME_OVER_STATE = (() => {
   const ids = sequentialIds();
   return play(puzzleStart(PUZZLE_SAMPLE, ids), [{ spend: [5, 7] }, { spend: [9, 1] }, { spend: [4] }], ids);
