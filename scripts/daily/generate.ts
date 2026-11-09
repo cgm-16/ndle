@@ -1,9 +1,11 @@
-// Fills src/game/dailyTables.json with daily tables and writes the review file.
+// Fills src/game/dailyTables.json (the compact format of dailyFormat.ts) with daily
+// tables and writes the review file.
 // Usage, from the repo root:
 //   node scripts/run.mjs scripts/daily/generate.ts [--count 365] [--attempts 20000]
 // The review file is committed, so it is public (docs/spec/product.md §1.2b).
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { DAILY_LAUNCHED, dateOfDaily, localDateOf } from "../../src/game/daily";
+import { packTables, unpackTables, type CompactTable } from "../../src/game/dailyFormat";
 import { describeDaily, fillDailySlots, frozenThroughOn } from "../../src/game/dailyPicker";
 import type { PuzzleTable } from "../../src/game/types";
 
@@ -24,7 +26,7 @@ const flag = (name: string, fallback: number): number => {
   return value;
 };
 
-const existing: PuzzleTable[] = existsSync(TABLES) ? JSON.parse(readFileSync(TABLES, "utf8")) : [];
+const existing: PuzzleTable[] = existsSync(TABLES) ? unpackTables(JSON.parse(readFileSync(TABLES, "utf8")) as CompactTable[]) : [];
 const vetoes: Vetoes = JSON.parse(readFileSync(VETOES, "utf8"));
 const today = localDateOf(new Date());
 const frozenThrough = frozenThroughOn(today, existing.length, DAILY_LAUNCHED);
@@ -44,7 +46,7 @@ const tables = fillDailySlots(existing, {
   onPlant: () => plants++,
 });
 
-writeFileSync(TABLES, `${JSON.stringify(tables)}\n`);
+writeFileSync(TABLES, `${JSON.stringify(packTables(tables))}\n`);
 writeFileSync(
   REVIEW,
   tables.map((table, i) => describeDaily(i + 1, dateOfDaily(i + 1), table)).join("\n"),
