@@ -129,6 +129,18 @@ The key `action.start` is deleted, because its button is gone.
       `play = { kind: "practice" }`. `onDaily` is a stub that T107 fills.
 - [ ] **Gates,** including `npm run test:e2e`: the title's buttons changed,
       so update the specs that press Start Run to press Practice.
+- [ ] **Bundle check,** after `npm run build`, once the title imports
+      `todaysDaily` (function names cannot be grepped, because minification
+      renames them, so grep literals):
+  - `grep -c "SACRIFICE\|(run over)" dist/assets/*.js` prints 0 for every
+    file; those literals only `describeDaily` emits, and it is offline only.
+  - A literal from the shipped table data is found: table #1's opening, as
+    `dailyTables.json` spells it (Vite keeps a large JSON file as a
+    `JSON.parse` string), via
+    `grep -c '"hand":\[3,4,0,6,1\],"rows":\[{"left":6,"right":6' dist/assets/*.js`
+    printing at least 1 for one file.
+  - A control literal from `src/i18n/messages.ts`, e.g. `Today's result`, is
+    found.
 - [ ] **Commit:** `feat(title): choose Daily or Practice`, with `Task: T106`.
 
 ## Acceptance gate
@@ -136,3 +148,5 @@ The key `action.start` is deleted, because its button is gone.
 - The six App tests and the reducer's `RETURN_TO_TITLE` tests are green
   under StrictMode.
 - The e2e suite is green.
+- The bundle check passes: no `SACRIFICE` or `(run over)` in `dist/assets`,
+  the table data and a messages literal are both found.

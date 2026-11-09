@@ -32,7 +32,9 @@ const today = localDateOf(new Date());
 const frozenThrough = frozenThroughOn(today, existing.length, DAILY_LAUNCHED);
 const vetoed = new Set(vetoes.pending.map((veto) => veto.number));
 for (const number of vetoed) {
-  if (number > existing.length) throw new RangeError(`Veto #${number} is past the ${existing.length} existing tables`);
+  if (!Number.isInteger(number) || number < 1 || number > existing.length) {
+    throw new RangeError(`Veto #${JSON.stringify(number)} is not a table number from 1 to ${existing.length}`);
+  }
 }
 
 let plants = 0;

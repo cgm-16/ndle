@@ -18,10 +18,9 @@ const numberOn = (now: Date) => dailyNumberOn(localDateOf(now));
 
 describe("daily table number", () => {
   it("numbers launch day 1, the next day 2 and the day before 0", () => {
-    const { year, month, day } = DAILY_LAUNCH_DATE;
     expect(dailyNumberOn(DAILY_LAUNCH_DATE)).toBe(1);
-    expect(dailyNumberOn({ year, month, day: day + 1 })).toBe(2);
-    expect(dailyNumberOn({ year, month, day: day - 1 })).toBe(0);
+    expect(dailyNumberOn(dateOfDaily(2))).toBe(2);
+    expect(dailyNumberOn(dateOfDaily(0))).toBe(0);
   });
 
   it("gives one number to the whole local day", () => {

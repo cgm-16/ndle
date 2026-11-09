@@ -7,7 +7,7 @@ export interface LocalDate {
 /** Table #1's date. Ori sets it once at release (M16); changing it after launch renumbers every table. */
 export const DAILY_LAUNCH_DATE: LocalDate = { year: 2026, month: 11, day: 9 };
 
-/** M16 sets the real DAILY_LAUNCH_DATE and flips this. */
+/** Only the generator's freeze reads this (nothing freezes while false); previews number from the placeholder date. M16 sets the real DAILY_LAUNCH_DATE and flips this. */
 export const DAILY_LAUNCHED = false;
 
 const MS_PER_DAY = 86_400_000;
