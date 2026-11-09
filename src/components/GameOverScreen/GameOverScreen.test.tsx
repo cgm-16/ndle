@@ -8,13 +8,14 @@ import { LanguageToggle } from "../LanguageToggle/LanguageToggle";
 import { GameOverScreen, type GameOverScreenProps } from "./GameOverScreen";
 import styles from "./GameOverScreen.module.css";
 
-const STATS = { mode: "endless", won: false, score: 7, totalRounds: 9, longestStreak: 4 } as const;
+// A table that ended early, two short of par: the run stopped on EQUATION.
+const STATS = { won: false, par: 7, rows: 8, score: 5, longestStreak: 4 } as const;
 const EQUATION = makeEquation(2, 3);
 const URL = "https://example.test/";
 const EN_TEXT =
-  "ozterisk — Rounds: 9\nScore: 7\nLongest streak: 4\n\nCan you beat it?\nhttps://example.test/";
+  "ozterisk — 2 short of par — Score: 5/8 · par 7\nLongest streak: 4\n\nCan you make par?\nhttps://example.test/";
 const KO_TEXT =
-  "ozterisk — 라운드: 9\n점수: 7\n최장 연속 정답: 4\n\n이 기록을 넘을 수 있나요?\nhttps://example.test/";
+  "ozterisk — 목표까지 2점 부족 — 점수: 5/8 · 목표 7\n최장 연속 정답: 4\n\n목표를 달성할 수 있나요?\nhttps://example.test/";
 
 function renderScreen(overrides: Partial<GameOverScreenProps> = {}) {
   const onPlayAgain = vi.fn();
@@ -60,42 +61,31 @@ describe("GameOverScreen", () => {
     expect(within(main).getByText("7 × 8 =")).toBeInTheDocument();
   });
 
-  it("shows the run statistics", () => {
-    renderScreen();
-    expect(screen.getByRole("heading", { name: "Game Over" })).toBeInTheDocument();
-    expect(screen.getByText("Score")).toBeInTheDocument();
-    expect(screen.getByText("7")).toBeInTheDocument();
-    expect(screen.getByText("Rounds played")).toBeInTheDocument();
-    expect(screen.getByText("9")).toBeInTheDocument();
-    expect(screen.getByText("Longest streak")).toBeInTheDocument();
-    expect(screen.getByText("4")).toBeInTheDocument();
-  });
-
-  it("orders the statistics rounds, score, longest streak", () => {
+  it("orders the statistics score, par, longest streak", () => {
     renderScreen();
 
-    const rounds = screen.getByText("Rounds played");
     const score = screen.getByText("Score");
+    const par = screen.getByText("Par");
     const streak = screen.getByText("Longest streak");
 
     // DOCUMENT_POSITION_FOLLOWING (4) means the argument node comes after `this` node.
-    expect(rounds.compareDocumentPosition(score) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(score.compareDocumentPosition(streak) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(score.compareDocumentPosition(par) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(par.compareDocumentPosition(streak) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   // Mirrors the HUD's emphasis guard in App.test.tsx: reading getComputedStyle
   // catches a `.primary` rule that loses the cascade, which a className
   // assertion would not.
-  it("renders the rounds value at a larger computed font size than score", () => {
+  it("renders the score at a larger computed font size than par", () => {
     renderScreen();
 
-    const roundsValue = screen.getByText("Rounds played").nextElementSibling as HTMLElement;
     const scoreValue = screen.getByText("Score").nextElementSibling as HTMLElement;
+    const parValue = screen.getByText("Par").nextElementSibling as HTMLElement;
 
-    const roundsFontSize = parseFloat(getComputedStyle(roundsValue).fontSize);
     const scoreFontSize = parseFloat(getComputedStyle(scoreValue).fontSize);
+    const parFontSize = parseFloat(getComputedStyle(parValue).fontSize);
 
-    expect(roundsFontSize).toBeGreaterThan(scoreFontSize);
+    expect(scoreFontSize).toBeGreaterThan(parFontSize);
   });
 
   // The R shortcut has no other affordance in the product, so its hint has to
@@ -278,28 +268,19 @@ describe("GameOverScreen", () => {
   });
 });
 
-describe("GameOverScreen, Puzzle", () => {
-  const PUZZLE_STATS = {
-    mode: "puzzle",
-    won: true,
-    par: 7,
-    rows: 8,
-    score: 7,
-    totalRounds: 8,
-    longestStreak: 4,
-  } as const;
+describe("GameOverScreen verdicts", () => {
+  const PUZZLE_STATS = { won: true, par: 7, rows: 8, score: 7, longestStreak: 4 } as const;
   const statValue = (label: string) => screen.getByText(label).nextElementSibling?.textContent;
 
   // The table is finished and par is made: nothing is left to explain, so the
   // slot a loss gives its equation carries only the reason.
-  it("sets made par in gold, with no equation and no Rounds played", () => {
-    renderScreen({ stats: PUZZLE_STATS });
+  it("sets made par in gold, with no equation", () => {
+    renderScreen({ equation: null, stats: PUZZLE_STATS });
 
     expect(screen.getByRole("heading", { name: "Made par" })).toHaveClass(styles.won);
     expect(screen.getByText("All eight rows played.")).toBeInTheDocument();
     expect(screen.queryByText("2 × 3 =", { exact: false })).not.toBeInTheDocument();
     expect(screen.queryByRole("img")).not.toBeInTheDocument();
-    expect(screen.queryByText("Rounds played")).not.toBeInTheDocument();
     expect(statValue("Score")).toBe("7 / 8");
     expect(statValue("Par")).toBe("7");
     expect(statValue("Longest streak")).toBe("4");
@@ -311,19 +292,19 @@ describe("GameOverScreen, Puzzle", () => {
   // `.reason` that keeps its own size reads back unset in jsdom, which
   // substitutes no var().
   it("keeps the reason a caption when no equation precedes it", () => {
-    renderScreen({ stats: PUZZLE_STATS });
+    renderScreen({ equation: null, stats: PUZZLE_STATS });
 
     const reason = screen.getByText("All eight rows played.");
     expect(getComputedStyle(reason).fontSize).not.toBe("var(--size-title)");
   });
 
   it("names the shortfall in ink when par is missed on a finished table", () => {
-    renderScreen({ stats: { ...PUZZLE_STATS, won: false, score: 5 } });
+    renderScreen({ equation: null, stats: { ...PUZZLE_STATS, won: false, score: 5 } });
 
     const heading = screen.getByRole("heading", { name: "2 short of par" });
     expect(heading).not.toHaveClass(styles.won);
-    // Ink, not Game Over's vermilion: a short table is a score to read, not a
-    // tile leaving. Read by computed colour, which jsdom resolves from the
+    // Ink, not vermilion: a short table is a score to read, not a tile
+    // leaving. Read by computed colour, which jsdom resolves from the
     // cascade without substituting var().
     expect(heading).toHaveClass(styles.shortOfPar);
     expect(getComputedStyle(heading).color).toBe("var(--text-primary)");
@@ -331,18 +312,10 @@ describe("GameOverScreen, Puzzle", () => {
     expect(statValue("Score")).toBe("5 / 8");
   });
 
-  it("keeps Game Over vermilion", () => {
-    renderScreen({ stats: STATS });
-
-    expect(getComputedStyle(screen.getByRole("heading", { name: "Game Over" })).color).toBe(
-      "var(--verm-400)",
-    );
-  });
-
   it("keeps the terminal equation and the loss reason when the run ended early", () => {
     renderScreen({
       equation: makeEquation(7, 8),
-      stats: { ...PUZZLE_STATS, won: false, score: 1, totalRounds: 3 },
+      stats: { ...PUZZLE_STATS, won: false, score: 1 },
     });
 
     expect(screen.getByText("7 × 8 =")).toBeInTheDocument();
@@ -352,14 +325,14 @@ describe("GameOverScreen, Puzzle", () => {
     expect(screen.getByRole("heading", { name: "6 short of par" })).toBeInTheDocument();
   });
 
-  it("copies the Puzzle share text", async () => {
-    const { dependencies } = renderScreen({ stats: PUZZLE_STATS });
+  it("copies the share text", async () => {
+    const { dependencies } = renderScreen({ equation: null, stats: PUZZLE_STATS });
 
     await userEvent.click(screen.getByRole("button", { name: "Copy Result" }));
 
     await waitFor(() => expect(dependencies.writeClipboard).toHaveBeenCalledTimes(1));
     expect(dependencies.writeClipboard).toHaveBeenCalledWith(
-      "ozterisk Puzzle — Made par — Score: 7/8 · par 7\nLongest streak: 4\n\nCan you make par?\nhttps://example.test/",
+      "ozterisk — Made par — Score: 7/8 · par 7\nLongest streak: 4\n\nCan you make par?\nhttps://example.test/",
     );
   });
 });

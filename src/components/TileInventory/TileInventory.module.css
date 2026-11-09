@@ -34,8 +34,8 @@
   padding-right: calc(3px + var(--tile-h) * sin(11deg) - var(--tile-w) * (1 - cos(11deg)));
 }
 
-/* Columns and rows come from --rack-columns and --rack-rows: ten sockets in
-   5 x 2 for Endless, or the one row Puzzle's five take. Tiles past capacity go to the rail, so no row is ever added.
+/* Columns and rows come from --rack-columns and --rack-rows: the one row
+   five sockets take, or 5 x 2 for a larger capacity. Tiles past capacity go to the rail, so no row is ever added.
 
    The tracks are `minmax(0, --tile-w)` rather than a flat `--tile-w`, and that
    is what fixes #85. Fixed tracks gave the rack a min-content width the arena
@@ -193,8 +193,8 @@
   --rack-width: calc(var(--rack-columns) * var(--tile-w) + (var(--rack-columns) - 1) * var(--rack-gap));
 }
 
-/* Puzzle's five sockets, at Endless's tiers: one row. The Endless rack's
-   `5 x 2` would leave Puzzle's five an empty second row. */
+/* Five sockets take one row: the default `5 x 2` would leave them an empty
+   second row. */
 .rack[data-size="row"] > .rail,
 .rack[data-size="row"] > .inventory {
   --rack-rows: 1;

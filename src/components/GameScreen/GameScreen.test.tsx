@@ -387,13 +387,6 @@ describe("GameScreen phase composition", () => {
     expect(onNextRound).not.toHaveBeenCalled();
     expect(dispatch).not.toHaveBeenCalled();
   });
-
-  it("does not auto-confirm discard merely from reaching the exact required count", () => {
-    const overflow = makeOverflowState();
-    const { dispatch } = renderScreen({ ...overflow, pendingDiscards: [tileWith(overflow, 1).id] });
-
-    expect(dispatch).not.toHaveBeenCalled();
-  });
 });
 
 describe("GameScreen overflow collapse", () => {
@@ -446,15 +439,6 @@ describe("GameScreen overflow collapse", () => {
     await userEvent.keyboard("8");
 
     expect(dispatch.mock.calls.map(([action]) => action.type)).toEqual(["TOGGLE_DISCARD"]);
-  });
-
-  it("ignores a digit key press once the required discard count is already marked", async () => {
-    const overflow = makeOverflowState(); // required 1, already met
-    const { dispatch } = renderScreen({ ...overflow, pendingDiscards: [tileWith(overflow, 1).id] });
-
-    await userEvent.keyboard("6");
-
-    expect(dispatch).not.toHaveBeenCalled();
   });
 });
 
@@ -564,10 +548,9 @@ describe("GameScreen after a discard", () => {
 });
 
 describe("GameScreen in Puzzle", () => {
-  it("shows the ledger and par, and no capacity meter", () => {
+  it("shows the ledger and par", () => {
     renderScreen(makeAnsweringState());
     expect(screen.getByRole("list", { name: "Table" })).toBeInTheDocument();
-    expect(screen.queryByRole("img", { name: /^Capacity/ })).not.toBeInTheDocument();
     expect(screen.getByText("Par").nextElementSibling).toHaveTextContent("7");
   });
 
@@ -589,9 +572,8 @@ describe("GameScreen in Puzzle", () => {
     renderScreen(
       gameReducer(makeGameOverState(), {
         type: "RESTART_RUN",
-        equation: next.rows[0].equation,
-        inventory: sortTiles(createTiles(next.hand, sequentialIds())),
         table: next,
+        inventory: sortTiles(createTiles(next.hand, sequentialIds())),
       }),
     );
 

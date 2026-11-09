@@ -122,7 +122,7 @@ export function AnswerSlots({
         if (tile === undefined) {
           // Read-only, the socket is not a control, and a roleless element has
           // no role that can carry an accessible name. role="img" is one that
-          // can, the way CapacityMeter names its pip rail.
+          // can.
           if (onReturn === undefined) {
             return (
               <span

@@ -14,7 +14,8 @@ import { EquationBoard } from "../EquationBoard/EquationBoard";
 import styles from "./GameOverScreen.module.css";
 
 export interface GameOverScreenProps {
-  equation: Equation;
+  /** The equation the run stopped on; null when the table was played to its end. */
+  equation: Equation | null;
   stats: ShareStats;
   url: string;
   dependencies: ShareDependencies;
@@ -45,57 +46,34 @@ export function GameOverScreen({
     setStatus(outcome);
   };
 
-  // A table played to its end leaves no terminal equation: the run did not
-  // stop on one.
-  const tableFinished = stats.mode === "puzzle" && stats.totalRounds === stats.rows;
-  const reason = tableFinished ? "gameOver.tableReason" : "gameOver.reason";
-  const shortOfPar = stats.mode === "puzzle" && !stats.won;
-  const title =
-    stats.mode === "puzzle"
-      ? stats.won
-        ? t("gameOver.parTitle")
-        : t("gameOver.shortTitle", { short: stats.par - stats.score })
-      : t("gameOver.title");
+  const reason = equation === null ? "gameOver.tableReason" : "gameOver.reason";
+  const title = stats.won
+    ? t("gameOver.parTitle")
+    : t("gameOver.shortTitle", { short: stats.par - stats.score });
 
   return (
     <main className={styles.screen}>
       <div className={styles.terminal}>
-        {tableFinished ? null : <EquationBoard equation={equation} showProduct />}
+        {equation === null ? null : <EquationBoard equation={equation} showProduct />}
         {/* §1.8 keeps the terminal equation on screen to explain the loss, but
             the equation alone reads as a live prompt. The reason sits with the
             equation rather than inside the results block, so it defuses the
             thing it explains. */}
         <p className={styles.reason}>{t(reason)}</p>
       </div>
-      <h1 className={`${styles.title} ${stats.won ? styles.won : shortOfPar ? styles.shortOfPar : ""}`}>
+      <h1 className={`${styles.title} ${stats.won ? styles.won : styles.shortOfPar}`}>
         {title}
       </h1>
       <dl className={styles.stats}>
-        {/* Puzzle's score is read against its table, so Rounds played, which
-            repeats the score's denominator, gives way to Par. */}
-        {stats.mode === "puzzle" ? (
-          <>
-            <div className={styles.entry}>
-              <dt>{t("hud.score")}</dt>
-              <dd className={styles.primary}>{`${stats.score} / ${stats.rows}`}</dd>
-            </div>
-            <div className={styles.entry}>
-              <dt>{t("hud.par")}</dt>
-              <dd>{stats.par}</dd>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className={styles.entry}>
-              <dt>{t("gameOver.rounds")}</dt>
-              <dd className={styles.primary}>{stats.totalRounds}</dd>
-            </div>
-            <div className={styles.entry}>
-              <dt>{t("hud.score")}</dt>
-              <dd>{stats.score}</dd>
-            </div>
-          </>
-        )}
+        {/* The score is read against its table, so Par sits beside it. */}
+        <div className={styles.entry}>
+          <dt>{t("hud.score")}</dt>
+          <dd className={styles.primary}>{`${stats.score} / ${stats.rows}`}</dd>
+        </div>
+        <div className={styles.entry}>
+          <dt>{t("hud.par")}</dt>
+          <dd>{stats.par}</dd>
+        </div>
         <div className={styles.entry}>
           <dt>{t("gameOver.longestStreak")}</dt>
           <dd>{stats.longestStreak}</dd>

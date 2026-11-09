@@ -1,4 +1,4 @@
-import { createTiles, createTitleState, sortTiles } from "../game/factories";
+import { createPuzzleStart, createTiles, createTitleState } from "../game/factories";
 import { gameReducer } from "../game/gameReducer";
 import { answerMatches } from "../game/selectors";
 import type {
@@ -11,16 +11,6 @@ import type {
   Tile,
   TileIdFactory,
 } from "../game/types";
-
-export const sequenceRandom = (...values: number[]): RandomSource => {
-  let index = 0;
-  return () => {
-    const value = values[index];
-    if (value === undefined) throw new Error("Random sequence exhausted");
-    index += 1;
-    return value;
-  };
-};
 
 // mulberry32, for tests only: the research tables were dealt with it, so a
 // seeded source can replay them. Production never seeds a run.
@@ -92,13 +82,7 @@ export const PUZZLE_SAMPLE_PAR_LINE: PuzzleMove[] = [
 ];
 
 export const puzzleStart = (table = PUZZLE_SAMPLE, ids = sequentialIds()): GameState =>
-  gameReducer(createTitleState(), {
-    type: "START_RUN",
-    mode: "puzzle",
-    equation: table.rows[0]!.equation,
-    inventory: sortTiles(createTiles(table.hand, ids)),
-    table,
-  });
+  gameReducer(createTitleState(), createPuzzleStart(table, ids));
 
 export const tileWith = (state: GameState, digit: Digit): Tile =>
   state.inventory.find((tile) => tile.digit === digit)!;
@@ -124,12 +108,10 @@ export function playRow(state: GameState, move: PuzzleMove, ids: TileIdFactory):
   return state;
 }
 
-// Plays rows, each advanced to the next row's equation as App does.
+// Plays rows, each advanced to the next row as App does.
 export function play(state: GameState, line: PuzzleMove[], ids: TileIdFactory): GameState {
   for (const move of line) {
-    state = playRow(state, move, ids);
-    const next = state.table!.rows[state.round]?.equation ?? state.equation!;
-    state = gameReducer(state, { type: "NEXT_ROUND", equation: next });
+    state = gameReducer(playRow(state, move, ids), { type: "NEXT_ROUND" });
   }
   return state;
 }

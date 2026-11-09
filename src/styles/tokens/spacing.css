@@ -11,7 +11,7 @@
   --space-10: 40px;
   --space-14: 56px;
 
-  /* The rack is ten fixed sockets in 5x2 at every breakpoint — the empty
+  /* The rack is five fixed sockets in one row at every breakpoint — the empty
      sockets are the score, so the grid never resizes as tiles are lost. What
      changes across tiers is the socket, and only the socket.
 
@@ -44,7 +44,6 @@
   --tile-h-sm: 38px;
   --rack-columns: 5;
   --rack-rows: 2;
-  --capacity: 10;
 
   /* 44px is both the accessible minimum target and the smallest legal tile. */
   --target-min: 44px;

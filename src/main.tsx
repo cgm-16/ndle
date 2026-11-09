@@ -7,7 +7,6 @@ import type { ShareDependencies } from "./services/sharing";
 import "./styles/global.css";
 
 const dependencies: AppDependencies = {
-  random: Math.random,
   nextTileId: () => crypto.randomUUID(),
   gameUrl: window.location.origin + window.location.pathname,
   dealPuzzle: () => dealPuzzle(Math.random),

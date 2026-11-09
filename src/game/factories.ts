@@ -1,11 +1,9 @@
-import type { Digit, GameState, Tile, TileIdFactory } from "./types";
-
-const ALL_DIGITS: readonly Digit[] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+import type { Digit, GameState, PuzzleTable, Tile, TileIdFactory } from "./types";
 
 export function createTitleState(): GameState {
   return {
     phase: "title",
-    mode: "puzzle",
+    table: null,
     equation: null,
     inventory: [],
     selectedTiles: [],
@@ -16,17 +14,17 @@ export function createTitleState(): GameState {
     currentStreak: 0,
     longestStreak: 0,
     lastResult: null,
+    rowResults: [],
   };
 }
 
-// Deals round-robin through the digits, so a hand of 10 holds one of each and a
-// hand of 20 two of each (§1.3). Sorted, since the deal order is by digit.
-export function createInitialInventory(
-  idFactory: TileIdFactory,
-  count = ALL_DIGITS.length,
-): Tile[] {
-  const digits = Array.from({ length: count }, (_, index) => ALL_DIGITS[index % ALL_DIGITS.length]);
-  return sortTiles(createTiles(digits, idFactory));
+// A run's opening action: the table's hand, dealt in rack order. The reducer
+// takes row 1's equation from the table.
+export function createPuzzleStart(
+  table: PuzzleTable,
+  nextTileId: TileIdFactory,
+): { type: "START_RUN"; table: PuzzleTable; inventory: Tile[] } {
+  return { type: "START_RUN", table, inventory: sortTiles(createTiles(table.hand, nextTileId)) };
 }
 
 // Digit tiles in the given order, unsorted: a Puzzle pay arrives in its printed

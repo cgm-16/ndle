@@ -4,6 +4,7 @@ import { GameScreen } from "../components/GameScreen/GameScreen";
 import { LanguageToggle } from "../components/LanguageToggle/LanguageToggle";
 import { TitleScreen } from "../components/TitleScreen/TitleScreen";
 import { gameReducer } from "../game/gameReducer";
+import { isRunComplete } from "../game/selectors";
 import type { GamePhase, GameState } from "../game/types";
 import { getShareStats, type ShareDependencies } from "../services/sharing";
 import {
@@ -38,15 +39,12 @@ function renderGameScreen(state: GameState): ReactNode {
 }
 
 // GameOverScreen takes flat equation/stats props rather than a GameState;
-// this adapts a `makeGameOverState` fixture to that shape.
+// this adapts a `makeGameOverState` fixture to that shape, as App does: a table
+// played to its end stopped on no equation.
 function renderGameOverScreen(state: GameState, dependencies: ShareDependencies): ReactNode {
-  // Reducer invariant (§2.5): equation === null only in `title`, and
-  // makeGameOverState always sets phase to `gameOver`, so this only guards
-  // the type.
-  if (state.equation === null) return null;
   return (
     <GameOverScreen
-      equation={state.equation}
+      equation={isRunComplete(state) ? null : state.equation}
       stats={getShareStats(state)}
       url="https://example.test/"
       dependencies={dependencies}
@@ -181,8 +179,8 @@ export const GALLERY_STATES: Record<GamePhase | "interaction", GalleryEntry[]> =
       render: () => renderGameScreen(ANSWERING_DEPLETED_STATE),
     },
     {
-      id: "answering-puzzle-row-4",
-      label: "Answering — Puzzle at row 4, three rows marked",
+      id: "answering-row-4",
+      label: "Answering — row 4, three rows marked",
       render: () => renderGameScreen(ANSWERING_ROW_4_STATE),
     },
   ],

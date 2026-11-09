@@ -7,7 +7,6 @@ import "../src/styles/global.css";
 export { I18nProvider } from "../src/i18n/I18nContext";
 export { ActionButton } from "../src/components/ActionButton/ActionButton";
 export { AnswerSlots } from "../src/components/AnswerSlots/AnswerSlots";
-export { CapacityMeter } from "../src/components/CapacityMeter/CapacityMeter";
 export { EquationBoard } from "../src/components/EquationBoard/EquationBoard";
 export { FeedbackPanel } from "../src/components/FeedbackPanel/FeedbackPanel";
 export { GameHud } from "../src/components/GameHud/GameHud";

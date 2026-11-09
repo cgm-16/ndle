@@ -1,4 +1,4 @@
-import type { Equation, GameAction, GameMode, GameState, PuzzleTable, Tile } from "./types";
+import type { GameAction, GameState, PuzzleTable, Tile } from "./types";
 import { sortTiles } from "./factories";
 import {
   answerMatches,
@@ -10,19 +10,14 @@ import {
   isRunComplete,
 } from "./selectors";
 
-// Round 1, zero statistics, straight into answering — shared by START_RUN and
-// RESTART_RUN, which both begin a run from action-provided equation/inventory.
-// A table makes it a Puzzle run; other modes carry neither Puzzle key.
-function freshRunState(
-  mode: GameMode,
-  equation: Equation,
-  inventory: Tile[],
-  table?: PuzzleTable,
-): GameState {
+// Round 1, zero statistics, straight into answering on the table's first row —
+// shared by START_RUN and RESTART_RUN, which both begin a run from the
+// action's table and inventory.
+function freshRunState(table: PuzzleTable, inventory: Tile[]): GameState {
   return {
     phase: "answering",
-    mode,
-    equation,
+    table,
+    equation: table.rows[0].equation,
     inventory,
     selectedTiles: [],
     pendingDiscards: [],
@@ -32,7 +27,7 @@ function freshRunState(
     currentStreak: 0,
     longestStreak: 0,
     lastResult: null,
-    ...(table && { table, rowResults: [] }),
+    rowResults: [],
   };
 }
 
@@ -42,8 +37,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     // so title is the only phase it arrives from, and a fresh run owes
     // nothing to the state it replaces.
     case "START_RUN":
-      if (action.mode === "puzzle" && !action.table) return state;
-      return freshRunState(action.mode, action.equation, action.inventory, action.table);
+      return freshRunState(action.table, action.inventory);
 
     case "SELECT_TILE": {
       if (state.phase !== "answering" || state.equation === null) return state;
@@ -69,16 +63,16 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case "SUBMIT_CORRECT": {
-      if (state.phase !== "answering" || state.equation === null) return state;
+      if (state.phase !== "answering" || state.equation === null || state.table === null) {
+        return state;
+      }
       if (state.selectedTiles.length !== getAnswerLength(state.equation)) return state;
       if (!answerMatches(state.selectedTiles, state.equation.product)) return state;
       if (action.rewardTiles.length !== getRewardCount(state.selectedTiles.length)) return state;
-      // A Puzzle row pays the digits printed on it, in order.
-      if (state.table) {
-        const pay = state.table.rows[state.round - 1]?.pay;
-        if (!pay || action.rewardTiles.some((tile, index) => tile.digit !== pay[index])) {
-          return state;
-        }
+      // A row pays the digits printed on it, in order.
+      const pay = state.table.rows[state.round - 1]?.pay;
+      if (!pay || action.rewardTiles.some((tile, index) => tile.digit !== pay[index])) {
+        return state;
       }
       const inventoryIds = new Set(state.inventory.map((tile) => tile.id));
       if (action.rewardTiles.some((tile) => inventoryIds.has(tile.id))) return state;
@@ -87,7 +81,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const arrived = [...state.inventory, ...newRewardTiles];
       const nextCurrentStreak = state.currentStreak + 1;
       const nextTotalRounds = state.totalRounds + 1;
-      const overflowCount = getOverflowCount({ mode: state.mode, inventory: arrived });
+      const overflowCount = getOverflowCount({ inventory: arrived });
       // Sort only what fits. The tiles past capacity are the newest arrivals, in
       // arrival order, and perch on the rail — sorting first would always perch
       // the highest digits (§1.5 step 7).
@@ -110,7 +104,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           submittedTiles: state.selectedTiles,
           rewardTileIds: action.rewardTiles.map((tile) => tile.id),
         },
-        ...(state.rowResults && { rowResults: [...state.rowResults, "correct"] }),
+        rowResults: [...state.rowResults, "correct"],
       };
     }
 
@@ -134,7 +128,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           submittedTiles: state.selectedTiles,
           rewardTileIds: [],
         },
-        ...(state.rowResults && { rowResults: [...state.rowResults, "incorrect"] }),
+        rowResults: [...state.rowResults, "incorrect"],
       };
     }
 
@@ -174,18 +168,20 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case "NEXT_ROUND": {
-      if (state.phase !== "feedback") return state;
+      if (state.phase !== "feedback" || state.table === null) return state;
       // The one re-sort per round (§1.8).
       const nextInventory = sortTiles(
         state.inventory.map((tile) => (tile.isNew ? { ...tile, isNew: false } : tile)),
       );
-      // A complete run (Puzzle past its last row) is over before the loss
-      // check, so a hand that could still answer does not play on (§1.8).
-      const canPlay = !isRunComplete(state) && canAttemptEquation(nextInventory, action.equation);
+      // A complete run (past its table's last row) is over before the loss
+      // check, so a hand that could still answer does not play on (§1.8). It
+      // keeps the last row's equation: there is no row to read past it.
+      const nextRow = isRunComplete(state) ? undefined : state.table.rows[state.round];
+      const canPlay = nextRow !== undefined && canAttemptEquation(nextInventory, nextRow.equation);
       return {
         ...state,
         phase: canPlay ? "answering" : "gameOver",
-        equation: action.equation,
+        equation: nextRow?.equation ?? state.equation,
         inventory: nextInventory,
         selectedTiles: [],
         pendingDiscards: [],
@@ -196,8 +192,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case "RESTART_RUN":
       if (state.phase !== "gameOver") return state;
-      if (state.mode === "puzzle" && !action.table) return state;
-      return freshRunState(state.mode, action.equation, action.inventory, action.table);
+      return freshRunState(action.table, action.inventory);
 
     case "CLEAR_SELECTION": {
       if (state.phase !== "answering") return state;

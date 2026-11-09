@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { Tile } from "./types";
-import { createTiles, createTitleState, sortTiles } from "./factories";
-import { sequentialIds } from "../test/fixtures";
+import { createPuzzleStart, createTiles, createTitleState, sortTiles } from "./factories";
+import { PUZZLE_SAMPLE, sequentialIds } from "../test/fixtures";
 
 describe("createTitleState", () => {
-  it("returns empty arrays, null equation/result, zero statistics, round 0, and phase title", () => {
+  it("returns empty arrays, null table/equation/result, zero statistics, round 0, and phase title", () => {
     expect(createTitleState()).toEqual({
       phase: "title",
-      mode: "puzzle",
+      table: null,
       equation: null,
       inventory: [],
       selectedTiles: [],
@@ -18,6 +18,7 @@ describe("createTitleState", () => {
       currentStreak: 0,
       longestStreak: 0,
       lastResult: null,
+      rowResults: [],
     });
   });
 
@@ -48,5 +49,21 @@ describe("createTiles", () => {
       { id: "tile-1", digit: 9, isNew: false },
       { id: "tile-2", digit: 1, isNew: false },
     ]);
+  });
+});
+
+describe("createPuzzleStart", () => {
+  it("starts the table with its hand dealt in rack order", () => {
+    expect(createPuzzleStart(PUZZLE_SAMPLE, sequentialIds())).toEqual({
+      type: "START_RUN",
+      table: PUZZLE_SAMPLE,
+      inventory: [
+        { id: "tile-2", digit: 1, isNew: false },
+        { id: "tile-3", digit: 4, isNew: false },
+        { id: "tile-0", digit: 5, isNew: false },
+        { id: "tile-4", digit: 7, isNew: false },
+        { id: "tile-1", digit: 9, isNew: false },
+      ],
+    });
   });
 });

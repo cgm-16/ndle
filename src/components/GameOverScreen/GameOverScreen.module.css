@@ -94,8 +94,7 @@
   font-weight: 600;
 }
 
-/* Rounds survived is Endless's win condition, so it is the number the screen
-   is built around. `.entry dd.primary` is (0,2,1) against `.entry dd`'s
+/* The score against the table is the number the screen is built around. `.entry dd.primary` is (0,2,1) against `.entry dd`'s
    (0,1,1): it wins on specificity, not on source order. */
 .entry dd.primary {
   font-size: 2.125rem;

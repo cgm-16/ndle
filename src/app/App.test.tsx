@@ -10,7 +10,6 @@ import {
   makePuzzleRow,
   PUZZLE_SAMPLE,
   PUZZLE_SAMPLE_PAR_LINE,
-  sequenceRandom,
   sequentialIds,
   type PuzzleMove,
 } from "../test/fixtures";
@@ -21,7 +20,6 @@ function makeShareDependencies(): ShareDependencies {
 }
 
 function renderApp(
-  randomValues: number[],
   options: {
     initialLanguage?: Language;
     gameUrl?: string;
@@ -30,7 +28,6 @@ function renderApp(
   } = {},
 ) {
   const dependencies: AppDependencies = {
-    random: sequenceRandom(...randomValues),
     nextTileId: sequentialIds(),
     gameUrl: options.gameUrl ?? "https://example.test/",
     dealPuzzle: vi.fn(options.dealPuzzle ?? (() => PUZZLE_SAMPLE)),
@@ -92,12 +89,10 @@ beforeEach(() => {
   localStorage.clear();
 });
 
-// renderApp([]) gives an exhausted RandomSource throughout: a run deals its
-// table and pays its rows without drawing randomness.
 describe("App", () => {
   it("starts a Puzzle run from the title screen and reaches row 1", async () => {
     const user = userEvent.setup();
-    renderApp([], { initialLanguage: "en" });
+    renderApp({ initialLanguage: "en" });
 
     expect(screen.getByRole("heading", { name: "ozterisk" })).toBeVisible();
     expect(screen.queryByText(/×/)).not.toBeInTheDocument();
@@ -113,7 +108,7 @@ describe("App", () => {
 
   it("orders the HUD Round, Score, Streak so rounds survived reads as the headline stat", async () => {
     const user = userEvent.setup();
-    renderApp([], { initialLanguage: "en" });
+    renderApp({ initialLanguage: "en" });
 
     await user.click(screen.getByRole("button", { name: "Start Run" }));
 
@@ -133,7 +128,7 @@ describe("App", () => {
   // that class of bug; comparing className strings would not.
   it("renders Round's value at a larger computed font size than Score's", async () => {
     const user = userEvent.setup();
-    renderApp([], { initialLanguage: "en" });
+    renderApp({ initialLanguage: "en" });
 
     await user.click(screen.getByRole("button", { name: "Start Run" }));
 
@@ -148,7 +143,7 @@ describe("App", () => {
 
   it("resolves a correct answer through the row's pay, overflow, and an exact discard that advances the round on its own", async () => {
     const user = userEvent.setup();
-    renderApp([], { initialLanguage: "en" });
+    renderApp({ initialLanguage: "en" });
 
     await user.click(screen.getByRole("button", { name: "Start Run" }));
     await playRows(user, PUZZLE_SAMPLE_PAR_LINE.slice(0, 3));
@@ -186,7 +181,7 @@ describe("App", () => {
 
   it("grants no reward and resets the streak on an incorrect answer, then advances via Next Round", async () => {
     const user = userEvent.setup();
-    renderApp([], { initialLanguage: "en" });
+    renderApp({ initialLanguage: "en" });
 
     await user.click(screen.getByRole("button", { name: "Start Run" }));
     await playRows(user, PUZZLE_SAMPLE_PAR_LINE.slice(0, 2)); // the sacrifice, then 14
@@ -211,7 +206,7 @@ describe("App", () => {
 
   it("reaches game over when the next equation exceeds the surviving inventory, keeping the terminal equation visible", async () => {
     const user = userEvent.setup();
-    renderApp([], { initialLanguage: "en" });
+    renderApp({ initialLanguage: "en" });
 
     await driveToGameOver(user);
 
@@ -227,7 +222,7 @@ describe("App", () => {
 
   it("starts a fresh run at round 1 with reset inventory and statistics via Play Again", async () => {
     const user = userEvent.setup();
-    const { dependencies } = renderApp([], { initialLanguage: "en" });
+    const { dependencies } = renderApp({ initialLanguage: "en" });
 
     await driveToGameOver(user);
     await user.click(screen.getByRole("button", { name: "Play Again" }));
@@ -244,7 +239,7 @@ describe("App", () => {
     const user = userEvent.setup();
     // Rendered under Strict Mode: a doubled handleRestart would deal a third
     // table, and the count below would read it.
-    const { dependencies, shareDependencies } = renderApp([], {
+    const { dependencies, shareDependencies } = renderApp({
       initialLanguage: "en",
       strictMode: true,
     });
@@ -262,7 +257,7 @@ describe("App", () => {
 
   it("restarts on the key at R's physical position when the key value is not r", async () => {
     const user = userEvent.setup();
-    renderApp([], { initialLanguage: "en" });
+    renderApp({ initialLanguage: "en" });
 
     await driveToGameOver(user);
 
@@ -278,7 +273,7 @@ describe("App", () => {
     const user = userEvent.setup();
     // §1.11 gives gameOver no global Enter shortcut, so a restart here would
     // deal a second table as well as failing below.
-    const { dependencies, shareDependencies } = renderApp([], { initialLanguage: "en" });
+    const { dependencies, shareDependencies } = renderApp({ initialLanguage: "en" });
 
     await driveToGameOver(user);
     screen.getByRole("button", { name: "Share" }).focus();
@@ -295,7 +290,7 @@ describe("App", () => {
 
   it("survives the stray Enter of a Submit/Enter rhythm arriving after the phase flips", async () => {
     const user = userEvent.setup();
-    const { dependencies } = renderApp([], { initialLanguage: "en" });
+    const { dependencies } = renderApp({ initialLanguage: "en" });
 
     // The rhythm that produces the defect, entirely by keyboard: digits, Enter
     // to submit, Enter to advance. The last of those Enters flips the phase to
@@ -318,7 +313,7 @@ describe("App", () => {
 
   it("changes language mid-answering immediately, without resetting the run", async () => {
     const user = userEvent.setup();
-    renderApp([], { initialLanguage: "en" });
+    renderApp({ initialLanguage: "en" });
 
     await user.click(screen.getByRole("button", { name: "Start Run" }));
     await user.click(screen.getByRole("button", { name: "Digit 1" }));
@@ -339,7 +334,7 @@ describe("App", () => {
 
   it("returns to the title phase on a fresh mount while the saved language persists", async () => {
     const user = userEvent.setup();
-    const first = renderApp([]); // no forced language: reads storage like production
+    const first = renderApp(); // no forced language: reads storage like production
 
     await user.click(screen.getByRole("button", { name: "Start Run" }));
     await user.click(screen.getByRole("button", { name: "한국어" }));
@@ -347,7 +342,7 @@ describe("App", () => {
 
     first.unmount(); // simulates a page reload discarding all in-memory state
 
-    renderApp([]); // fresh mount: I18nProvider re-reads storage; App starts a new reducer
+    renderApp(); // fresh mount: I18nProvider re-reads storage; App starts a new reducer
 
     expect(screen.getByRole("heading", { name: "ozterisk" })).toBeInTheDocument(); // back to title
     expect(screen.getByRole("button", { name: "게임 시작" })).toBeInTheDocument(); // language persisted
@@ -355,7 +350,6 @@ describe("App", () => {
 });
 
 async function startPuzzle(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole("button", { name: /Puzzle/ }));
   await user.click(screen.getByRole("button", { name: "Start Run" }));
 }
 
@@ -369,7 +363,7 @@ async function press(user: ReturnType<typeof userEvent.setup>, digits: number[])
 describe("Puzzle", () => {
   it("deals the table's hand and shows row 1", async () => {
     const user = userEvent.setup();
-    renderApp([]);
+    renderApp();
     await startPuzzle(user);
     expect(screen.getByText("3 × 5 =")).toBeInTheDocument();
     for (const digit of [1, 4, 5, 7, 9]) {
@@ -377,11 +371,9 @@ describe("Puzzle", () => {
     }
   });
 
-  // renderApp([]) gives an exhausted RandomSource: any draw throws, so these
-  // rows prove the pay and the next equation come from the table.
-  it("pays the row's printed tiles and advances row by row without drawing randomness", async () => {
+  it("pays the row's printed tiles and advances row by row", async () => {
     const user = userEvent.setup();
-    renderApp([]);
+    renderApp();
     await startPuzzle(user);
     await press(user, [5, 7]); // the sacrifice: 57 for 15
     await user.click(screen.getByRole("button", { name: "Next Round" }));
@@ -396,7 +388,7 @@ describe("Puzzle", () => {
 
   it("advances to the next row on its own after a discard", async () => {
     const user = userEvent.setup();
-    renderApp([]);
+    renderApp();
     await startPuzzle(user);
     await press(user, [5, 7]);
     await user.click(screen.getByRole("button", { name: "Next Round" }));
@@ -415,7 +407,7 @@ describe("Puzzle", () => {
     const firstTable: PuzzleTable = { hand: [1, 2, 3, 4], rows: [makePuzzleRow(1, 2, [1, 2])], par: 1 };
     const secondTable: PuzzleTable = { hand: [1, 2, 3, 4], rows: [makePuzzleRow(3, 4, [1, 2])], par: 1 };
     const dealPuzzle = vi.fn<() => PuzzleTable>().mockReturnValueOnce(firstTable).mockReturnValueOnce(secondTable);
-    renderApp([], { strictMode: true, dealPuzzle });
+    renderApp({ strictMode: true, dealPuzzle });
     await startPuzzle(user);
     expect(dealPuzzle).toHaveBeenCalledTimes(1);
     await press(user, [2]);
@@ -428,7 +420,7 @@ describe("Puzzle", () => {
 
   it("plays the sample's par line, sacrifice included, to Made par", async () => {
     const user = userEvent.setup();
-    renderApp([]);
+    renderApp();
     await startPuzzle(user);
     for (const move of PUZZLE_SAMPLE_PAR_LINE) {
       await press(user, move.spend);
@@ -442,6 +434,9 @@ describe("Puzzle", () => {
     }
     expect(await screen.findByRole("heading", { name: "Made par" })).toBeInTheDocument();
     expect(hudField("Par")).toBe("7");
+    // The table was played to its end, so no terminal equation is shown.
+    expect(screen.getByText("All eight rows played.")).toBeInTheDocument();
+    expect(screen.queryByText("3 × 4 =")).not.toBeInTheDocument();
   });
 
   it("ends early when the hand cannot fill the next row, short of par", async () => {
@@ -451,7 +446,7 @@ describe("Puzzle", () => {
       rows: [makePuzzleRow(3, 4, [1, 2, 3]), makePuzzleRow(5, 5, [1, 2, 3])],
       par: 1,
     };
-    renderApp([], { dealPuzzle: () => twoTiles });
+    renderApp({ dealPuzzle: () => twoTiles });
     await startPuzzle(user);
     await press(user, [2, 1]); // 21 for 12: the hand is spent
     await user.click(screen.getByRole("button", { name: "Next Round" }));

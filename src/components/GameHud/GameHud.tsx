@@ -6,8 +6,8 @@ export interface GameHudProps {
   score: number;
   currentStreak: number;
   round: number;
-  /** Puzzle's par, the best score its table allows. Endless omits it. */
-  par?: number;
+  /** The best score the table allows. */
+  par: number;
 }
 
 export function GameHud({ score, currentStreak, round, par }: GameHudProps) {
@@ -61,12 +61,10 @@ export function GameHud({ score, currentStreak, round, par }: GameHudProps) {
           )}
         </dd>
       </div>
-      {par !== undefined && (
-        <div className={styles.entry}>
-          <dt>{t("hud.par")}</dt>
-          <dd>{par}</dd>
-        </div>
-      )}
+      <div className={styles.entry}>
+        <dt>{t("hud.par")}</dt>
+        <dd>{par}</dd>
+      </div>
     </dl>
   );
 }

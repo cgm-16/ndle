@@ -44,10 +44,10 @@ describe("EquationBoard motion", () => {
     expect(screen.getByText("2 × 3 =")).toBe(first);
   });
 
-  // generateEquation draws uniformly from 45 pairs and never rejects a repeat,
-  // so roughly one round in forty-five arrives with the digits already on the
-  // board. Keying on those digits skips the rise on exactly those rounds — and
-  // it fails by staying still, which is indistinguishable from correct rest.
+  // plantTable draws each row from the 45 pairs and never rejects a repeat, so
+  // a row can arrive with the digits already on the board. Keying on those
+  // digits skips the rise on exactly those rows — and it fails by staying
+  // still, which is indistinguishable from correct rest.
   it("replaces its node when a new round redraws the pair already on the board", () => {
     const { rerender } = render(<EquationBoard equation={equation(2, 3)} />);
     const first = screen.getByText("2 × 3 =");

@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { GameAction, GameState, PuzzleTable, Tile } from "./types";
 import { gameReducer } from "./gameReducer";
-import { createInitialInventory, createTiles, createTitleState, sortTiles } from "./factories";
+import { PUZZLE_CAPACITY } from "./balance";
+import { createPuzzleStart, createTiles, createTitleState, sortTiles } from "./factories";
 import {
   answerMatches,
   getAnswerLength,
-  getCapacity,
   getOverflowCount,
   isParMade,
 } from "./selectors";
@@ -13,7 +13,6 @@ import {
   PUZZLE_SAMPLE,
   PUZZLE_SAMPLE_PAR_LINE,
   makeAnsweringState,
-  makeEquation,
   makeFeedbackState,
   makeGameOverState,
   makeOverflowState,
@@ -31,33 +30,17 @@ import {
 const digitsOf = (tiles: readonly Tile[]) => tiles.map((tile) => tile.digit);
 
 describe("START_RUN", () => {
-  it("starts an Endless run", () => {
-    const priorState: GameState = {
-      ...createTitleState(),
-      phase: "gameOver",
-      score: 5,
-      round: 6,
-      totalRounds: 5,
-      currentStreak: 2,
-      longestStreak: 4,
-      lastResult: {
-        kind: "incorrect",
-        submittedValue: 12,
-        correctValue: 15,
-        submittedTiles: [],
-        rewardTileIds: [],
-      },
-    };
-    const equation = makeEquation(3, 4);
-    const inventory = createInitialInventory(sequentialIds());
+  it("starts a fresh run on row 1 of the action's table, whatever state it replaces", () => {
+    const priorState = makeGameOverState();
+    const action = createPuzzleStart(PUZZLE_SAMPLE, sequentialIds("start"));
 
-    const next = gameReducer(priorState, { type: "START_RUN", mode: "endless", equation, inventory });
+    const next = gameReducer(priorState, action);
 
     expect(next).toEqual({
       phase: "answering",
-      mode: "endless",
-      equation,
-      inventory,
+      table: PUZZLE_SAMPLE,
+      equation: PUZZLE_SAMPLE.rows[0]!.equation,
+      inventory: action.inventory,
       selectedTiles: [],
       pendingDiscards: [],
       score: 0,
@@ -66,6 +49,7 @@ describe("START_RUN", () => {
       currentStreak: 0,
       longestStreak: 0,
       lastResult: null,
+      rowResults: [],
     });
   });
 });
@@ -481,7 +465,7 @@ describe("NEXT_ROUND", () => {
     const oldTile = tileWith(state, 9);
     const nextEquation = PUZZLE_SAMPLE.rows[2]!.equation; // 3 x 3 = 9, one slot
 
-    const next = gameReducer(state, { type: "NEXT_ROUND", equation: nextEquation });
+    const next = gameReducer(state, { type: "NEXT_ROUND" });
 
     expect(next.phase).toBe("answering");
     expect(next.equation).toBe(nextEquation);
@@ -503,7 +487,7 @@ describe("NEXT_ROUND", () => {
     const state = playRow(parLineAt(2, ids), { spend: [4, 1] }, ids);
     expect(state.inventory).toHaveLength(1);
 
-    const next = gameReducer(state, { type: "NEXT_ROUND", equation: PUZZLE_SAMPLE.rows[2]!.equation });
+    const next = gameReducer(state, { type: "NEXT_ROUND" });
 
     expect(next.phase).toBe("answering");
   });
@@ -521,7 +505,7 @@ describe("NEXT_ROUND", () => {
     expect(state.inventory).toHaveLength(1);
     const terminalEquation = table.rows[1]!.equation;
 
-    const next = gameReducer(state, { type: "NEXT_ROUND", equation: terminalEquation });
+    const next = gameReducer(state, { type: "NEXT_ROUND" });
 
     expect(next.phase).toBe("gameOver");
     expect(next.equation).toBe(terminalEquation);
@@ -535,7 +519,7 @@ describe("NEXT_ROUND", () => {
     const state = playRow(parLineAt(2, ids), { spend: [9, 1] }, ids);
     expect(digitsOf(state.inventory)).toEqual([4]);
 
-    const next = gameReducer(state, { type: "NEXT_ROUND", equation: PUZZLE_SAMPLE.rows[2]!.equation });
+    const next = gameReducer(state, { type: "NEXT_ROUND" });
 
     expect(next.phase).toBe("answering");
   });
@@ -547,7 +531,7 @@ describe("NEXT_ROUND", () => {
     expect(state.lastResult?.discarded).toBe(true);
     expect(digitsOf(state.inventory)).toEqual([1, 2, 4, 6, 2]);
 
-    const next = gameReducer(state, { type: "NEXT_ROUND", equation: PUZZLE_SAMPLE.rows[5]!.equation });
+    const next = gameReducer(state, { type: "NEXT_ROUND" });
 
     expect(digitsOf(next.inventory)).toEqual([1, 2, 2, 4, 6]);
     expect(next.lastResult).toBeNull();
@@ -556,7 +540,7 @@ describe("NEXT_ROUND", () => {
   it("is a no-op outside the feedback phase (overflow)", () => {
     const state = makeOverflowState();
 
-    const next = gameReducer(state, { type: "NEXT_ROUND", equation: PUZZLE_SAMPLE.rows[4]!.equation });
+    const next = gameReducer(state, { type: "NEXT_ROUND" });
 
     expect(next).toBe(state);
   });
@@ -564,9 +548,50 @@ describe("NEXT_ROUND", () => {
   it("is a no-op outside the feedback phase (answering)", () => {
     const state = makeAnsweringState();
 
-    const next = gameReducer(state, { type: "NEXT_ROUND", equation: PUZZLE_SAMPLE.rows[1]!.equation });
+    const next = gameReducer(state, { type: "NEXT_ROUND" });
 
     expect(next).toBe(state);
+  });
+
+  it("takes the next row's equation from the table on NEXT_ROUND", () => {
+    // Row 1's sacrifice judged; row 2 is 7 x 2 = 14.
+    const next = gameReducer(makeFeedbackState(), { type: "NEXT_ROUND" });
+
+    expect(next.phase).toBe("answering");
+    expect(next.equation).toBe(PUZZLE_SAMPLE.rows[1]!.equation);
+    expect(next.round).toBe(2);
+  });
+
+  it("refuses NEXT_ROUND when no table is loaded", () => {
+    const state = makeFeedbackState({ table: null });
+
+    expect(gameReducer(state, { type: "NEXT_ROUND" })).toBe(state);
+  });
+
+  it("ends after the last row without reading past the table", () => {
+    // Reading any row past the last throws, so the advance off row 8 has to
+    // end the run on the table's length: the hand of five could answer a
+    // ninth row, and a read would find none.
+    const rows = new Proxy(PUZZLE_SAMPLE.rows, {
+      get(target, key, receiver) {
+        if (typeof key === "string" && Number(key) >= target.length) {
+          throw new RangeError(`row ${key} read past the table`);
+        }
+        return Reflect.get(target, key, receiver);
+      },
+    });
+    const table: PuzzleTable = { ...PUZZLE_SAMPLE, rows };
+    const ids = sequentialIds();
+    const rowSeven = play(puzzleStart(table, ids), PUZZLE_SAMPLE_PAR_LINE.slice(0, 7), ids);
+    const lastRow = playRow(rowSeven, PUZZLE_SAMPLE_PAR_LINE[7]!, ids);
+
+    const end = gameReducer(lastRow, { type: "NEXT_ROUND" });
+
+    expect(end.phase).toBe("gameOver");
+    expect(end.equation).toBe(PUZZLE_SAMPLE.rows[7]!.equation);
+    expect(end.inventory).toHaveLength(PUZZLE_CAPACITY);
+    expect(end.round).toBe(9);
+    expect(end.totalRounds).toBe(8);
   });
 });
 
@@ -576,11 +601,10 @@ describe("RESTART_RUN", () => {
     const equation = PUZZLE_SAMPLE.rows[0]!.equation;
     const inventory = sortTiles(createTiles(PUZZLE_SAMPLE.hand, sequentialIds("restart")));
 
-    const next = gameReducer(priorState, { type: "RESTART_RUN", equation, inventory, table: PUZZLE_SAMPLE });
+    const next = gameReducer(priorState, { type: "RESTART_RUN", table: PUZZLE_SAMPLE, inventory });
 
     expect(next).toEqual({
       phase: "answering",
-      mode: "puzzle",
       equation,
       inventory,
       selectedTiles: [],
@@ -598,10 +622,9 @@ describe("RESTART_RUN", () => {
 
   it("is a no-op outside the game over phase", () => {
     const state = makeFeedbackState();
-    const equation = PUZZLE_SAMPLE.rows[0]!.equation;
     const inventory = sortTiles(createTiles(PUZZLE_SAMPLE.hand, sequentialIds("restart")));
 
-    const next = gameReducer(state, { type: "RESTART_RUN", equation, inventory, table: PUZZLE_SAMPLE });
+    const next = gameReducer(state, { type: "RESTART_RUN", table: PUZZLE_SAMPLE, inventory });
 
     expect(next).toBe(state);
   });
@@ -612,6 +635,7 @@ describe("RESTART_RUN", () => {
 function assertInvariants(state: GameState): void {
   const {
     phase,
+    table,
     equation,
     inventory,
     selectedTiles,
@@ -624,10 +648,12 @@ function assertInvariants(state: GameState): void {
     lastResult,
   } = state;
 
-  // equation === null only in title.
+  // table === null and equation === null only in title.
   if (phase === "title") {
+    expect(table).toBeNull();
     expect(equation).toBeNull();
   } else {
+    expect(table).not.toBeNull();
     expect(equation).not.toBeNull();
   }
 
@@ -664,16 +690,15 @@ function assertInvariants(state: GameState): void {
     expect(pendingDiscards).toEqual([]);
   }
 
-  // inventory.length <= getCapacity(state) when phase is
-  // answering, feedback, or gameOver.
-  const capacity = getCapacity(state);
+  // inventory.length <= PUZZLE_CAPACITY when phase is answering, feedback,
+  // or gameOver.
   if (phase === "answering" || phase === "feedback" || phase === "gameOver") {
-    expect(inventory.length).toBeLessThanOrEqual(capacity);
+    expect(inventory.length).toBeLessThanOrEqual(PUZZLE_CAPACITY);
   }
 
-  // inventory.length > getCapacity(state) when phase is overflow.
+  // inventory.length > PUZZLE_CAPACITY when phase is overflow.
   if (phase === "overflow") {
-    expect(inventory.length).toBeGreaterThan(capacity);
+    expect(inventory.length).toBeGreaterThan(PUZZLE_CAPACITY);
   }
 
   // lastResult === null in title and answering.
@@ -739,13 +764,7 @@ describe("reducer lifecycle invariants (§2.5)", () => {
     const steps: Step[] = [
       {
         label: "start the run",
-        getAction: () => ({
-          type: "START_RUN",
-          mode: "puzzle",
-          equation: table.rows[0]!.equation,
-          inventory: sortTiles(createTiles(table.hand, ids)),
-          table,
-        }),
+        getAction: () => createPuzzleStart(table, ids),
         expectedPhase: "answering",
       },
     ];
@@ -778,22 +797,16 @@ describe("reducer lifecycle invariants (§2.5)", () => {
           expectedPhase: "feedback",
         });
       }
-      const next = table.rows[index + 1];
       steps.push({
         label: `${label}: advance`,
-        getAction: () => ({ type: "NEXT_ROUND", equation: (next ?? row).equation }),
-        expectedPhase: next === undefined ? "gameOver" : "answering",
+        getAction: () => ({ type: "NEXT_ROUND" }),
+        expectedPhase: index === table.rows.length - 1 ? "gameOver" : "answering",
       });
     }
 
     steps.push({
       label: "restart the run",
-      getAction: () => ({
-        type: "RESTART_RUN",
-        equation: table.rows[0]!.equation,
-        inventory: sortTiles(createTiles(table.hand, sequentialIds("restart"))),
-        table,
-      }),
+      getAction: () => ({ ...createPuzzleStart(table, sequentialIds("restart")), type: "RESTART_RUN" }),
       expectedPhase: "answering",
     });
 
@@ -816,7 +829,6 @@ describe("Puzzle", () => {
   it("starts with the table, its hand and row 1", () => {
     const state = puzzleStart();
     expect(state.phase).toBe("answering");
-    expect(state.mode).toBe("puzzle");
     expect(state.table).toBe(PUZZLE_SAMPLE);
     expect(digitsOf(state.inventory)).toEqual([1, 4, 5, 7, 9]);
     expect(state.rowResults).toEqual([]);
@@ -826,17 +838,6 @@ describe("Puzzle", () => {
     const ids = sequentialIds();
     const state = play(puzzleStart(PUZZLE_SAMPLE, ids), PUZZLE_SAMPLE_PAR_LINE.slice(0, 3), ids);
     expect(state.rowResults).toEqual(["incorrect", "correct", "correct"]);
-  });
-
-  it("refuses a Puzzle start without a table", () => {
-    const title = createTitleState();
-    const next = gameReducer(title, {
-      type: "START_RUN",
-      mode: "puzzle",
-      equation: PUZZLE_SAMPLE.rows[0]!.equation,
-      inventory: createTiles(PUZZLE_SAMPLE.hand, sequentialIds()),
-    });
-    expect(next).toBe(title);
   });
 
   it("accepts the row's pay and refuses other digits, or another order", () => {
@@ -899,15 +900,12 @@ describe("Puzzle", () => {
     expect(gameOver.longestStreak).toBe(7);
   });
 
-  it("restarts with the new table, refusing a restart without one", () => {
+  it("restarts with the new table", () => {
     const ids = sequentialIds();
     const end = play(puzzleStart(PUZZLE_SAMPLE, ids), PUZZLE_SAMPLE_PAR_LINE, ids);
     const other: PuzzleTable = { ...PUZZLE_SAMPLE, hand: [0, 2, 3, 6, 8], par: 5 };
-    const restart = { type: "RESTART_RUN", equation: other.rows[0]!.equation, inventory: createTiles(other.hand, ids) } as const;
-    expect(gameReducer(end, restart)).toBe(end);
-    const next = gameReducer(end, { ...restart, table: other });
+    const next = gameReducer(end, { type: "RESTART_RUN", table: other, inventory: createTiles(other.hand, ids) });
     expect(next.table).toBe(other);
-    expect(next.mode).toBe("puzzle");
     expect(next.score).toBe(0);
   });
 });

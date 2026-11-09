@@ -1,6 +1,5 @@
 export type Digit = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 export type Language = "en" | "ko";
-export type GameMode = "endless" | "puzzle";
 export type GamePhase =
   | "title"
   | "answering"
@@ -29,7 +28,7 @@ export interface RoundResult {
 
 export interface GameState {
   phase: GamePhase;
-  mode: GameMode;
+  table: PuzzleTable | null; // null only in "title"
   equation: Equation | null;
   inventory: Tile[];
   selectedTiles: Tile[];
@@ -40,21 +39,19 @@ export interface GameState {
   currentStreak: number;
   longestStreak: number;
   lastResult: RoundResult | null;
-  /** Set only in Puzzle: the dealt table, for checking pays and ending the run. */
-  table?: PuzzleTable;
-  /** Set only in Puzzle: one entry per submitted row, in order, for the ledger's marks. */
-  rowResults?: RoundResult["kind"][];
+  /** One entry per submitted row, in order, for the ledger's marks. */
+  rowResults: RoundResult["kind"][];
 }
 
 export type GameAction =
-  | { type: "START_RUN"; mode: GameMode; equation: Equation; inventory: Tile[]; table?: PuzzleTable }
+  | { type: "START_RUN"; table: PuzzleTable; inventory: Tile[] } // equation = table.rows[0].equation
+  | { type: "RESTART_RUN"; table: PuzzleTable; inventory: Tile[] }
   | { type: "SELECT_TILE"; tileId: string }
   | { type: "RETURN_TILE"; tileId: string }
   | { type: "SUBMIT_CORRECT"; rewardTiles: Tile[] }
   | { type: "SUBMIT_INCORRECT" }
   | { type: "TOGGLE_DISCARD"; tileId: string }
-  | { type: "NEXT_ROUND"; equation: Equation }
-  | { type: "RESTART_RUN"; equation: Equation; inventory: Tile[]; table?: PuzzleTable } // keeps state.mode
+  | { type: "NEXT_ROUND" } // the reducer reads table.rows[round]
   | { type: "CLEAR_SELECTION" };
 
 export interface PuzzleRow {

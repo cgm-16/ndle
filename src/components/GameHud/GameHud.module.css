@@ -34,8 +34,8 @@
   font-weight: 600;
 }
 
-/* Rounds survived is Endless's win condition, so it gets the next step up
-   the existing type scale. `.entry dd.primary` is (0,2,1) against `.entry dd`
+/* The round leads the HUD, so it takes the next step up the existing type
+   scale. `.entry dd.primary` is (0,2,1) against `.entry dd`
    above's (0,1,1): it wins on specificity, not on source order. */
 .entry dd.primary {
   font-size: 1.5rem;

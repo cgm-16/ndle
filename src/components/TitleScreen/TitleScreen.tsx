@@ -1,5 +1,3 @@
-import { useState } from "react";
-import type { GameMode } from "../../game/types";
 import { ActionButton } from "../ActionButton/ActionButton";
 import { LanguageToggle } from "../LanguageToggle/LanguageToggle";
 import { useI18n } from "../../i18n/I18nContext";
@@ -7,10 +5,8 @@ import type { MessageTree } from "../../i18n/messages";
 import styles from "./TitleScreen.module.css";
 
 export interface TitleScreenProps {
-  onStart(mode: GameMode): void;
+  onStart(): void;
 }
-
-const MODES = ["endless", "puzzle"] as const;
 
 /**
  * The four material rules, in the design's reading order. Each swatch is the
@@ -28,12 +24,10 @@ const MATERIAL_RULES: { swatch: string; topic: keyof MessageTree["howToPlay"] }[
 
 /** Topics play never teaches on its own. Keyboard controls lead: it is the one
     of the four that no amount of playing reveals. */
-const MORE_TOPICS = ["keyboard", "selecting", "slots", "progress", "puzzle"] as const;
+const MORE_TOPICS = ["keyboard", "selecting", "slots", "progress"] as const;
 
 export function TitleScreen({ onStart }: TitleScreenProps) {
   const { t } = useI18n();
-  // Not persisted (§1.16): a reload is a fresh title with Puzzle chosen.
-  const [mode, setMode] = useState<GameMode>("puzzle");
 
   return (
     <main className={styles.screen}>
@@ -69,22 +63,8 @@ export function TitleScreen({ onStart }: TitleScreenProps) {
           ))}
         </ul>
       </details>
-      <div className={styles.modes} role="group" aria-label={t("title.mode")}>
-        {MODES.map((option) => (
-          <button
-            key={option}
-            type="button"
-            className={styles.mode}
-            aria-pressed={mode === option}
-            onClick={() => setMode(option)}
-          >
-            <span className={styles.modeName}>{t(`mode.${option}`)}</span>
-            <span className={styles.modeHint}>{t(`mode.${option}Hint`)}</span>
-          </button>
-        ))}
-      </div>
       <LanguageToggle />
-      <ActionButton onClick={() => onStart(mode)}>{t("action.start")}</ActionButton>
+      <ActionButton onClick={() => onStart()}>{t("action.start")}</ActionButton>
     </main>
   );
 }

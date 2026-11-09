@@ -2,17 +2,15 @@ import { describe, expect, it } from "vitest";
 import {
   answerMatches,
   canAttemptEquation,
-  canConstruct,
   constructAnswer,
   getAnswerLength,
-  getCapacity,
   getOverflowCount,
   getRewardCount,
   isParMade,
   isRunComplete,
   isSubmissionReady,
 } from "./selectors";
-import { PUZZLE_CAPACITY, REWARD_BONUS } from "./balance";
+import { REWARD_BONUS } from "./balance";
 import { createTitleState } from "./factories";
 import {
   PUZZLE_SAMPLE,
@@ -93,31 +91,6 @@ describe("canAttemptEquation", () => {
   });
 });
 
-describe("canConstruct", () => {
-  const hand = [makeTile(1, "a"), makeTile(2, "b"), makeTile(4, "c")];
-
-  it("accepts a one-digit product whose digit is held", () => {
-    expect(canConstruct(hand, 4)).toBe(true);
-  });
-
-  it("accepts a two-digit product whose digits are both held", () => {
-    expect(canConstruct(hand, 42)).toBe(true);
-  });
-
-  it("rejects a product missing one digit", () => {
-    expect(canConstruct(hand, 45)).toBe(false);
-  });
-
-  it("requires two tiles for a repeated digit", () => {
-    expect(canConstruct([makeTile(1, "a")], 11)).toBe(false);
-    expect(canConstruct([makeTile(1, "a"), makeTile(1, "b")], 11)).toBe(true);
-  });
-
-  it("rejects everything from an empty hand", () => {
-    expect(canConstruct([], 4)).toBe(false);
-  });
-});
-
 describe("answerMatches", () => {
   it("reads slots in order", () => {
     expect(answerMatches([makeTile(5), makeTile(6)], 56)).toBe(true);
@@ -127,12 +100,6 @@ describe("answerMatches", () => {
   it("rejects a selection that does not fill the product's slots", () => {
     expect(answerMatches([makeTile(0), makeTile(9)], 9)).toBe(false);
     expect(answerMatches([makeTile(5)], 56)).toBe(false);
-  });
-});
-
-describe("getCapacity", () => {
-  it("is five for Puzzle", () => {
-    expect(getCapacity({ mode: "puzzle" })).toBe(PUZZLE_CAPACITY);
   });
 });
 
@@ -188,16 +155,16 @@ describe("isSubmissionReady", () => {
 describe("Puzzle selectors", () => {
   it("completes a Puzzle run once every row is submitted", () => {
     const table = PUZZLE_SAMPLE;
-    expect(isRunComplete({ mode: "puzzle", totalRounds: 7, table })).toBe(false);
-    expect(isRunComplete({ mode: "puzzle", totalRounds: 8, table })).toBe(true);
-    expect(isRunComplete({ mode: "endless", totalRounds: 999 })).toBe(false);
+    expect(isRunComplete({ totalRounds: 7, table })).toBe(false);
+    expect(isRunComplete({ totalRounds: 8, table })).toBe(true);
+    expect(isRunComplete({ totalRounds: 8, table: null })).toBe(false);
   });
 
   it("makes par only at game over with score equal to par", () => {
     const table = PUZZLE_SAMPLE;
-    expect(isParMade({ phase: "gameOver", mode: "puzzle", score: 7, table })).toBe(true);
-    expect(isParMade({ phase: "gameOver", mode: "puzzle", score: 6, table })).toBe(false);
-    expect(isParMade({ phase: "feedback", mode: "puzzle", score: 7, table })).toBe(false);
-    expect(isParMade({ phase: "gameOver", mode: "endless", score: 7 })).toBe(false);
+    expect(isParMade({ phase: "gameOver", score: 7, table })).toBe(true);
+    expect(isParMade({ phase: "gameOver", score: 6, table })).toBe(false);
+    expect(isParMade({ phase: "feedback", score: 7, table })).toBe(false);
+    expect(isParMade({ phase: "gameOver", score: 7, table: null })).toBe(false);
   });
 });

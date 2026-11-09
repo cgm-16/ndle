@@ -16,8 +16,8 @@ export function EquationBoard({ equation, showProduct = false }: EquationBoardPr
   // rise has to come from a key that changes when the equation does.
   //
   // What "changes" means here is object identity, not the pair of digits.
-  // generateEquation draws uniformly from 45 pairs and never rejects a repeat,
-  // so a key built from left and right misses every round that redraws the
+  // plantTable draws each row from the 45 pairs and never rejects a repeat, so
+  // a key built from left and right misses every row that repeats the
   // previous pair — reachable, not theoretical, and it fails by staying still,
   // which is the one way a motion defect looks exactly like correct rest.
   // The reducer holds one equation object per round, so identity is the round.

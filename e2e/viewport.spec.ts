@@ -86,8 +86,8 @@ async function setContentWidth(page: Page, width: number): Promise<number> {
     measures nothing and reports it clean, which is what T62 hit when it swept
     `main` on the four interaction boards. */
 async function sweep(page: Page): Promise<StateReading[]> {
-  // Scoped to the picker: the title's mode select and the LanguageToggle
-  // also carry aria-pressed, and render only in some states.
+  // Scoped to the picker: the LanguageToggle also carries aria-pressed, and
+  // renders only in some states.
   const buttons = page.locator("nav ul button[aria-pressed]");
   const states = await buttons.count();
   expect(states, "gallery state count").toBe(STATE_COUNT);
@@ -111,8 +111,8 @@ async function sweep(page: Page): Promise<StateReading[]> {
           if (box.right > peak) peak = box.right;
           if (box.right > viewport + 0.5) past += 1;
         }
-        // The picker's own buttons: the LanguageToggle and the mode select
-        // also carry aria-pressed and would otherwise label the readings.
+        // The picker's own buttons: the LanguageToggle also carries
+        // aria-pressed and would otherwise label the readings.
         const picker = [...document.querySelectorAll("nav ul button[aria-pressed]")];
         return {
           state:
