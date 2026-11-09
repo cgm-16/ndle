@@ -76,7 +76,7 @@ Both files are rewritten to the target that this plan's tasks build.
   - **§1.14 copy:** a table of every key in use after T108, en and ko. It
     holds T106–T108's new keys verbatim, and is marked placeholder copy until
     the identity.
-  - **§1.15 sharing:** the four exact formats from T108's Interfaces,
+  - **§1.15 sharing:** the exact share texts in T108's Interfaces table,
     replacing ozterisk's.
   - **§1.16 persistence:** replace lines 307–308 with the `DailyRecord`
     contract from T105, and "A reload constructs a fresh `title` state; the

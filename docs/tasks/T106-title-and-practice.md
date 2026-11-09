@@ -95,6 +95,7 @@ In `main.tsx`:
 | `title.dailyPlayed` | `Today's result #{number}` | `오늘의 결과 #{number}` |
 | `title.dailyNone` | `No table today` | `오늘은 판이 없습니다` |
 | `title.practice` | `Practice` | `연습` |
+| `action.back` | `Back` | `뒤로` |
 
 `title.dailyNone` renders as a disabled button that still has its text.
 
