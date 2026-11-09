@@ -16,21 +16,23 @@ import {
   sequentialIds,
 } from "../test/fixtures";
 
-// plantDailyTable(seededRandom(7), 5000) finds a table.
-const B = plantDailyTable(seededRandom(7), 5000)!;
+// Seeds reach candidates early (a candidate is about 1 plant in 1300): seed 134
+// yields its first at plant 4, and seed 390 yields its first two at plants 22
+// and 26, so the fills below stay cheap.
+const B = plantDailyTable(seededRandom(134), 5000)!;
 
 const fill = (existing: Parameters<typeof fillDailySlots>[0], overrides = {}) =>
   fillDailySlots(existing, {
     count: 2,
     frozenThrough: 0,
     vetoed: new Set<number>(),
-    random: seededRandom(11),
+    random: seededRandom(390),
     attemptsPerSlot: 5000,
     ...overrides,
   });
 
 describe("daily picker", () => {
-  it("finds the B table within 5000 plants of seed 7", () => {
+  it("finds the B table within 5000 plants of seed 134", () => {
     expect(B).not.toBeNull();
     expect(isDailyCandidate(B)).not.toBeNull();
   });
@@ -55,11 +57,11 @@ describe("daily picker", () => {
 
   it("never refills a vetoed slot with the table that was vetoed", () => {
     // The same source plants the vetoed table first, so the veto must skip it.
-    const vetoedTable = plantDailyTable(seededRandom(11), 5000)!;
+    const vetoedTable = plantDailyTable(seededRandom(390), 5000)!;
     const filled = fill([PUZZLE_SAMPLE, vetoedTable], {
       frozenThrough: 1,
       vetoed: new Set([2]),
-      random: seededRandom(11),
+      random: seededRandom(390),
     });
     expect(filled[1]).not.toEqual(vetoedTable);
     expect(isDailyCandidate(filled[1])).not.toBeNull();
