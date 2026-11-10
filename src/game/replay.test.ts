@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createTiles, createTitleState } from "./factories";
 import { gameReducer } from "./gameReducer";
 import { replayMoves } from "./replay";
+import type { PuzzleMove } from "./types";
 import { isParMade } from "./selectors";
 import {
   PUZZLE_SAMPLE,
@@ -28,7 +29,7 @@ describe("replayMoves", () => {
   });
 
   it("stops in overflow when the last move has no discard", () => {
-    const line = [...PUZZLE_SAMPLE_PAR_LINE.slice(0, 7), { spend: [1, 2] as [1, 2] }];
+    const line: PuzzleMove[] = [...PUZZLE_SAMPLE_PAR_LINE.slice(0, 7), { spend: [1, 2] }];
     const { state } = replayMoves(PUZZLE_SAMPLE, line, sequentialIds())!;
     expect(state.phase).toBe("overflow");
     expect(state.round).toBe(8);
@@ -40,30 +41,39 @@ describe("replayMoves", () => {
     expect(replayMoves(PUZZLE_SAMPLE, [{ spend: [3, 3] }], sequentialIds())).toBeNull();
   });
 
+  it("rejects a submit the reducer refuses for a one-digit spend on a two-digit answer", () => {
+    expect(replayMoves(PUZZLE_SAMPLE, [{ spend: [5] }], sequentialIds())).toBeNull();
+  });
+
+  it("rejects a submit the reducer refuses for two held digits on a one-digit answer", () => {
+    const line: PuzzleMove[] = [...PUZZLE_SAMPLE_PAR_LINE.slice(0, 2), { spend: [1, 6] }];
+    expect(replayMoves(PUZZLE_SAMPLE, line, sequentialIds())).toBeNull();
+  });
+
   it("rejects a discard with no overflow", () => {
     expect(replayMoves(PUZZLE_SAMPLE, [{ spend: [5, 7], discard: 1 }], sequentialIds())).toBeNull();
   });
 
   it("rejects moves past the end of the run", () => {
-    const line = [...PUZZLE_SAMPLE_PAR_LINE, { spend: [1] as [1] }];
+    const line: PuzzleMove[] = [...PUZZLE_SAMPLE_PAR_LINE, { spend: [1] }];
     expect(replayMoves(PUZZLE_SAMPLE, line, sequentialIds())).toBeNull();
   });
 
   it("rejects an overflow stop that is not the last move", () => {
-    const line = [...PUZZLE_SAMPLE_PAR_LINE.slice(0, 3), { spend: [7] as [7] }, { spend: [1] as [1] }];
+    const line: PuzzleMove[] = [...PUZZLE_SAMPLE_PAR_LINE.slice(0, 3), { spend: [7] }, { spend: [1] }];
     expect(replayMoves(PUZZLE_SAMPLE, line, sequentialIds())).toBeNull();
   });
 
   it("lets live play continue after a replay", () => {
     const ids = sequentialIds();
-    const { state } = replayMoves(PUZZLE_SAMPLE, PUZZLE_SAMPLE_PAR_LINE.slice(0, 3), ids)!;
-    const selected = selectDigits(state, 7);
+    const { state } = replayMoves(PUZZLE_SAMPLE, PUZZLE_SAMPLE_PAR_LINE.slice(0, 1), ids)!;
+    const selected = selectDigits(state, 1, 4);
     const next = gameReducer(selected, {
       type: "SUBMIT_CORRECT",
-      rewardTiles: createTiles([4, 4], ids),
+      rewardTiles: createTiles([8, 1, 6], ids),
     });
     expect(next).not.toBe(selected);
-    expect(next.score).toBe(3);
+    expect(next.score).toBe(1);
   });
 
   it("leaves the reducer at the replay's state when its actions are dispatched", () => {

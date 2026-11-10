@@ -95,7 +95,7 @@ export const selectDigits = (state: GameState, ...digits: Digit[]): GameState =>
 // stops before the advance.
 export function playRow(state: GameState, move: PuzzleMove, ids: TileIdFactory): GameState {
   const replay: Replay = { state, actions: [] };
-  if (!applyMove(replay, move, ids)) throw new Error(`move refused: ${JSON.stringify(move)}`);
+  if (!applyMove(replay, move, ids)) throw new Error(`move refused at round ${state.round} (${state.phase}): ${JSON.stringify(move)}`);
   return replay.state;
 }
 

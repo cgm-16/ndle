@@ -43,8 +43,17 @@ describe("dailyStorage", () => {
     ["a two-character digit", '{"version":1,"number":1,"moves":[{"spend":[12]}],"outcome":null}'],
     ["a three-digit spend", '{"version":1,"number":1,"moves":[{"spend":[1,2,3]}],"outcome":null}'],
     ["a bad discard", '{"version":1,"number":1,"moves":[{"spend":[1],"discard":10}],"outcome":null}'],
-    ["a negative score", '{"version":1,"number":1,"moves":[],"outcome":{"score":-1}}'],
+    ["a negative score", '{"version":1,"number":1,"moves":[],"outcome":{"score":-1,"par":7,"longestStreak":0}}'],
     ["a partial outcome", '{"version":1,"number":1,"moves":[],"outcome":{"score":1,"par":7}}'],
+    ["a string digit", '{"version":1,"number":1,"moves":[{"spend":["1"]}],"outcome":null}'],
+    ["a fractional digit", '{"version":1,"number":1,"moves":[{"spend":[1.5]}],"outcome":null}'],
+    ["an empty spend", '{"version":1,"number":1,"moves":[{"spend":[]}],"outcome":null}'],
+    ["moves not an array", '{"version":1,"number":1,"moves":{},"outcome":null}'],
+    ["a null discard", '{"version":1,"number":1,"moves":[{"spend":[1],"discard":null}],"outcome":null}'],
+    ["number 1.5", '{"version":1,"number":1.5,"moves":[],"outcome":null}'],
+    ["a string number", '{"version":1,"number":"1","moves":[],"outcome":null}'],
+    ["a top-level array", "[]"],
+    ["a primitive", "3"],
     ["null", "null"],
   ])("loads null for %s", (_name, raw) => {
     expect(createDailyStore(memoryStorage({ [DAILY_STORAGE_KEY]: raw })).load()).toBeNull();
