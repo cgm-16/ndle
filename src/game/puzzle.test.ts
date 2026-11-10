@@ -8,7 +8,15 @@ import {
 import { getAnswerLength, getRewardCount } from "./selectors";
 import { dealPuzzle, playMyopic, plantTable, solvePuzzle } from "./puzzle";
 import type { PuzzleDeal } from "./types";
-import { makePuzzleRow, PUZZLE_SAMPLE, seededRandom } from "../test/fixtures";
+import {
+  makePuzzleRow,
+  play,
+  PUZZLE_SAMPLE,
+  PUZZLE_SAMPLE_PAR_LINE,
+  puzzleStart,
+  seededRandom,
+  sequentialIds,
+} from "../test/fixtures";
 
 const deal = ({ hand, rows }: PuzzleDeal): PuzzleDeal => ({ hand, rows });
 
@@ -18,7 +26,23 @@ describe("solvePuzzle", () => {
       par: 7,
       onlyMoves: 4,
       sacrificeRequired: true,
+      parLine: PUZZLE_SAMPLE_PAR_LINE,
     });
+  });
+
+  it("returns a par line that replays to par", () => {
+    const tables = [
+      PUZZLE_SAMPLE,
+      ...Array.from({ length: 20 }, (_, i) => {
+        const planted = plantTable(seededRandom(i + 1));
+        return { ...planted, par: solvePuzzle(planted).par };
+      }),
+    ];
+    for (const table of tables) {
+      const ids = sequentialIds();
+      const { parLine, par } = solvePuzzle(table);
+      expect(play(puzzleStart(table, ids), parLine, ids).score).toBe(par);
+    }
   });
 
   it("scores 0 when the hand can spell no row", () => {

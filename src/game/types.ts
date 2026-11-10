@@ -66,6 +66,12 @@ export interface PuzzleTable {
   par: number;
 }
 
+/** One row's play: the tiles spent, in slot order, and the overflow discard. */
+export interface PuzzleMove {
+  spend: Digit[];
+  discard?: Digit;
+}
+
 /** A table before the solver has priced it. */
 export type PuzzleDeal = Omit<PuzzleTable, "par">;
 
