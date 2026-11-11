@@ -70,6 +70,22 @@ read as 9dle's.
     survived a measurement pass";
   - `grep -rnE "#(31|84|85|104|105|130|138|142)\b" src e2e` then prints
     nothing. `#12` in tests is the Daily table's number and stays.
+- [ ] **Carried from M16's reviews:**
+  - **`src/gallery/harness.tsx:29-43`:** `CopyPressedOnMount` wraps
+    `game-over-copy-succeeded` and `game-over-copy-failed` in a `div`. That
+    `div` becomes the flex item, so the sweep's width check can't fail on
+    those two states. Make the wrapper layout-neutral, for example
+    `display: contents`, and show that the check then fails on them with
+    `main`'s `width: 100%` removed.
+  - **`e2e/fit.spec.ts`'s `contentWidthGap`** takes the bar's content box as
+    the frame's. Measure against the frame element itself, so it still holds
+    once T114 sets the 393 px frame.
+  - **The title's foot placement** (`flex: 1`) has no check. Add a geometry
+    check that the Practice button's bottom edge and the note sit within
+    the frame's bottom padding of the viewport's bottom, at `393 × 660` in
+    en and ko.
+  - **Duplicate check:** delete the duplicate Gothic A1 load test in
+    `accessibility.spec.ts` (ledger, T109).
 - [ ] **Spec and traceability:**
   - `ui-i18n.md` §1.12: delete "Two known misses, owned by the second plan
     (M16)…", and the first rule's "Until then…" clause;
