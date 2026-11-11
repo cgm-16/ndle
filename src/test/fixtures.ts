@@ -1,6 +1,6 @@
-import { createPuzzleStart, createTiles, createTitleState } from "../game/factories";
+import { createPuzzleStart, createTitleState } from "../game/factories";
 import { gameReducer } from "../game/gameReducer";
-import { answerMatches } from "../game/selectors";
+import { applyMove, type Replay } from "../game/replay";
 import type {
   Digit,
   Equation,
@@ -91,21 +91,15 @@ export const selectDigits = (state: GameState, ...digits: Digit[]): GameState =>
     state,
   );
 
-// One row through the reducer exactly as App plays it: select, submit with the
-// current row's pay, and discard if asked. It stops before the advance.
+// One move through the reducer exactly as App plays it (see applyMove). It
+// stops before the advance.
 export function playRow(state: GameState, move: PuzzleMove, ids: TileIdFactory): GameState {
-  const row = state.table!.rows[state.round - 1]!;
-  state = selectDigits(state, ...move.spend);
-  state = answerMatches(state.selectedTiles, row.equation.product)
-    ? gameReducer(state, { type: "SUBMIT_CORRECT", rewardTiles: createTiles(row.pay, ids) })
-    : gameReducer(state, { type: "SUBMIT_INCORRECT" });
-  if (move.discard !== undefined) {
-    state = gameReducer(state, { type: "TOGGLE_DISCARD", tileId: tileWith(state, move.discard).id });
-  }
-  return state;
+  const replay: Replay = { state, actions: [] };
+  if (!applyMove(replay, move, ids)) throw new Error(`move refused at round ${state.round} (${state.phase}): ${JSON.stringify(move)}`);
+  return replay.state;
 }
 
-// Plays rows, each advanced to the next row as App does.
+// Plays moves, each advanced to the next row as App does.
 export function play(state: GameState, line: PuzzleMove[], ids: TileIdFactory): GameState {
   for (const move of line) {
     state = gameReducer(playRow(state, move, ids), { type: "NEXT_ROUND" });

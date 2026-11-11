@@ -301,6 +301,8 @@ export function todaysDaily(now: Date, tables?: readonly PuzzleTable[]): // defa
 
 // game/replay.ts (T104)
 export interface Replay { state: GameState; actions: GameAction[] }
+export function applyMove(replay: Replay, move: PuzzleMove,
+  nextTileId: TileIdFactory): boolean; // one move, stopping before the advance; mutates replay
 export function replayMoves(table: PuzzleTable, moves: readonly PuzzleMove[],
   nextTileId: TileIdFactory): Replay | null;
 ```

@@ -72,9 +72,12 @@ paths:
   - `it("saves each move once under StrictMode")`. Play the par line's first
     three moves; the stored `moves` equal `PUZZLE_SAMPLE_PAR_LINE.slice(0, 3)`.
   - `it("resumes mid-table after a remount")`:
-    - unmount, then render a new App over the same store;
-    - press Daily: row 4 is current and the hand is `1 2 6 7 8`;
-    - answering row 4 correctly scores, which pins Review Focus 1.
+    - play the par line's first move only, then unmount;
+    - render a new App over the same store, with a fresh `sequentialIds()`
+      that simulates a page reload;
+    - press Daily: row 2 is current and the hand is `1 4 9`;
+    - answering row 2 correctly (1 and 4) scores, which pins Review Focus 1:
+      a replay that restarts its own ids collides with the opening 9.
   - `it("records a Daily played by keyboard alone")`. Play the par line's
     first four moves using only keys, including row 4's discard by digit; the
     stored `moves` equal `PUZZLE_SAMPLE_PAR_LINE.slice(0, 4)`.
@@ -91,10 +94,11 @@ paths:
   - `it("ignores a corrupt record and starts fresh")`.
   - `it("keeps the run's number when the clock passes midnight")`.
   - `it("resumes after Back mid-Daily")`:
-    - play the par line's first three moves, then press Back;
-    - the title shows `Daily #1`, and the stored `moves` are still three;
-    - press it: row 4 is current with the hand `1 2 6 7 8`, and answering
-      row 4 correctly scores, which pins Review Focus 1 again.
+    - play the par line's first move only, then press Back;
+    - the title shows `Daily #1`, and the stored `moves` are still one;
+    - press it, with a fresh `sequentialIds()` for the new run: row 2 is
+      current with the hand `1 4 9`, and answering row 2 correctly (1 and 4)
+      scores, which pins Review Focus 1 again.
   - `it("writes no record when Practice is left by Back")`. With an empty
     store, play two Practice rows and press Back: `getItem("ndle.daily")`
     is `null`.
