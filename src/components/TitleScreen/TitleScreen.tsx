@@ -1,5 +1,4 @@
 import { ActionButton } from "../ActionButton/ActionButton";
-import { LanguageToggle } from "../LanguageToggle/LanguageToggle";
 import { useI18n } from "../../i18n/I18nContext";
 import type { MessageTree } from "../../i18n/messages";
 import styles from "./TitleScreen.module.css";
@@ -56,7 +55,6 @@ export function TitleScreen({ daily, onDaily, onPractice }: TitleScreenProps) {
           ))}
         </ul>
       </details>
-      <LanguageToggle />
       <ActionButton onClick={onDaily} disabled={daily.status === "none"}>
         {daily.status === "none"
           ? t("title.dailyNone")

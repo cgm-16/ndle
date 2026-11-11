@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
-import { ActionButton } from "../components/ActionButton/ActionButton";
 import { GameOverScreen } from "../components/GameOverScreen/GameOverScreen";
 import { GameScreen } from "../components/GameScreen/GameScreen";
-import { LanguageToggle } from "../components/LanguageToggle/LanguageToggle";
 import { TitleScreen, type DailyEntry } from "../components/TitleScreen/TitleScreen";
+import { TopBar } from "../components/TopBar/TopBar";
 import { createPuzzleStart, createTitleState } from "../game/factories";
 import { gameReducer } from "../game/gameReducer";
 import { createSubmit, replayMoves } from "../game/replay";
@@ -178,19 +177,17 @@ export function App({ dependencies, shareDependencies }: AppProps) {
 
   return (
     <div className={styles.app}>
-      {state.phase !== "title" && (
-        <div className={styles.languageBar}>
-          {/* Not a move: a Daily keeps its record. It shares the language
-              bar's row, so it costs the table no height, and it comes first
-              in tab order. */}
-          <ActionButton variant="ghost" onClick={handleBack}>
-            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M10 3 5 8l5 5" />
-            </svg>{" "}
-            {t("action.back")}
-          </ActionButton>
-          <LanguageToggle />
-        </div>
+      {/* Keyed per screen kind: a bar that survives a phase change leaves the
+          browser's focus starting point in the new screen, so Tab would reach
+          Back last. */}
+      {state.phase === "title" ? (
+        <TopBar key="title" />
+      ) : (
+        <TopBar
+          key="play"
+          onBack={handleBack}
+          label={play.kind === "daily" ? t("bar.daily", { number: play.number }) : t("title.practice")}
+        />
       )}
 
       {state.phase === "title" && (

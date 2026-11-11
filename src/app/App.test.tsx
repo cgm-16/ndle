@@ -177,6 +177,29 @@ describe("App", () => {
     expect(dependencies.dealPuzzle).toHaveBeenCalledTimes(3);
   });
 
+  it("shows the bar on the title with the toggle and no Back", () => {
+    renderApp();
+    expect(screen.getByRole("group", { name: "Language" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Back" })).not.toBeInTheDocument();
+  });
+
+  it("labels the bar #n in a Daily and Practice in Practice", async () => {
+    const user = userEvent.setup();
+    renderApp({ initialLanguage: "en" });
+    await user.click(screen.getByRole("button", { name: "Daily #3" }));
+    expect(screen.getByText("#3")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Back" }));
+    await user.click(screen.getByRole("button", { name: "Practice" }));
+    expect(screen.getByText("Practice")).toBeInTheDocument();
+  });
+
+  it("labels the Practice bar 연습 in Korean", async () => {
+    const user = userEvent.setup();
+    renderApp({ initialLanguage: "ko" });
+    await user.click(screen.getByRole("button", { name: "연습" }));
+    expect(screen.getByText("연습")).toBeInTheDocument();
+  });
+
   it("makes Back the first focusable element of the game and game-over screens", async () => {
     const user = userEvent.setup();
     renderApp();

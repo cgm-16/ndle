@@ -13,11 +13,12 @@ satisfy.
 
 - **Every screen fits `393 × 660` with no page scroll, and `375` wide.** 393 × 660
   is a common phone's viewport less its browser chrome. The geometry specs in
-  `e2e/` assert it.
+  `e2e/` assert it, and `fit.spec.ts` sweeps every gallery state with the top
+  bar counted, in Chromium and in Playwright's WebKit.
 - Use one centered vertical arena on desktop and mobile.
 - Preserve order across breakpoints: Back (in the app's top bar) → HUD → ledger → equation/slots → phase action → rail (while a tile is past capacity, and until a dropping tile lands) → rack. The rail sits directly above the rack, because a perched tile drops from it into a socket.
 - Mobile changes spacing, wrapping, and control size, not information architecture.
-- **Back** (`action.back`, `Back` / `뒤로`) sits in the app's top bar, ahead of the language toggle and outside the screen's `<main>`, on the game screen and the game-over screen, for Daily and Practice alike, so it is the first focusable element on the page. It is at least `44 px` tall and carries an `aria-hidden` inline-SVG arrow. It has no key binding, because `Escape` already clears the selection. It dispatches `RETURN_TO_TITLE`, with no confirmation. Back is not a move: a Daily keeps its record and resumes from the title, and a Practice run is dropped.
+- **Back** (`action.back`, `Back` / `뒤로`) sits at the left edge of the app's top bar, with the wordmark and the label (`#12` or `Practice`) in the centre and the language toggle at the right, ahead of the toggle in tab order and outside the screen's `<main>`, on the game screen and the game-over screen, for Daily and Practice alike, so it is the first focusable element on the page. It is at least `44 px` tall and carries an `aria-hidden` inline-SVG arrow. It has no key binding, because `Escape` already clears the selection. It dispatches `RETURN_TO_TITLE`, with no confirmation. Back is not a move: a Daily keeps its record and resumes from the title, and a Practice run is dropped.
 - **The ledger** lists the table's 8 rows. Each row shows its equation and the tiles it pays, and a mark once answered: correct or missed, in text or shape as well as colour. The current row is marked by more than colour. Each row is one accessible string (`ledger.row`).
 - **The rack** is five fixed sockets in a single row at every breakpoint (`PUZZLE_CAPACITY`). The grid never resizes; an empty socket is a tile spent, and a socket whose tile is lifted is on loan: it stays held for that tile, visibly distinct from an empty one, and the rack does not re-sort until the round resolves.
 - **The rail.** The tile past capacity (the newest arrival, `product.md` §1.7) perches on a band one tile high above the rack with a `1px` `--border-accent` top rule, right-aligned and drawn at the rack's tile size (where the rack's tracks shrink below it, a dropping tile narrows by a few pixels as it lands). The rail exists while a tile is past capacity, and until the tile it held has landed in a freed socket (`8a·2`). It never adds a row to the rack.
@@ -27,7 +28,7 @@ satisfy.
 - **A tier's figures are the tile's maximum size, not a fixed size.** The rack is sized from its container rather than from the viewport, and scales down toward the `44 × 44` target minimum when the container is narrower than the tier's natural width. At every width where the tier already fits, the rendered size is exactly the figure above.
 - **The target minimum is a floor, and it outranks the layout.** A tile is a control, so below the content width where five tiles at `44` plus their gaps no longer fit — about `276px` once the arena's padding is counted — the rack stops shrinking and the page scrolls instead. The `320px` rule below is silent under `320px`, while the target minimum has no lower bound, so that is the order they resolve in.
 - **This is what the `320px` no-horizontal-scroll rule requires, because a boundary cannot carry it.** A `min-width` query matches the scrollbar-*inclusive* viewport while the content box excludes it, so wherever scrollbars take layout width every tier fires about `15px` early. Scaling within the tier fixes it, and the target minimum bounds how far.
-- **Two known misses, owned by the second plan (M16):** the Next Round action sits below `660` after a miss, and the overflow page reaches `859 px`. Until then these two states are the only exceptions to the first rule of this list.
+- **Known misses, owned by the second plan (M16):** the feedback and overflow states overflow `660` with the bar counted, and two states fail the focus-ring reach. `KNOWN_MISSES` in `e2e/fit.spec.ts` lists them, and each layout task removes its keys. Until then these states are the only exceptions to the first rule of this list.
 
 **Phases**
 
@@ -112,6 +113,7 @@ placeholder until the identity.
 | `title.dailyPlayed` | `Today's result #{number}` | `오늘의 결과 #{number}` |
 | `title.dailyNone` | `No table today` | `오늘은 판이 없습니다` |
 | `title.practice` | `Practice` | `연습` |
+| `bar.daily` | `#{number}` | `#{number}` |
 | `action.back` | `Back` | `뒤로` |
 | `action.submit` | `Submit` | `제출` |
 | `action.clear` | `Clear` | `지우기` |

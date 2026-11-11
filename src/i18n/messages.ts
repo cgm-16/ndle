@@ -17,6 +17,9 @@ const en = {
     dailyNone: "No table today",
     practice: "Practice",
   },
+  bar: {
+    daily: "#{number}",
+  },
   language: {
     groupLabel: "Language",
   },
@@ -107,6 +110,9 @@ const ko = {
     dailyPlayed: "오늘의 결과 #{number}",
     dailyNone: "오늘은 판이 없습니다",
     practice: "연습",
+  },
+  bar: {
+    daily: "#{number}",
   },
   language: {
     groupLabel: "언어",

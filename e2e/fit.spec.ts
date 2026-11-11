@@ -1,0 +1,219 @@
+import { readFileSync } from "node:fs";
+import { test, expect, type Page } from "@playwright/test";
+
+/* The fit sweep: every gallery state, in both languages, at two phone widths,
+   in a window 660 tall, with the top bar counted. Each state is measured on
+   `gallery.html?state=<id>`, which renders only the bar and the screen: the
+   default gallery's picker would add height the app does not have, and a
+   screen measured without its bar passes 52px short.
+
+   Playwright's WebKit (project "webkit", iPhone 15 emulation) runs this file
+   too. It is not iOS Safari, so a real phone is still unmeasured. */
+
+const WIDTHS = [393, 375] as const;
+const HEIGHT = 660;
+const LANGUAGES = ["en", "ko"] as const;
+const BAR_HEIGHT = 52;
+/* The ring is a 3px outline at a 3px offset, so it reaches 6px from a control. */
+const RING_REACH = 6;
+const CHALK = "rgb(238, 240, 234)";
+const DUST = "rgb(170, 179, 191)";
+
+/* States known to miss, keyed "<id> <lang> <width>", then " ring" when the
+   miss is the focus-ring reach, then " webkit" when only WebKit misses (a key
+   without " webkit" is asserted in both engines). Measured with the bar
+   counted; Chromium and Playwright's WebKit missed the same keys, by the same
+   scrollHeights. A listed key must still
+   miss: fixing a state fails the sweep until its key is removed here. */
+const KNOWN_MISSES = new Set<string>([
+  "feedback-correct en 393", // scrollHeight 824 of 660
+  "feedback-correct en 375", // scrollHeight 824 of 660
+  "feedback-correct ko 393", // scrollHeight 827 of 660
+  "feedback-correct ko 375", // scrollHeight 827 of 660
+  "feedback-incorrect en 393", // scrollHeight 766 of 660
+  "feedback-incorrect en 375", // scrollHeight 766 of 660
+  "feedback-incorrect ko 393", // scrollHeight 769 of 660
+  "feedback-incorrect ko 375", // scrollHeight 769 of 660
+  "feedback-after-discard en 393", // scrollHeight 764 of 660
+  "feedback-after-discard en 375", // scrollHeight 764 of 660
+  "feedback-after-discard ko 393", // scrollHeight 767 of 660
+  "feedback-after-discard ko 375", // scrollHeight 767 of 660
+  "feedback-streak-5 en 393", // scrollHeight 764 of 660
+  "feedback-streak-5 en 375", // scrollHeight 764 of 660
+  "feedback-streak-5 ko 393", // scrollHeight 767 of 660
+  "feedback-streak-5 ko 375", // scrollHeight 767 of 660
+  "feedback-streak-8 en 393", // scrollHeight 764 of 660
+  "feedback-streak-8 en 375", // scrollHeight 764 of 660
+  "feedback-streak-8 ko 393", // scrollHeight 767 of 660
+  "feedback-streak-8 ko 375", // scrollHeight 767 of 660
+  "overflow-required-1 en 393", // scrollHeight 853 of 660
+  "overflow-required-1 en 375", // scrollHeight 853 of 660
+  "overflow-required-1 ko 393", // scrollHeight 857 of 660
+  "overflow-required-1 ko 375", // scrollHeight 857 of 660
+  "overflow-required-1 en 393 ring", // the perched rail tile and the rack tiles: tile buttons closer than 6px, and tile faces within 6px of a tile button
+  "overflow-required-1 en 375 ring", // the perched rail tile and the rack tiles: tile buttons closer than 6px, and tile faces within 6px of a tile button
+  "overflow-required-1 ko 393 ring", // the perched rail tile and the rack tiles: tile buttons closer than 6px, and tile faces within 6px of a tile button
+  "overflow-required-1 ko 375 ring", // the perched rail tile and the rack tiles: tile buttons closer than 6px, and tile faces within 6px of a tile button
+  "interaction-reduced-motion en 393 ring", // a button and a tile button, each within 6px of a chalk tile face
+  "interaction-reduced-motion en 375 ring", // a button and a tile button, each within 6px of a chalk tile face
+  "interaction-reduced-motion ko 393 ring", // a button and a tile button, each within 6px of a chalk tile face
+  "interaction-reduced-motion ko 375 ring", // a button and a tile button, each within 6px of a chalk tile face
+]);
+
+/* The gallery's state count, as viewport.spec.ts counts it. Read from that
+   file so there is one number to change. */
+const STATE_COUNT = Number(
+  /const STATE_COUNT = (\d+);/.exec(readFileSync("e2e/viewport.spec.ts", "utf8"))?.[1],
+);
+
+interface Reading {
+  barHeight: number;
+  scrollHeight: number;
+  scrollWidth: number;
+  innerHeight: number;
+  innerWidth: number;
+  ringFailures: string[];
+}
+
+async function stateIds(page: Page): Promise<string[]> {
+  await page.goto("/gallery.html");
+  return page.locator("nav ul button[data-state-id]").evaluateAll((buttons) =>
+    buttons.map((button) => button.getAttribute("data-state-id")!),
+  );
+}
+
+/** Opens a state with the language set before load: switching it at runtime
+    hangs the renderer on the lazy Hangul font import. Returns once the
+    self-hosted faces the page uses have loaded, so no reading is of a fallback. */
+async function openState(page: Page, id: string, language: string, width: number, height: number): Promise<void> {
+  await page.addInitScript((lang) => window.localStorage.setItem("ndle.language", lang), language);
+  await page.setViewportSize({ width, height });
+  await page.goto(`/gallery.html?state=${id}`);
+  await expect(page.locator("header")).toHaveCount(1);
+  await page.waitForFunction(
+    (lang) => {
+      const loaded = new Set(
+        [...document.fonts].filter((face) => face.status === "loaded").map((face) => face.family.replace(/"/g, "")),
+      );
+      return loaded.has("Atkinson Hyperlegible") && (lang !== "ko" || loaded.has("Gothic A1"));
+    },
+    language,
+  );
+  await page.evaluate(() => document.fonts.ready);
+  // Entry motion is a transform, which counts toward scrollable overflow.
+  await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished)));
+}
+
+/** The wordmark is set in Gaegu wherever it shows, so it must have loaded there. */
+async function gaeguLoadedWhereUsed(page: Page): Promise<boolean> {
+  return page.evaluate(() => {
+    const uses = [...document.querySelectorAll("header p span, h1")].some((el) =>
+      getComputedStyle(el).fontFamily.includes("Gaegu"),
+    );
+    return !uses || [...document.fonts].some((face) => face.family.includes("Gaegu") && face.status === "loaded");
+  });
+}
+
+async function read(page: Page): Promise<Reading> {
+  return page.evaluate(
+    ({ reach, chalk, dust }) => {
+      const de = document.documentElement;
+      const controls = [...document.querySelectorAll<HTMLElement>('button, [role="button"], a, summary')].filter(
+        (el) => el.getBoundingClientRect().width > 0,
+      );
+      const name = (el: Element) => `${el.tagName.toLowerCase()}.${String(el.className).split(" ")[0]}`;
+      // Two boxes' rings meet when they are closer than `reach` on both axes.
+      const near = (a: DOMRect, b: DOMRect) =>
+        Math.max(a.left - b.right, b.left - a.right) < reach - 0.01 &&
+        Math.max(a.top - b.bottom, b.top - a.bottom) < reach - 0.01;
+      const ringFailures: string[] = [];
+      controls.forEach((a, i) => {
+        const box = a.getBoundingClientRect();
+        for (const b of controls.slice(i + 1)) {
+          if (a.contains(b) || b.contains(a)) continue;
+          if (near(box, b.getBoundingClientRect())) ringFailures.push(`${name(a)} / ${name(b)}`);
+        }
+        for (const el of document.body.querySelectorAll<HTMLElement>("*")) {
+          if (a.contains(el) || el.contains(a)) continue;
+          const bg = getComputedStyle(el).backgroundColor;
+          if (bg !== chalk && bg !== dust) continue;
+          const other = el.getBoundingClientRect();
+          if (other.width > 0 && near(box, other)) ringFailures.push(`${name(a)} / ${name(el)} (${bg})`);
+        }
+      });
+      return {
+        barHeight: document.querySelector("header")!.getBoundingClientRect().height,
+        scrollHeight: de.scrollHeight,
+        scrollWidth: de.scrollWidth,
+        innerHeight: window.innerHeight,
+        innerWidth: window.innerWidth,
+        ringFailures,
+      };
+    },
+    { reach: RING_REACH, chalk: CHALK, dust: DUST },
+  );
+}
+
+const overflows = (r: Reading) => r.scrollHeight > r.innerHeight || r.scrollWidth > r.innerWidth;
+
+test("the sweep covers every gallery state", async ({ page }) => {
+  const ids = await stateIds(page);
+  expect(ids.length, "gallery state ids").toBe(STATE_COUNT);
+  expect(new Set(ids).size, "distinct ids").toBe(ids.length);
+});
+
+for (const language of LANGUAGES) {
+  for (const width of WIDTHS) {
+    test(`every state fits ${width} x ${HEIGHT} in ${language}, bar counted`, async ({ page }, testInfo) => {
+      test.setTimeout(120_000);
+      const webkit = testInfo.project.name === "webkit";
+      const ids = await stateIds(page);
+      expect(ids.length, "gallery state ids").toBe(STATE_COUNT);
+      const problems: string[] = [];
+      // A miss listed without " webkit" holds in both engines. One listed with
+      // it holds only in WebKit, and Chromium must fit.
+      const listed = (key: string) => (webkit ? KNOWN_MISSES.has(key) || KNOWN_MISSES.has(`${key} webkit`) : KNOWN_MISSES.has(key));
+
+      for (const id of ids) {
+        await openState(page, id, language, width, HEIGHT);
+        const reading = await read(page);
+        expect(reading.innerWidth, `${id}: window width the harness produced`).toBe(width);
+        expect(reading.innerHeight, `${id}: window height the harness produced`).toBe(HEIGHT);
+        expect(reading.barHeight, `${id}: the bar's height`).toBe(BAR_HEIGHT);
+        expect(await gaeguLoadedWhereUsed(page), `${id}: Gaegu loaded where used`).toBe(true);
+
+        const key = `${id} ${language} ${width}`;
+        const checks: Array<[string, boolean, string]> = [
+          [key, overflows(reading), `scrollHeight ${reading.scrollHeight} of ${reading.innerHeight}, scrollWidth ${reading.scrollWidth} of ${reading.innerWidth}`],
+          [`${key} ring`, reading.ringFailures.length > 0, reading.ringFailures.join("; ")],
+        ];
+        for (const [checkKey, missedHere, detail] of checks) {
+          if (missedHere !== listed(checkKey)) {
+            problems.push(`${checkKey}: ${missedHere ? "misses, not listed" : "fits, but listed as a miss"} (${detail})`);
+          }
+        }
+      }
+
+      expect(problems, "states against KNOWN_MISSES").toEqual([]);
+    });
+  }
+}
+
+test("the sweep fails a window too short for the screen", async ({ page }) => {
+  await openState(page, "answering-empty", "en", 393, 400);
+  const reading = await read(page);
+  expect(reading.innerHeight, "window height the harness produced").toBe(400);
+  expect(reading.scrollHeight, "page height at 393 x 400").toBeGreaterThan(reading.innerHeight);
+});
+
+test("the sweep fails a state whose stack fits only without the bar", async ({ page }) => {
+  await openState(page, "answering-empty", "en", 393, 1400);
+  const screenHeight = await page.evaluate(() => document.querySelector("main")!.getBoundingClientRect().height);
+  // One pixel short of the whole stack: the screen alone fits, the bar tips it over.
+  const height = Math.ceil(screenHeight) + BAR_HEIGHT - 1;
+  await openState(page, "answering-empty", "en", 393, height);
+  const reading = await read(page);
+  expect(reading.innerHeight, "window height the harness produced").toBe(height);
+  expect(screenHeight, "the screen alone fits").toBeLessThanOrEqual(height);
+  expect(reading.scrollHeight, "the stack with its bar overflows").toBeGreaterThan(height);
+});

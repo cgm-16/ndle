@@ -9,11 +9,11 @@
   min-width: var(--target-min);
   min-height: var(--target-min);
   padding: 0 var(--space-3);
-  border: 1px solid var(--border-hairline);
+  border: 1.5px solid var(--border-hairline);
   border-radius: var(--radius-md);
   background: transparent;
-  color: var(--text-meta);
-  font: var(--weight-regular) var(--size-label) / var(--leading-tight) var(--font-ui);
+  color: var(--text-primary);
+  font: var(--weight-bold) var(--type-secondary) / var(--leading-tight) var(--font-ui);
   cursor: pointer;
   transition:
     background var(--dur-state) var(--ease-standard),
@@ -24,11 +24,16 @@
   transform: translateY(var(--press-offset));
 }
 
-/* The active half fills with the accent and slate text; the inactive one
-   stays bare field. */
+/* The Hangul half is set in Gothic A1 at 15px. */
+.button:last-child {
+  font-family: "Gothic A1", var(--font-ui);
+  font-size: var(--type-hud);
+}
+
+/* The active half fills with chalk and slate text; the inactive one stays
+   bare field. */
 .button[aria-pressed="true"] {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--text-on-accent);
-  font-weight: var(--weight-bold);
+  background: var(--surface-tile);
+  border-color: var(--surface-tile);
+  color: var(--text-on-tile);
 }

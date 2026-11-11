@@ -29,6 +29,8 @@ export interface GalleryEntry {
   id: string;
   /** Picker label. English only — the gallery is a dev tool, not a screen. */
   label: string;
+  /** The Daily number the bar shows; a screen without one is a Practice screen. */
+  dailyNumber?: number;
   render: () => ReactNode;
 }
 
@@ -250,12 +252,14 @@ export const GALLERY_STATES: Record<GamePhase | "interaction", GalleryEntry[]> =
     },
     {
       id: "game-over-daily-par",
+      dailyNumber: 12,
       label: "Game over — Daily, par made",
       render: () =>
         renderGameOverScreen(GAME_OVER_STATE, RESOLVING_SHARE_DEPENDENCIES, { kind: "daily", number: 12 }),
     },
     {
       id: "game-over-daily-short",
+      dailyNumber: 12,
       label: "Game over — Daily, 1 short of par",
       render: () =>
         renderGameOverScreen(DAILY_SHORT_GAME_OVER_STATE, RESOLVING_SHARE_DEPENDENCIES, { kind: "daily", number: 12 }),

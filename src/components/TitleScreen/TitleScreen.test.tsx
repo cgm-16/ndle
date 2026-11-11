@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { I18nProvider } from "../../i18n/I18nContext";
+import { TopBar } from "../TopBar/TopBar";
 import { TitleScreen, type DailyEntry } from "./TitleScreen";
 
 const props = (daily: DailyEntry = { status: "open", number: 3 }) => ({
@@ -18,6 +19,7 @@ describe("TitleScreen", () => {
   ] as const)("labels the %j Daily entry in both languages", async (daily, en, ko) => {
     render(
       <I18nProvider initialLanguage="en">
+        <TopBar />
         <TitleScreen {...props(daily)} />
       </I18nProvider>,
     );
@@ -139,6 +141,7 @@ describe("TitleScreen", () => {
   it("switches all visible copy live when the language toggle changes languages", async () => {
     render(
       <I18nProvider initialLanguage="en">
+        <TopBar />
         <TitleScreen {...props()} />
       </I18nProvider>,
     );

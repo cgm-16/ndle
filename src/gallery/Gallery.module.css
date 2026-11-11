@@ -124,3 +124,11 @@
     padding-top: var(--space-6);
   }
 }
+
+/* The single-state page: .app's frame, the container GameScreen's arena reads. */
+.single {
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+  container: app / inline-size;
+}
