@@ -16,7 +16,9 @@ hoc at branch time.
 | `M13 — Daily Tables` | 365 numbered tables in band that need a sacrifice ship, with a generator that respects freezing and vetoes | T101–T103 | Every shipped table re-solves to its par, is in band, and has `sacrificeRequired`. The same local date gives the same number |
 | `M14 — Daily Resume` | A Daily's moves are saved, and replaying them rebuilds the exact state | T104–T105 | The par line replays to Made par 7 / 8. A record cut after a submit lands in overflow. A corrupt record is ignored without a crash |
 | `M15 — Daily and Practice` | The title offers Daily and Practice. A Daily is one attempt that resumes. Both game-over variants and their share texts work | T106–T108 | A reload mid-Daily resumes. A finished Daily shows its result until the next table. No input restarts a Daily. Back mid-Daily returns to the title, and Daily resumes at the same row. The share texts are exact-match tested in en and ko |
-| `M16 — Identity and Release (second plan)` | 9dle's own identity, layout, Korean screen and launch | — | The geometry suite passes for every screen in en and ko, and the production smoke test passes |
+| `M16 — Identity: Title and Game Over` | B's palette, faces and focus ring; one top bar; a geometry sweep over every gallery state in en and ko; the title and both game-over variants in B | T109–T112 | The contrast test is green. The sweep measures every state at 393 × 660 and 375 × 660 in en and ko, with the bar; only its known misses overflow, and no title or game-over state is among them |
+| `M17 — Identity: The Table in Play` | The HUD, ledger, answer row, rack, rail, feedback and overflow in B; B's motion; the suite closed | T113–T117 | The known-miss list is gone and every state fits. §1.12's two known misses are deleted. The keyframe inventory is B's thirteen, under `nd-` |
+| `M18 — Launch` | The launch date set, `DAILY_LAUNCHED` true, the review file dated from it | T118 | `dailyNumberOn(DAILY_LAUNCH_DATE)` is 1 at Ori's date, and the review-file test is green. Then the release PR, and the production smoke test passes |
 
 ## 5. Dependency DAG and Execution Waves
 
@@ -30,7 +32,9 @@ milestone starts when the previous one has merged.
 | W2 | M13 | T101–T103 | P0 | Serial | The M13 exit gate |
 | W3 | M14 | T104–T105 | P0 | Serial | The M14 exit gate |
 | W4 | M15 | T106–T108 | P0 | Serial | The M15 exit gate |
-| W5 | M16 | second plan | — | Serial | The M16 exit gate |
+| W5 | M16 | T109–T112 | P0/P1 | Serial | The M16 exit gate |
+| W6 | M17 | T113–T117 | P0/P1 | Serial | The M17 exit gate |
+| W7 | M18 | T118 | P0 | Serial | The M18 exit gate |
 
 No agent may modify another active task's owned paths. If a shared type must change, pause the dependent task, land the type change through the owning prerequisite task, rebase, and rerun its gate.
 
