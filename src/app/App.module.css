@@ -9,7 +9,7 @@
 
 .languageBar {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   max-width: var(--arena-max-width);
   margin: 0 auto;
   padding: var(--space-4) var(--space-4) 0;

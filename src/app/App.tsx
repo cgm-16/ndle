@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useReducer } from "react";
+import { ActionButton } from "../components/ActionButton/ActionButton";
 import { GameOverScreen } from "../components/GameOverScreen/GameOverScreen";
 import { GameScreen } from "../components/GameScreen/GameScreen";
 import { LanguageToggle } from "../components/LanguageToggle/LanguageToggle";
-import { TitleScreen } from "../components/TitleScreen/TitleScreen";
+import { TitleScreen, type DailyEntry } from "../components/TitleScreen/TitleScreen";
 import { createPuzzleStart, createTiles, createTitleState } from "../game/factories";
 import { gameReducer } from "../game/gameReducer";
 import { answerMatches, isRunComplete } from "../game/selectors";
+import { todaysDaily } from "../game/dailyTables";
 import type { PuzzleTable, TileIdFactory } from "../game/types";
+import type { DailyStore } from "../services/dailyStorage";
+import { useI18n } from "../i18n/I18nContext";
 import { getShareStats, type ShareDependencies } from "../services/sharing";
 import styles from "./App.module.css";
 
@@ -15,6 +19,18 @@ export interface AppDependencies {
   gameUrl: string;
   /** Deals a Practice table. Called only from event handlers, once per run. */
   dealPuzzle(): PuzzleTable;
+  /** Read on title render and in event handlers, never in the reducer. */
+  now(): Date;
+  dailyStore: DailyStore;
+  dailyTables: readonly PuzzleTable[];
+}
+
+function dailyEntry({ now, dailyStore, dailyTables }: AppDependencies): DailyEntry {
+  const today = todaysDaily(now(), dailyTables);
+  if (today === null) return { status: "none" };
+  const record = dailyStore.load();
+  const played = record !== null && record.number === today.number && record.outcome !== null;
+  return { status: played ? "played" : "open", number: today.number };
 }
 
 export interface AppProps {
@@ -23,11 +39,17 @@ export interface AppProps {
 }
 
 export function App({ dependencies, shareDependencies }: AppProps) {
+  const { t } = useI18n();
   const [state, dispatch] = useReducer(gameReducer, undefined, createTitleState);
 
-  const handleStart = useCallback(() => {
+  const handlePractice = useCallback(() => {
     dispatch(createPuzzleStart(dependencies.dealPuzzle(), dependencies.nextTileId));
   }, [dependencies]);
+
+  // T107 starts the Daily here.
+  const handleDaily = useCallback(() => {}, []);
+
+  const handleBack = useCallback(() => dispatch({ type: "RETURN_TO_TITLE" }), []);
 
   const handleRestart = useCallback(() => {
     dispatch({ ...createPuzzleStart(dependencies.dealPuzzle(), dependencies.nextTileId), type: "RESTART_RUN" });
@@ -60,8 +82,8 @@ export function App({ dependencies, shareDependencies }: AppProps) {
   // tap already in flight from the Submit/Enter rhythm that reached it — and R
   // activates no button, so this needs no focus guard. useGameKeyboard
   // (mounted inside GameScreen) only covers answering/feedback/overflow, and
-  // title intentionally has no global Enter shortcut (the focused Start Run
-  // button keeps ordinary browser behavior), so gameOver needs its own
+  // title intentionally has no global Enter shortcut (the focused title
+  // buttons keep ordinary browser behavior), so gameOver needs its own
   // listener here.
   useEffect(() => {
     if (state.phase !== "gameOver") return;
@@ -86,11 +108,22 @@ export function App({ dependencies, shareDependencies }: AppProps) {
     <div className={styles.app}>
       {state.phase !== "title" && (
         <div className={styles.languageBar}>
+          {/* Not a move: a Daily keeps its record. It shares the language
+              bar's row, so it costs the table no height, and it comes first
+              in tab order. */}
+          <ActionButton variant="ghost" onClick={handleBack}>
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M10 3 5 8l5 5" />
+            </svg>{" "}
+            {t("action.back")}
+          </ActionButton>
           <LanguageToggle />
         </div>
       )}
 
-      {state.phase === "title" && <TitleScreen onStart={handleStart} />}
+      {state.phase === "title" && (
+        <TitleScreen daily={dailyEntry(dependencies)} onDaily={handleDaily} onPractice={handlePractice} />
+      )}
 
       {(state.phase === "answering" || state.phase === "feedback" || state.phase === "overflow") && (
         <GameScreen

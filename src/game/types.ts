@@ -52,7 +52,8 @@ export type GameAction =
   | { type: "SUBMIT_INCORRECT" }
   | { type: "TOGGLE_DISCARD"; tileId: string }
   | { type: "NEXT_ROUND" } // the reducer reads table.rows[round]
-  | { type: "CLEAR_SELECTION" };
+  | { type: "CLEAR_SELECTION" }
+  | { type: "RETURN_TO_TITLE" }; // any phase but title
 
 export interface PuzzleRow {
   equation: Equation;

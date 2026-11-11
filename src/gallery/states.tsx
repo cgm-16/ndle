@@ -166,7 +166,7 @@ const REDUCED_MOTION_NOTE =
 // disabled and reduced motion are conditions any screen can be in rather than
 // moments the reducer can reach, and M5.5g's gate names all four.
 export const GALLERY_STATES: Record<GamePhase | "interaction", GalleryEntry[]> = {
-  title: [{ id: "title", label: "Title", render: () => <TitleScreen onStart={noop} /> }],
+  title: [{ id: "title", label: "Title", render: () => <TitleScreen daily={{ status: "open", number: 1 }} onDaily={noop} onPractice={noop} /> }],
   answering: [
     {
       id: "answering-empty",

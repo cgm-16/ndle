@@ -12,6 +12,10 @@ const en = {
     summary:
       "A daily multiplication puzzle. Spell each row's answer with tiles from your hand. A correct answer pays the digits printed on its row, and your hand holds five. Par is the best score the table allows.",
     more: "More",
+    daily: "Daily #{number}",
+    dailyPlayed: "Today's result #{number}",
+    dailyNone: "No table today",
+    practice: "Practice",
   },
   language: {
     groupLabel: "Language",
@@ -33,7 +37,7 @@ const en = {
       "Press a digit key to select a matching tile or, during a discard, to mark it and complete the discard, Backspace to return the most recently selected tile, Escape to clear your selection, Enter to submit or continue, and R to play again once the run ends.",
   },
   action: {
-    start: "Start Run",
+    back: "Back",
     submit: "Submit",
     clear: "Clear",
     next: "Next Round",
@@ -95,6 +99,10 @@ const ko = {
     summary:
       "매일 한 판, 곱셈 퍼즐. 손에 든 숫자 타일로 각 줄의 답을 만드세요. 정답이면 그 줄에 적힌 숫자 타일을 받고, 손에는 다섯 개까지 들 수 있습니다. 목표는 이 판에서 낼 수 있는 최고 점수입니다.",
     more: "더 보기",
+    daily: "오늘의 판 #{number}",
+    dailyPlayed: "오늘의 결과 #{number}",
+    dailyNone: "오늘은 판이 없습니다",
+    practice: "연습",
   },
   language: {
     groupLabel: "언어",
@@ -114,7 +122,7 @@ const ko = {
       "숫자 키를 누르면 일치하는 타일을 선택하거나, 버리기 중에는 타일을 표시해 바로 버리기를 완료하며, Backspace 키로 가장 최근에 선택한 타일을 되돌리고, Escape 키로 선택을 지우며, Enter 키로 제출하거나 다음으로 진행하고, 게임이 끝나면 R 키로 다시 시작합니다.",
   },
   action: {
-    start: "게임 시작",
+    back: "뒤로",
     submit: "제출",
     clear: "지우기",
     next: "다음 라운드",

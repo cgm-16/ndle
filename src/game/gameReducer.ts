@@ -1,5 +1,5 @@
 import type { GameAction, GameState, PuzzleTable, Tile } from "./types";
-import { sortTiles } from "./factories";
+import { createTitleState, sortTiles } from "./factories";
 import {
   answerMatches,
   canAttemptEquation,
@@ -193,6 +193,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case "RESTART_RUN":
       if (state.phase !== "gameOver") return state;
       return freshRunState(action.table, action.inventory);
+
+    case "RETURN_TO_TITLE":
+      return state.phase === "title" ? state : createTitleState();
 
     case "CLEAR_SELECTION": {
       if (state.phase !== "answering") return state;

@@ -13,7 +13,23 @@ import {
   sequentialIds,
   type PuzzleMove,
 } from "../test/fixtures";
+import { DAILY_LAUNCH_DATE } from "../game/daily";
+import { createDailyStore } from "../services/dailyStorage";
 import { App, type AppDependencies } from "./App";
+
+class MemoryStorage implements Pick<Storage, "getItem" | "setItem"> {
+  private items = new Map<string, string>();
+  getItem(key: string) {
+    return this.items.get(key) ?? null;
+  }
+  setItem(key: string, value: string) {
+    this.items.set(key, value);
+  }
+}
+
+// Table #1 is DAILY_LAUNCH_DATE; local noon avoids any date boundary.
+const dayAfterLaunch = (days: number) =>
+  new Date(DAILY_LAUNCH_DATE.year, DAILY_LAUNCH_DATE.month - 1, DAILY_LAUNCH_DATE.day + days, 12);
 
 function makeShareDependencies(): ShareDependencies {
   return { writeClipboard: vi.fn().mockResolvedValue(undefined) };
@@ -25,12 +41,17 @@ function renderApp(
     gameUrl?: string;
     strictMode?: boolean;
     dealPuzzle?: () => PuzzleTable;
+    now?: Date;
   } = {},
 ) {
+  const storage = new MemoryStorage();
   const dependencies: AppDependencies = {
     nextTileId: sequentialIds(),
     gameUrl: options.gameUrl ?? "https://example.test/",
     dealPuzzle: vi.fn(options.dealPuzzle ?? (() => PUZZLE_SAMPLE)),
+    now: () => options.now ?? dayAfterLaunch(2),
+    dailyStore: createDailyStore(storage),
+    dailyTables: [PUZZLE_SAMPLE, PUZZLE_SAMPLE, PUZZLE_SAMPLE],
   };
   const shareDependencies = makeShareDependencies();
   const tree = (
@@ -39,7 +60,7 @@ function renderApp(
     </I18nProvider>
   );
   const utils = render(options.strictMode ? <StrictMode>{tree}</StrictMode> : tree);
-  return { ...utils, dependencies, shareDependencies };
+  return { ...utils, dependencies, shareDependencies, storage };
 }
 
 // GameHud and GameOverScreen both render <dt>label</dt><dd>value</dd> pairs;
@@ -81,7 +102,7 @@ async function playRows(user: ReturnType<typeof userEvent.setup>, moves: PuzzleM
 }
 
 async function driveToGameOver(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole("button", { name: "Start Run" }));
+  await user.click(screen.getByRole("button", { name: "Practice" }));
   await playRows(user, LOSS_ROWS);
 }
 
@@ -90,6 +111,73 @@ beforeEach(() => {
 });
 
 describe("App", () => {
+  it("shows today's number on the title", () => {
+    renderApp({ strictMode: true });
+    expect(screen.getByRole("button", { name: "Daily #3" })).toBeEnabled();
+  });
+
+  it("offers no Daily before launch, and Practice still plays", async () => {
+    const user = userEvent.setup();
+    renderApp({ strictMode: true, now: dayAfterLaunch(-1) });
+    expect(screen.getByRole("button", { name: "No table today" })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Practice" }));
+    expect(screen.getByText("3 × 5 =")).toBeInTheDocument();
+  });
+
+  it("deals Practice once per start, even under StrictMode", async () => {
+    const user = userEvent.setup();
+    const { dependencies } = renderApp({ strictMode: true });
+    await user.click(screen.getByRole("button", { name: "Practice" }));
+    expect(dependencies.dealPuzzle).toHaveBeenCalledTimes(1);
+  });
+
+  it("deals a new table on Play Again and on R in Practice", async () => {
+    const user = userEvent.setup();
+    const { dependencies } = renderApp({ strictMode: true });
+    await driveToGameOver(user);
+    expect(dependencies.dealPuzzle).toHaveBeenCalledTimes(1);
+    await user.click(screen.getByRole("button", { name: "Play Again" }));
+    expect(dependencies.dealPuzzle).toHaveBeenCalledTimes(2);
+    await playRows(user, LOSS_ROWS);
+    await user.keyboard("r");
+    expect(dependencies.dealPuzzle).toHaveBeenCalledTimes(3);
+  });
+
+  it("never writes the daily record in Practice", async () => {
+    const user = userEvent.setup();
+    const { storage } = renderApp({ strictMode: true });
+    await driveToGameOver(user);
+    expect(storage.getItem("ndle.daily")).toBeNull();
+  });
+
+  it("goes Back from Practice to the title, then deals a new table", async () => {
+    const user = userEvent.setup();
+    const { dependencies } = renderApp({ strictMode: true });
+    await user.click(screen.getByRole("button", { name: "Practice" }));
+    await user.click(screen.getByRole("button", { name: "Back" }));
+    expect(screen.getByRole("button", { name: "Practice" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Practice" }));
+    expect(dependencies.dealPuzzle).toHaveBeenCalledTimes(2);
+
+    await playRows(user, LOSS_ROWS);
+    await user.click(screen.getByRole("button", { name: "Back" }));
+    expect(screen.getByRole("button", { name: "Practice" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Practice" }));
+    expect(dependencies.dealPuzzle).toHaveBeenCalledTimes(3);
+  });
+
+  it("makes Back the first focusable element of the game and game-over screens", async () => {
+    const user = userEvent.setup();
+    renderApp();
+    await user.click(screen.getByRole("button", { name: "Practice" }));
+    await user.tab();
+    expect(screen.getByRole("button", { name: "Back" })).toHaveFocus();
+    await playRows(user, LOSS_ROWS);
+    (document.activeElement as HTMLElement).blur();
+    await user.tab();
+    expect(screen.getByRole("button", { name: "Back" })).toHaveFocus();
+  });
+
   it("starts a Puzzle run from the title screen and reaches row 1", async () => {
     const user = userEvent.setup();
     renderApp({ initialLanguage: "en" });
@@ -97,7 +185,7 @@ describe("App", () => {
     expect(screen.getByRole("heading", { name: "9dle" })).toBeVisible();
     expect(screen.queryByText(/×/)).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Start Run" }));
+    await user.click(screen.getByRole("button", { name: "Practice" }));
 
     expect(screen.getByText("3 × 5 =")).toBeInTheDocument();
     expect(hudField("Round")).toBe("1");
@@ -112,7 +200,7 @@ describe("App", () => {
     const user = userEvent.setup();
     renderApp({ initialLanguage: "en" });
 
-    await user.click(screen.getByRole("button", { name: "Start Run" }));
+    await user.click(screen.getByRole("button", { name: "Practice" }));
 
     const round = screen.getByText("Round");
     const score = screen.getByText("Score");
@@ -132,7 +220,7 @@ describe("App", () => {
     const user = userEvent.setup();
     renderApp({ initialLanguage: "en" });
 
-    await user.click(screen.getByRole("button", { name: "Start Run" }));
+    await user.click(screen.getByRole("button", { name: "Practice" }));
 
     const roundValue = screen.getByText("Round").nextElementSibling as HTMLElement;
     const scoreValue = screen.getByText("Score").nextElementSibling as HTMLElement;
@@ -147,7 +235,7 @@ describe("App", () => {
     const user = userEvent.setup();
     renderApp({ initialLanguage: "en" });
 
-    await user.click(screen.getByRole("button", { name: "Start Run" }));
+    await user.click(screen.getByRole("button", { name: "Practice" }));
     await playRows(user, PUZZLE_SAMPLE_PAR_LINE.slice(0, 3));
     await press(user, [7]); // row 4, 1 × 7, pays 4 4: six tiles in five sockets
 
@@ -185,7 +273,7 @@ describe("App", () => {
     const user = userEvent.setup();
     renderApp({ initialLanguage: "en" });
 
-    await user.click(screen.getByRole("button", { name: "Start Run" }));
+    await user.click(screen.getByRole("button", { name: "Practice" }));
     await playRows(user, PUZZLE_SAMPLE_PAR_LINE.slice(0, 2)); // the sacrifice, then 14
 
     expect(hudField("Streak")).toBe("1");
@@ -297,7 +385,7 @@ describe("App", () => {
     // The rhythm that produces the defect, entirely by keyboard: digits, Enter
     // to submit, Enter to advance. The last of those Enters flips the phase to
     // gameOver, and the player's next tap is already in flight.
-    await user.click(screen.getByRole("button", { name: "Start Run" }));
+    await user.click(screen.getByRole("button", { name: "Practice" }));
     for (const { spend } of LOSS_ROWS) {
       for (const digit of spend) await user.keyboard(String(digit));
       await user.keyboard("{Enter}"); // submit
@@ -317,7 +405,7 @@ describe("App", () => {
     const user = userEvent.setup();
     renderApp({ initialLanguage: "en" });
 
-    await user.click(screen.getByRole("button", { name: "Start Run" }));
+    await user.click(screen.getByRole("button", { name: "Practice" }));
     await user.click(screen.getByRole("button", { name: "Digit 1" }));
     await user.click(screen.getByRole("button", { name: "Digit 5" })); // fills both answer slots
 
@@ -338,7 +426,7 @@ describe("App", () => {
     const user = userEvent.setup();
     const first = renderApp(); // no forced language: reads storage like production
 
-    await user.click(screen.getByRole("button", { name: "Start Run" }));
+    await user.click(screen.getByRole("button", { name: "Practice" }));
     await user.click(screen.getByRole("button", { name: "한국어" }));
     expect(localStorage.getItem(LANGUAGE_STORAGE_KEY)).toBe("ko");
 
@@ -347,12 +435,12 @@ describe("App", () => {
     renderApp(); // fresh mount: I18nProvider re-reads storage; App starts a new reducer
 
     expect(screen.getByRole("heading", { name: "구들" })).toBeInTheDocument(); // back to title
-    expect(screen.getByRole("button", { name: "게임 시작" })).toBeInTheDocument(); // language persisted
+    expect(screen.getByRole("button", { name: "연습" })).toBeInTheDocument(); // language persisted
   });
 });
 
 async function startPuzzle(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(screen.getByRole("button", { name: "Start Run" }));
+  await user.click(screen.getByRole("button", { name: "Practice" }));
 }
 
 async function press(user: ReturnType<typeof userEvent.setup>, digits: number[]) {
