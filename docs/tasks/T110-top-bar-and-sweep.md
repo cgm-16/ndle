@@ -34,6 +34,8 @@ paths:
   - src/gallery/
   - src/i18n/messages.ts
   - e2e/fit.spec.ts
+  - playwright.config.ts
+  - .github/workflows/ci.yml
   - docs/spec/ui-i18n.md
 ```
 
@@ -147,6 +149,18 @@ chrome.
     - A state that fails this goes in `KNOWN_MISSES` under the key
       `"<id> <lang> <width> ring"`, asserted the same way.
   - Record which states miss, and why, in the report.
+- [ ] **WebKit:** every iPhone browser is WebKit, and the fit margins are
+      thin (plan, ruling 3), so the sweep runs in WebKit as well as Chromium.
+  - Add a second project to `playwright.config.ts`: `name: "webkit"`, with
+    `...devices["iPhone 15"]` (WebKit, `isMobile`, `hasTouch`) and
+    `testMatch: /fit\.spec\.ts/`. The other specs stay Chromium-only.
+  - The sweep sets each viewport itself, so the device's own size is
+    overridden.
+  - Install it locally with `npx playwright install webkit`.
+  - `ci.yml`'s browser step installs `chromium webkit`. That file changes
+    only on this line, and its comment's bare `#84` goes too (T117's rule).
+  - **This is Playwright's WebKit, not iOS Safari.** The report says what it
+    measured, in those words.
 - [ ] **Implement** `TopBar`, with App and the gallery rendering it. Delete
       App's `.languageBar`.
 - [ ] **Amend `ui-i18n.md` §1.12:**
@@ -162,7 +176,7 @@ chrome.
 ## Acceptance gate
 
 - The sweep runs every gallery state in en and ko at both sizes, with the
-  bar counted.
+  bar counted, in Chromium and in WebKit.
 - Its must-fail case fails, and every listed miss is asserted to overflow.
 - The ring-reach check passes in every state, or each failure is in
   `KNOWN_MISSES` under its `ring` key, with its reason.

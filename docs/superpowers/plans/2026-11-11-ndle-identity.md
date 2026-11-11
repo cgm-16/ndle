@@ -147,6 +147,14 @@ needs it.
     amended (T112).
 14. **The title is measured with `More` closed.** Opened, it may scroll,
     because the player asked for the text (T111).
+15. **The sweep runs in WebKit too.** This came from a note Ori passed on,
+    on 2026-11-11.
+    - Every iPhone browser is WebKit, and the margins in ruling 3 are thin.
+    - The WebKit project runs `e2e/fit.spec.ts` with iPhone emulation.
+    - CI installs WebKit, a one-line change to `ci.yml`. A push that
+      touches a workflow file goes to Ori as an SSH command (T110).
+    - Playwright's WebKit is not iOS Safari, so a real phone is still
+      unmeasured.
 
 ## Milestones
 
