@@ -633,13 +633,26 @@ describe("Daily", () => {
     expect(screen.getByRole("heading", { name: "7 short of par" })).toBeInTheDocument();
     expect(hudField("Score")).toBe("0 / 8");
 
-    // T108 removes Play Again from a Daily; until then it restarts nothing.
-    await user.click(screen.getByRole("button", { name: "Play Again" }));
-    expect(screen.getByRole("heading", { name: "7 short of par" })).toBeInTheDocument();
-    expect(hudField("Score")).toBe("0 / 8");
+    expect(screen.queryByRole("button", { name: "Play Again" })).not.toBeInTheDocument();
 
     expect(dependencies.dealPuzzle).not.toHaveBeenCalled();
     expect(storage.getItem("ndle.daily")).toBe(record);
+  });
+
+  it("makes Back the first focusable element of a Daily game over, and Practice leads on from it", async () => {
+    const user = userEvent.setup();
+    const { dependencies } = renderDaily();
+    await openDaily(user);
+    await playRows(user, LOSS_ROWS);
+    expect(screen.getByText("Table #1")).toBeInTheDocument();
+    (document.activeElement as HTMLElement).blur();
+    await user.tab();
+    expect(screen.getByRole("button", { name: "Back" })).toHaveFocus();
+
+    expect(dependencies.dealPuzzle).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Practice" }));
+    expect(dependencies.dealPuzzle).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("3 × 5 =")).toBeInTheDocument();
   });
 
   it("ignores a corrupt record and starts fresh", async () => {

@@ -33,7 +33,7 @@ import { START_LABEL } from "./labels.js";
    the three #85 attempts that reported `clean` and counted for nothing. */
 const CONTENT_WIDTHS = [305, 320, 407, 408] as const;
 const LOCALES = ["en", "ko"] as const;
-const STATE_COUNT = 20;
+const STATE_COUNT = 22;
 
 /* `spacing.css` — the narrow tier's tile, the middle tier's, and the boundary
    between them. The 48rem tier is out of range for every width swept here. */

@@ -143,6 +143,15 @@ describe("gallery catalogue", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Could not share or copy the result.");
   });
 
+  // The line behind game-over-daily-short is literal in the gallery, so this
+  // is what holds it to a table's real 6 against par 7.
+  it("shows the Daily's number, and a real line scoring 6 against par 7, on game-over-daily-short", async () => {
+    await renderEntry(entryById("game-over-daily-short"));
+    expect(screen.getByText("Table #12")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "1 short of par" })).toBeInTheDocument();
+    expect(screen.getByText("Score").nextElementSibling).toHaveTextContent("6 / 8");
+  });
+
   // Four rules in the system draw a focus ring, and LanguageToggle's is the
   // one no other board carries. Mounting it on the focus-visible board is
   // also what makes that board differ from the hover board in what it

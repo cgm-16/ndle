@@ -131,7 +131,7 @@ export function App({ dependencies, shareDependencies }: AppProps) {
   useEffect(() => {
     const daily = dailyRecord.current;
     if (state.phase !== "gameOver" || play.kind !== "daily" || daily === null) return;
-    const { score, par, longestStreak } = getShareStats(state);
+    const { score, par, longestStreak } = getShareStats(state, play);
     dailyRecord.current = { ...daily, outcome: { score, par, longestStreak } };
     dependencies.dailyStore.save(dailyRecord.current);
   }, [state, play, dependencies]);
@@ -197,10 +197,12 @@ export function App({ dependencies, shareDependencies }: AppProps) {
         <GameOverScreen
           // A table played to its end stopped on no equation.
           equation={isRunComplete(state) ? null : state.equation}
-          stats={getShareStats(state)}
+          stats={getShareStats(state, play)}
+          variant={play}
           url={dependencies.gameUrl}
           dependencies={shareDependencies}
           onPlayAgain={handleRestart}
+          onPractice={handlePractice}
         />
       )}
     </div>
