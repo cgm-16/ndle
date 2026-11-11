@@ -75,6 +75,11 @@ Every keyframe is renamed from `oz-` to `nd-` (ruling 6), in
 - **Transitions:**
   - a button's press moves it `1px` down, as `transform` over 80 ms
     ease-out;
+  - **`ActionButton.module.css`'s press today** is
+    `translateY(calc(var(--press-offset) / 2))`, which gives 1px only because
+    `--press-offset` is 2px (T109). When `--press-offset` becomes `1px`, the
+    press becomes `translateY(var(--press-offset))`. Otherwise it halves to
+    0.5px;
   - its background changes over 120 ms ease-out;
   - `--press-offset` is `1px`, and `--ease-snap` and every overshoot curve
     are deleted.

@@ -101,6 +101,11 @@ action → rail (in the band; T114) → rack.
 
 The HUD's round value reads `{round}/{totalRounds}`, for example `1/8`.
 
+## Carried from M16's reviews
+
+- **`GameHud.module.css:21-24,33`:** an uppercase transform, letter tracking and a literal `font-weight: 600`. B has none of them, and only weights 400 and 700 exist.
+- **`PuzzleLedger.module.css:47`:** the row number is set in `--size-label`, 11 px in en, which is below §1.12's 12 px floor. It takes `--type-secondary` (14), as in the Values table above.
+
 ## Steps
 
 - [ ] **Tests:**
