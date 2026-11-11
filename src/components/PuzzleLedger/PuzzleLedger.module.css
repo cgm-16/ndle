@@ -44,12 +44,12 @@
 }
 
 .number {
-  font: var(--weight-medium) var(--size-label) / var(--leading-tight) var(--font-ui);
+  font: var(--weight-regular) var(--size-label) / var(--leading-tight) var(--font-ui);
   color: var(--text-meta);
 }
 
 .equation {
-  font: var(--weight-semibold) var(--size-title) / var(--leading-tight) var(--font-numeral);
+  font: var(--weight-bold) var(--size-title) / var(--leading-tight) var(--font-ui);
   color: var(--text-body);
 }
 
@@ -61,7 +61,7 @@
 
 .mark {
   justify-self: end;
-  font: var(--weight-semibold) var(--size-title) / var(--leading-tight) var(--font-ui);
+  font: var(--weight-bold) var(--size-title) / var(--leading-tight) var(--font-ui);
   color: var(--text-meta);
 }
 

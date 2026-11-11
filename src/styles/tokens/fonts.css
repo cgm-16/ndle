@@ -1,16 +1,16 @@
-/* The Latin interface and every digit use the system stack set in
-   typography.css, so English makes no font download at all and a run makes
-   zero non-origin requests.
+/* Atkinson Hyperlegible (400 and 700, Latin subset) sets the Latin interface
+   and every digit, and Gaegu 700 sets both wordmarks and the title's step
+   numerals. Both are self-hosted through @fontsource and imported eagerly by
+   the entry points (src/main.tsx, src/gallery/main.tsx), so a run makes zero
+   non-origin requests. Gaegu's 700.css is sliced by unicode-range: the browser
+   fetches only the slices a page draws, so Hangul in the wordmark costs a few
+   slices rather than the whole face.
 
-   Hangul is the one script the stack cannot be trusted with: the face the
-   browser would pick differs by platform. Gothic A1 supplies it, self-hosted
-   through @fontsource at weights 400 (body) and 700 (buttons, the toggle's
-   active segment, the title disclosure). Its Korean subset is far too large to
-   hand an English player, so it is not imported here; it loads on demand, once,
-   the first time the interface needs it. See loadKoreanFont in
+   Hangul is the one script those faces cannot cover. Gothic A1 supplies it,
+   self-hosted at weights 400 (body) and 700 (buttons, the toggle's active
+   segment, the title disclosure). Its Korean subset is far too large to hand an
+   English player, so it is not imported here; it loads on demand, once, the
+   first time the interface needs it. See loadKoreanFont in
    src/i18n/koreanFont.ts.
 
-   Hangul loads only 400 and 700, while src/ also asks for 500 (the wordmark,
-   the title, dt) and 600 (dd). The browser substitutes silently, without an
-   error (#138): Hangul at 500 renders the 400 face and at 600 the 700 face.
-   Changing the weights loaded or the weights asked for changes that mapping. */
+   Only 400 and 700 exist, in every face. */

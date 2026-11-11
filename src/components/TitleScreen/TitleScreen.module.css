@@ -10,7 +10,7 @@
 }
 
 .wordmark {
-  font: var(--weight-medium) var(--size-wordmark) / var(--leading-tight) var(--font-display);
+  font: var(--weight-regular) var(--size-wordmark) / var(--leading-tight) var(--font-display);
   letter-spacing: var(--track-wordmark);
   color: var(--text-primary);
 }
@@ -62,9 +62,7 @@
    about 11% by the time it paints: sampled, it gave a top band only 1.161:1
    against the floor, which is at the threshold of being seen at all. 2px of
    blur concentrates it into a band 1.399:1 against the floor, under a bottom
-   rim 1.686:1 lighter again than the band. Still nowhere near
-   --shadow-socket, whose 4px/9px falloff swallows the whole top half of an
-   18px square. */
+   rim 1.686:1 lighter again than the band. */
 .socket {
   background: var(--surface-raised);
   box-shadow:

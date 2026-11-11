@@ -25,7 +25,7 @@
    3.34:1 clears its 3:1 floor; it does not clear 4.5:1 and must not be reused
    at body size. */
 .headline {
-  font: var(--weight-semibold) var(--size-title) / var(--leading-tight) var(--font-display);
+  font: var(--weight-bold) var(--size-title) / var(--leading-tight) var(--font-display);
 }
 
 .correct {

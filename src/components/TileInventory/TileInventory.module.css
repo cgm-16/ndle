@@ -82,7 +82,7 @@
   height: var(--tile-h);
   border-radius: var(--radius-md);
   background: var(--surface-socket);
-  box-shadow: var(--shadow-socket), var(--rim-socket);
+  box-shadow: var(--rim-socket);
 }
 
 /* A socket whose tile is out in the answer slots — owed back, not lost. */

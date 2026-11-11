@@ -24,11 +24,11 @@
   letter-spacing: 0.02em;
 }
 
-/* HUD values take --font-numeral, as equations and tile faces do. Family only:
+/* HUD values take --font-ui, as equations and tile faces do. Family only:
    the sizes below stay literal rem, because the guard below compares two
    computed font sizes and jsdom does not substitute var(). */
 .entry dd {
-  font-family: var(--font-numeral);
+  font-family: var(--font-ui);
   font-size: 1.25rem;
   font-weight: 600;
 }

@@ -1,9 +1,7 @@
 /* The one moment the game asks you to destroy something you own, so it is the
-   one panel that steps off the surround onto its own surface. --border-danger
-   is the design's edge here and it does not render: 45% vermilion composited
-   over --surface-panel measures 1.49:1 against that panel, the same failure as
-   an invisible rim. Full-strength --state-discard measures 3.05:1 and reads.
-   The instruction text carries the meaning; the edge only reinforces it. */
+   one panel that steps off the surround onto its own surface. Its edge is
+   full-strength --state-discard: a translucent edge over --surface-panel would
+   not render against that panel. The instruction text carries the meaning; the edge only reinforces it. */
 .controls {
   display: flex;
   flex-direction: column;

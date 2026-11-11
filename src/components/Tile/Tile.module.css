@@ -48,7 +48,7 @@ button.tile:not(:disabled):active {
   width: var(--tile-w);
   height: var(--tile-h);
   border-radius: var(--radius-md);
-  font: var(--weight-semibold) var(--size-tile) / var(--leading-tight) var(--font-numeral);
+  font: var(--weight-bold) var(--size-tile) / var(--leading-tight) var(--font-ui);
 }
 
 .sm {
@@ -57,7 +57,7 @@ button.tile:not(:disabled):active {
   width: var(--tile-w-sm);
   height: var(--tile-h-sm);
   border-radius: var(--radius-sm);
-  font: var(--weight-semibold) var(--size-tile-sm) / var(--leading-tight) var(--font-numeral);
+  font: var(--weight-bold) var(--size-tile-sm) / var(--leading-tight) var(--font-ui);
 }
 
 /* Every state names its own edge in --tile-edge instead of setting box-shadow,
@@ -72,12 +72,10 @@ button.tile:not(:disabled):active {
   --tile-lift: var(--lift-offset);
 }
 
-/* Selected as .tile.reward, not .reward: the global :focus-visible rule in
-   src/styles/global.css draws a 2px offset halo, and at equal specificity it
-   would win on source order and replace this inset rim on a focused tile. */
+/* Selected as .tile.reward, not .reward, and given its own focus rule below:
+   this outline outranks the global :focus-visible rule and would replace the
+   ring on a focused tile. */
 .tile.reward {
-  --tile-edge: var(--tile-edge-size), var(--glow-reward);
-
   outline: 1px solid var(--accent);
   outline-offset: -1px;
 }
@@ -94,15 +92,8 @@ button.tile:not(:disabled):active {
   opacity: 0.45;
 }
 
-/* :focus-visible, not focus handlers: a ring must not appear on click-focus.
-   The disabled state is excluded because "none" is not a valid entry in a
-   box-shadow list, and a disabled tile is not focusable anyway. */
-.tile:not(.disabled):focus-visible {
-  box-shadow: var(--tile-edge), var(--ring-focus);
-}
-
-/* The bezel is inset, so the UA's outer halo is suppressed — except on reward,
-   whose gold rim is drawn as an outline of its own. */
-.tile:not(.reward):focus-visible {
-  outline: none;
+/* A focused reward tile keeps the global ring, which its own outline outranks. */
+.tile.reward:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
 }

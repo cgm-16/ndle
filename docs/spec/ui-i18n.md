@@ -5,9 +5,9 @@ The game rules live in `docs/spec/product.md`.
 
 ### 1.12 Responsive and visual contract
 
-Token values live in `src/styles/tokens/`. The palette and type are
-placeholders until the identity replaces them (the second plan); this section
-states the contract any values must satisfy.
+Token values live in `src/styles/tokens/`. The palette and type are the
+Chalkboard identity's (direction B); this section states the contract they
+satisfy.
 
 **Layout and information architecture**
 
@@ -40,16 +40,16 @@ states the contract any values must satisfy.
 
 **Material and colour**
 
-- Tiles carry the light values of the system, with a hard bottom edge that reads as the tile's thickness, never a blurred all-round shadow. This treatment is provisional; the identity replaces it.
-- One meaning per hue: one accent for focus and the current row, one for correct, one for wrong or a tile leaving.
+- A tile is a flat chalk face with a `0 3px 0` dust bottom edge that reads as its thickness, never a blurred shadow.
+- One meaning per hue: blue marks focus, the current row and actions; pink marks wrong, or a tile leaving; correct has no hue, and its mark and its word carry it.
 - Semantic colour appears only at the moment of the event and only on the object concerned. There is no full-screen colour wash.
 - Transparency is used only for ink and hairlines. No backdrop blur.
 - **State is never shown by colour alone.** Use colour plus text or shape for correctness, selection, the current row, and discard state.
 
 **Typography**
 
-- Interface text is never below `11px`.
-- Each locale must render in a face that covers its script. A face that does not cover Hangul may not be the sole `ko` interface face. The Latin interface and the digits use the system stack; the placeholder Hangul face is self-hosted and loaded on Korean.
+- Interface text is never below `12px`, with no uppercase transform and no letter tracking.
+- Each locale must render in a face that covers its script. A face that does not cover Hangul may not be the sole `ko` interface face. Atkinson Hyperlegible (400 and 700) sets the Latin interface and every digit, and Gaegu 700 sets both wordmarks and the title's step numerals; both are self-hosted and loaded eagerly. Gothic A1 (400 and 700) sets Hangul, is self-hosted, and loads on Korean.
 - Fonts are self-hosted, and the app makes zero non-origin requests.
 
 **Accessibility**
@@ -57,7 +57,7 @@ states the contract any values must satisfy.
 - Interactive targets are at least `44 × 44` CSS pixels.
 - Text contrast is at least `4.5:1`.
 - All controls use semantic HTML buttons.
-- Visible focus styles are required. The focus indicator must reach at least `3:1` contrast against **every** surface it can appear on, including the tile face.
+- Visible focus styles are required: a `3px` solid outline at a `3px` offset, drawn outside the control. The focus indicator must reach at least `3:1` contrast against **every** surface it can appear on, including the tile face.
 - Status changes use an appropriate `aria-live` region.
 - No horizontal scroll at `320px`.
 

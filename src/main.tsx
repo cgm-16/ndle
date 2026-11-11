@@ -6,6 +6,9 @@ import { dealPuzzle } from "./game/puzzle";
 import { I18nProvider } from "./i18n/I18nContext";
 import { createDailyStore } from "./services/dailyStorage";
 import type { ShareDependencies } from "./services/sharing";
+import "@fontsource/atkinson-hyperlegible/latin-400.css";
+import "@fontsource/atkinson-hyperlegible/latin-700.css";
+import "@fontsource/gaegu/700.css";
 import "./styles/global.css";
 
 // Reading window.localStorage throws when site data is blocked.

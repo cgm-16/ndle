@@ -21,13 +21,6 @@ const VIEWPORT = { width: 320, height: 640 } as const;
    --target-min and the floor the rack's tracks are clamped to. */
 const MIN_TARGET = 44;
 
-/* SC 1.4.11: a focus indicator needs 3:1 against what it sits on. The ring is
-   two-tone precisely because no single tone clears that on both the felt and
-   the ceramic tile face — D1 in the design handover, measured at 1.10:1 on
-   ceramic before the second tone existed. */
-const MIN_INDICATOR_CONTRAST = 3;
-
-
 /** Loads the app at a phone-width viewport in `locale` and starts a run, so the
     rack, the slots and the phase actions are all mounted. */
 async function openArena(page: Page, locale: Locale = "en"): Promise<void> {
@@ -128,77 +121,96 @@ test("focus order follows the visual hierarchy", async ({ page }) => {
   expect(reading.inversions, "tab steps that move up or left").toEqual([]);
 });
 
-test("the focus indicator clears 3:1 on every surface it can appear on", async ({ page }) => {
-  await openArena(page);
-  /* One real keystroke first. `:focus-visible` follows the browser's own
-     keyboard-modality heuristic, and a programmatic focus() after a click does
-     not satisfy it — the ring would read as absent and the test would pass on a
-     measurement of nothing. */
-  await page.keyboard.press("Tab");
-
-  const reading = await page.evaluate(async () => {
-    const relativeLuminance = ([r, g, b]: number[]): number => {
-      const channel = (value: number) => {
-        const v = value / 255;
-        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
-      };
-      return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
-    };
-    const contrast = (a: number[], b: number[]): number => {
-      const [hi, lo] = [relativeLuminance(a), relativeLuminance(b)].sort((x, y) => y - x);
-      return Number(((hi + 0.05) / (lo + 0.05)).toFixed(2));
-    };
-    const rgb = (text: string): number[][] =>
-      (text.match(/rgba?\(([^)]+)\)/g) ?? []).map((match) =>
-        (match.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number),
-      );
-
-    const tile = document.querySelector<HTMLButtonElement>('button[aria-label^="Digit"]:not([disabled])');
-    if (!tile) return { tones: [], surfaces: [], focusVisible: false };
-    tile.focus();
-    /* The ring fades in on a transition, and a computed style read on the frame
-       the focus lands reports the *start* of that transition — a fully
-       transparent ring, which measures as black and fails against the felt. Wait
-       the transition out rather than sampling mid-flight. */
-    await Promise.all(tile.getAnimations().map((animation) => animation.finished.catch(() => {})));
-    const tileStyle = getComputedStyle(tile);
-
-    /* The ring is the inset part of the focused tile's box-shadow; the rest is
-       the tile's own edge and drop. Reading the tones off the element rather
-       than off --ring-focus keeps this honest if the composition changes. */
-    const tones = tileStyle.boxShadow
-      .split(/,(?![^(]*\))/)
-      .filter((part) => part.includes("inset"))
-      .flatMap((part) => rgb(part));
-
-    /* Ceramic is a gradient, so both stops count as surfaces the ring meets. */
-    const ceramic = rgb(tileStyle.backgroundImage);
-    const felt = rgb(getComputedStyle(document.body).backgroundColor)[0];
-    const activeSegment = document.querySelector('button[aria-pressed="true"]');
-    const segment = activeSegment ? rgb(getComputedStyle(activeSegment).backgroundColor)[0] : null;
-
-    const surfaces = [
-      ...ceramic.map((color, i) => ({ name: `ceramic stop ${i + 1}`, color })),
-      { name: "felt", color: felt },
-      ...(segment ? [{ name: "active language segment", color: segment }] : []),
-    ].map((surface) => ({
-      name: surface.name,
-      best: Math.max(...tones.map((tone) => contrast(tone, surface.color))),
-    }));
-
-    return { tones, surfaces, focusVisible: tile.matches(":focus-visible") };
-  });
-
-  expect(reading.focusVisible, "the tile matched :focus-visible").toBe(true);
-  /* Two tones is the fix for D1, not an incidental detail: one tone cannot
-     clear 3:1 on both the felt and the ceramic. */
-  expect(reading.tones.length, "tones composing the ring").toBeGreaterThanOrEqual(2);
-  expect(reading.surfaces.length, "surfaces measured against").toBeGreaterThanOrEqual(4);
-  for (const surface of reading.surfaces) {
-    expect(surface.best, `best tone against ${surface.name}`).toBeGreaterThanOrEqual(
-      MIN_INDICATOR_CONTRAST,
+/* The ring is one rule in global.css: a 3px outline at a 3px offset, in the
+   palette's blue (#8ccff2), on every control. The offset clears the tile's own
+   3px dust edge. Walked with real Tab presses, because `:focus-visible` follows
+   the browser's keyboard-modality heuristic and a programmatic focus() after a
+   click does not satisfy it. */
+async function walkFocusRings(page: Page, tabs: number) {
+  const readings: { name: string; style: string; width: string; color: string; offset: string }[] = [];
+  for (let i = 0; i < tabs; i++) {
+    await page.keyboard.press("Tab");
+    readings.push(
+      await page.evaluate(() => {
+        const el = document.activeElement as HTMLElement;
+        const style = getComputedStyle(el);
+        return {
+          name: (el.getAttribute("aria-label") || el.textContent || el.tagName).trim().slice(0, 24),
+          style: style.outlineStyle,
+          width: style.outlineWidth,
+          color: style.outlineColor,
+          offset: style.outlineOffset,
+        };
+      }),
     );
   }
+  return readings;
+}
+
+test("every focused control wears a 3px blue outline at a 3px offset", async ({ page }) => {
+  await page.setViewportSize({ ...VIEWPORT });
+  await page.goto("/");
+  await page.evaluate(() => document.fonts.ready);
+  const onTitle = await walkFocusRings(page, 4);
+
+  await page.getByRole("button", { name: START_LABEL.en, exact: true }).click();
+  await expect(page.locator('[class*="inventory"]')).toBeVisible();
+  const inArena = await walkFocusRings(page, 8);
+
+  const readings = [...onTitle, ...inArena];
+  expect(readings.length, "focus stops measured").toBe(12);
+  for (const reading of readings) {
+    expect(reading, `ring on ${reading.name}`).toMatchObject({
+      style: "solid",
+      width: "3px",
+      color: "rgb(140, 207, 242)",
+      offset: "3px",
+    });
+  }
+});
+
+/* Looked up in document.fonts, never with document.fonts.check(): check()
+   answers true for a face no stylesheet declares (check("16px NoSuchFace") is
+   true with an empty FontFaceSet). */
+async function loadedFaces(page: Page, family: string): Promise<string[]> {
+  return page.evaluate(async (name) => {
+    await document.fonts.ready;
+    return [...document.fonts]
+      .filter((face) => face.family.replace(/"/g, "") === name && face.status === "loaded")
+      .map((face) => face.weight);
+  }, family);
+}
+
+test("English loads Atkinson Hyperlegible 400 and 700, and the title loads Gaegu 700", async ({ page }) => {
+  await page.setViewportSize({ ...VIEWPORT });
+  await page.goto("/");
+  await page.evaluate(() => document.fonts.ready);
+  /* Slices load on use, so wait for the faces the title actually draws. */
+  await page.waitForFunction(() =>
+    [...document.fonts].some((face) => face.family.replace(/"/g, "") === "Gaegu" && face.status === "loaded"),
+  );
+
+  expect(await loadedFaces(page, "Atkinson Hyperlegible"), "Atkinson faces loaded").toEqual(
+    expect.arrayContaining(["400", "700"]),
+  );
+  expect(await loadedFaces(page, "Gaegu"), "Gaegu faces loaded").toContain("700");
+  /* The instrument fails on a face nothing declares. */
+  expect(await loadedFaces(page, "NoSuchFace"), "an undeclared face").toEqual([]);
+});
+
+test("Korean loads Gothic A1 400 and 700", async ({ page }) => {
+  await page.addInitScript(() => window.localStorage.setItem("ndle.language", "ko"));
+  await page.setViewportSize({ ...VIEWPORT });
+  await page.goto("/");
+  await page.waitForFunction(
+    () =>
+      ["400", "700"].every((weight) =>
+        [...document.fonts].some(
+          (face) => face.family.replace(/"/g, "") === "Gothic A1" && face.weight === weight && face.status === "loaded",
+        ),
+      ),
+  );
+  expect(await loadedFaces(page, "Gothic A1")).toEqual(expect.arrayContaining(["400", "700"]));
 });
 
 test("the verdict is announced, and carried by words rather than colour", async ({ page }) => {

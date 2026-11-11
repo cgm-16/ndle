@@ -41,15 +41,15 @@
    screen's one focal point. Every verdict is either .won or .shortOfPar, which
    set the colour. */
 .title {
-  font: var(--weight-medium) var(--size-label) / var(--leading-tight) var(--font-mono);
+  font: var(--weight-regular) var(--size-label) / var(--leading-tight) var(--font-ui);
   letter-spacing: var(--track-label);
   text-transform: uppercase;
 }
 
-/* A win takes the accent, the hue for what was earned: --gold-500 measures
-   6.97:1 on --surface-surround. */
+/* A win takes the accent, the hue for what was earned: --accent measures
+   9.06:1 on --surface-surround. */
 .title.won {
-  color: var(--gold-500);
+  color: var(--accent);
 }
 
 /* A table that fell short of par is a score to read against its par,
@@ -73,17 +73,17 @@
 }
 
 .entry dt {
-  font: var(--weight-medium) var(--size-label) / var(--leading-tight) var(--font-mono);
+  font: var(--weight-regular) var(--size-label) / var(--leading-tight) var(--font-ui);
   letter-spacing: var(--track-label);
   text-transform: uppercase;
   color: var(--text-meta);
 }
 
-/* Run values take --font-numeral, as equations and tile faces do. Family only:
+/* Run values take --font-ui, as equations and tile faces do. Family only:
    the sizes stay literal rem, because the guard below compares two computed
    font sizes and jsdom does not substitute var(). */
 .entry dd {
-  font-family: var(--font-numeral);
+  font-family: var(--font-ui);
   font-size: 1.5rem;
   font-weight: 600;
 }
