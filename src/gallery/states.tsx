@@ -53,7 +53,6 @@ function renderGameOverScreen(
     <GameOverScreen
       equation={isRunComplete(state) ? null : state.equation}
       stats={getShareStats(state, variant)}
-      variant={variant}
       url="https://example.test/"
       dependencies={dependencies}
       onPlayAgain={noop}

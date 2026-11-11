@@ -14,7 +14,7 @@ import {
   type PuzzleMove,
 } from "../test/fixtures";
 import { DAILY_LAUNCH_DATE } from "../game/daily";
-import { createDailyStore } from "../services/dailyStorage";
+import { createDailyStore, type DailyStore } from "../services/dailyStorage";
 import { App, type AppDependencies } from "./App";
 
 class MemoryStorage implements Pick<Storage, "getItem" | "setItem"> {
@@ -43,6 +43,8 @@ function renderApp(
     dealPuzzle?: () => PuzzleTable;
     now?: Date;
     storage?: Pick<Storage, "getItem" | "setItem">;
+    /** Replaces the store over `storage`, e.g. one with no storage at all. */
+    dailyStore?: DailyStore;
     dailyTables?: readonly PuzzleTable[];
   } = {},
 ) {
@@ -52,7 +54,7 @@ function renderApp(
     gameUrl: options.gameUrl ?? "https://example.test/",
     dealPuzzle: vi.fn(options.dealPuzzle ?? (() => PUZZLE_SAMPLE)),
     now: () => options.now ?? dayAfterLaunch(2),
-    dailyStore: createDailyStore(storage),
+    dailyStore: options.dailyStore ?? createDailyStore(storage),
     dailyTables: options.dailyTables ?? [PUZZLE_SAMPLE, PUZZLE_SAMPLE, PUZZLE_SAMPLE],
   };
   const shareDependencies = makeShareDependencies();
@@ -641,7 +643,7 @@ describe("Daily", () => {
 
   it("makes Back the first focusable element of a Daily game over, and Practice leads on from it", async () => {
     const user = userEvent.setup();
-    const { dependencies } = renderDaily();
+    const { dependencies, storage } = renderDaily();
     await openDaily(user);
     await playRows(user, LOSS_ROWS);
     expect(screen.getByText("Table #1")).toBeInTheDocument();
@@ -649,10 +651,14 @@ describe("Daily", () => {
     await user.tab();
     expect(screen.getByRole("button", { name: "Back" })).toHaveFocus();
 
+    expect(storedDaily(storage)).toEqual(dailyRecordOf(LOSS_ROWS, { score: 0, par: 7, longestStreak: 0 }));
+    const record = storage.getItem("ndle.daily");
     expect(dependencies.dealPuzzle).not.toHaveBeenCalled();
     await user.click(screen.getByRole("button", { name: "Practice" }));
     expect(dependencies.dealPuzzle).toHaveBeenCalledTimes(1);
     expect(screen.getByText("3 × 5 =")).toBeInTheDocument();
+    await playRows(user, PUZZLE_SAMPLE_PAR_LINE.slice(0, 1));
+    expect(storage.getItem("ndle.daily")).toBe(record);
   });
 
   it("ignores a corrupt record and starts fresh", async () => {
@@ -665,6 +671,30 @@ describe("Daily", () => {
     expect(screen.getByText("3 × 5 =")).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: /^Digit \d$/ })).toHaveLength(5);
     expect(storedDaily(storage)).toEqual(dailyRecordOf([]));
+  });
+
+  it("overwrites another day's record with today's empty one when the Daily opens", async () => {
+    const user = userEvent.setup();
+    const storage = new MemoryStorage();
+    storage.setItem("ndle.daily", JSON.stringify(dailyRecordOf(PUZZLE_SAMPLE_PAR_LINE, { score: 7, par: 7, longestStreak: 7 })));
+    renderDaily({ storage, dailyTables: [PUZZLE_SAMPLE, PUZZLE_SAMPLE], now: dayAfterLaunch(1) });
+    await openDaily(user, "Daily #2");
+    expect(screen.getByText("3 × 5 =")).toBeInTheDocument();
+    expect(hudField("Round")).toBe("1");
+    expect(storedDaily(storage)).toEqual({ ...dailyRecordOf([]), number: 2 });
+  });
+
+  it("offers the next table open once a midnight passed mid-run, after the run's result", async () => {
+    const user = userEvent.setup();
+    const { dependencies } = renderDaily({ dailyTables: [PUZZLE_SAMPLE, PUZZLE_SAMPLE] });
+    await openDaily(user);
+    await playRows(user, PUZZLE_SAMPLE_PAR_LINE.slice(0, 1));
+    dependencies.now = () => dayAfterLaunch(1);
+    await playRows(user, PUZZLE_SAMPLE_PAR_LINE.slice(1));
+    expect(await screen.findByRole("heading", { name: "Made par" })).toBeInTheDocument();
+    expect(screen.getByText("Table #1")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Back" }));
+    expect(screen.getByRole("button", { name: "Daily #2" })).toBeEnabled();
   });
 
   it("keeps the run's number when the clock passes midnight", async () => {
@@ -693,6 +723,46 @@ describe("Daily", () => {
     await press(user, [1, 4]);
     expect(screen.getByRole("status")).toHaveTextContent("Correct");
     expect(hudField("Score")).toBe("1");
+  });
+
+  // Blocked site data hands App a store over no storage (main.tsx), so the
+  // in-memory record is the only one the day has.
+  it("keeps one attempt with no storage: Back resumes the Daily, and a finished one shows its result", async () => {
+    const user = userEvent.setup();
+    renderDaily({ dailyStore: createDailyStore(null) });
+    await openDaily(user);
+    await playRows(user, PUZZLE_SAMPLE_PAR_LINE.slice(0, 1));
+    await user.click(screen.getByRole("button", { name: "Back" }));
+    await openDaily(user);
+    expectRowTwo();
+
+    await playRows(user, PUZZLE_SAMPLE_PAR_LINE.slice(1));
+    expect(await screen.findByRole("heading", { name: "Made par" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Back" }));
+    await openDaily(user, "Today's result #1");
+    expect(screen.getByRole("heading", { name: "Made par" })).toBeInTheDocument();
+    expect(hudField("Score")).toBe("7 / 8");
+  });
+
+  it("resumes after Back at the row reached when saves fail after the first", async () => {
+    const user = userEvent.setup();
+    const storage = new MemoryStorage();
+    const write = storage.setItem.bind(storage);
+    let writes = 0;
+    // The opening's empty record lands; every later save throws, as a full quota does.
+    storage.setItem = (key, value) => {
+      if (writes++ > 0) throw new Error("QuotaExceededError");
+      write(key, value);
+    };
+    renderDaily({ storage });
+    await openDaily(user);
+    await playRows(user, PUZZLE_SAMPLE_PAR_LINE.slice(0, 2));
+    expect(storedDaily(storage)).toEqual(dailyRecordOf([]));
+    await user.click(screen.getByRole("button", { name: "Back" }));
+    await openDaily(user);
+    expect(screen.getByText("3 × 3 =")).toBeInTheDocument();
+    expect(hudField("Round")).toBe("3");
+    expect(screen.getAllByRole("button", { name: /^Digit \d$/ }).map((tile) => tile.textContent)).toEqual(["1", "6", "8", "9"]);
   });
 
   it("writes no record when Practice is left by Back", async () => {
@@ -737,5 +807,39 @@ describe("Daily", () => {
     expect(await screen.findByRole("heading", { name: "Made par" })).toBeInTheDocument();
     expect(localStorage.getItem("ndle.daily")).not.toBeNull();
     expect(["ndle.language", "ndle.daily"]).toEqual(expect.arrayContaining(Object.keys(localStorage)));
+  });
+
+  // The play reaches the share text only through App, so the exact texts are
+  // pinned here as well as in sharing.test. The tables are played in English,
+  // whose labels the helpers press, and each text is copied in both languages.
+  it("copies the Daily's share text from its game over, then Practice's from the run after it", async () => {
+    const user = userEvent.setup();
+    const { shareDependencies } = renderDaily();
+    let copies = 0;
+    async function copy(language: "English" | "한국어", text: string) {
+      await user.click(screen.getByRole("button", { name: language }));
+      await user.click(screen.getByRole("button", { name: language === "English" ? "Copy Result" : "결과 복사" }));
+      copies += 1;
+      await waitFor(() => expect(shareDependencies.writeClipboard).toHaveBeenNthCalledWith(copies, text));
+    }
+
+    await openDaily(user);
+    await playRows(user, PUZZLE_SAMPLE_PAR_LINE);
+    expect(await screen.findByRole("heading", { name: "Made par" })).toBeInTheDocument();
+    await copy("English", "9dle #1 — Made par — 7/8 · par 7\nhttps://example.test/");
+    await copy("한국어", "구들 #1 — 목표 달성 — 7/8 · 목표 7\nhttps://example.test/");
+
+    await user.click(screen.getByRole("button", { name: "English" }));
+    await user.click(screen.getByRole("button", { name: "Practice" }));
+    await playRows(user, PUZZLE_SAMPLE_PAR_LINE);
+    expect(await screen.findByRole("heading", { name: "Made par" })).toBeInTheDocument();
+    await copy(
+      "English",
+      "9dle Practice — Made par — Score: 7/8 · par 7\nLongest streak: 7\n\nCan you make par?\nhttps://example.test/",
+    );
+    await copy(
+      "한국어",
+      "구들 연습 — 목표 달성 — 점수: 7/8 · 목표 7\n최장 연속 정답: 7\n\n목표를 달성할 수 있나요?\nhttps://example.test/",
+    );
   });
 });

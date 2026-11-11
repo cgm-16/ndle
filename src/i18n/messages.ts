@@ -83,6 +83,8 @@ const en = {
     copied: "Result copied.",
     failed: "Could not share or copy the result.",
     puzzleAsk: "Can you make par?",
+    // Lower case inside the share text, where `hud.par` would read "Par".
+    par: "par",
   },
   answerSlot: {
     filled: "Answer slot {position}: {digit}",
@@ -168,6 +170,7 @@ const ko = {
     copied: "결과를 복사했습니다.",
     failed: "결과를 공유하거나 복사하지 못했습니다.",
     puzzleAsk: "목표를 달성할 수 있나요?",
+    par: "목표",
   },
   answerSlot: {
     filled: "정답 칸 {position}: {digit}",

@@ -31,12 +31,12 @@ export function formatShareText(stats: ShareStats, language: Language, url: stri
   const outcome = stats.won ? gameOver.parTitle : gameOver.shortTitle.replace("{short}", String(par - score));
   const ko = language === "ko";
   if (stats.kind === "daily") {
-    return `${title.name} #${stats.number} — ${outcome} — ${score}/${rows} · ${ko ? "목표" : "par"} ${par}\n${url}`;
+    return `${title.name} #${stats.number} — ${outcome} — ${score}/${rows} · ${share.par} ${par}\n${url}`;
   }
   const heading = `${title.name} ${title.practice} — ${outcome}`;
   return ko
-    ? `${heading} — 점수: ${score}/${rows} · 목표 ${par}\n최장 연속 정답: ${longestStreak}\n\n${share.puzzleAsk}\n${url}`
-    : `${heading} — Score: ${score}/${rows} · par ${par}\nLongest streak: ${longestStreak}\n\n${share.puzzleAsk}\n${url}`;
+    ? `${heading} — 점수: ${score}/${rows} · ${share.par} ${par}\n최장 연속 정답: ${longestStreak}\n\n${share.puzzleAsk}\n${url}`
+    : `${heading} — Score: ${score}/${rows} · ${share.par} ${par}\nLongest streak: ${longestStreak}\n\n${share.puzzleAsk}\n${url}`;
 }
 
 export interface ShareDependencies {

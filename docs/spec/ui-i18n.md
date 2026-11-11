@@ -15,9 +15,9 @@ states the contract any values must satisfy.
   is a common phone's viewport less its browser chrome. The geometry specs in
   `e2e/` assert it.
 - Use one centered vertical arena on desktop and mobile.
-- Preserve order across breakpoints: Back → HUD → ledger → equation/slots → phase action → rail (while a tile is past capacity, and until a dropping tile lands) → rack. The rail sits directly above the rack, because a perched tile drops from it into a socket.
+- Preserve order across breakpoints: Back (in the app's top bar) → HUD → ledger → equation/slots → phase action → rail (while a tile is past capacity, and until a dropping tile lands) → rack. The rail sits directly above the rack, because a perched tile drops from it into a socket.
 - Mobile changes spacing, wrapping, and control size, not information architecture.
-- **Back** (`action.back`, `Back` / `뒤로`) is the first focusable element of the game screen and of the game-over screen, for Daily and Practice alike. It is at least `44 px` tall and carries an `aria-hidden` inline-SVG arrow. It has no key binding, because `Escape` already clears the selection. It dispatches `RETURN_TO_TITLE`, with no confirmation. Back is not a move: a Daily keeps its record and resumes from the title, and a Practice run is dropped.
+- **Back** (`action.back`, `Back` / `뒤로`) sits in the app's top bar, ahead of the language toggle and outside the screen's `<main>`, on the game screen and the game-over screen, for Daily and Practice alike, so it is the first focusable element on the page. It is at least `44 px` tall and carries an `aria-hidden` inline-SVG arrow. It has no key binding, because `Escape` already clears the selection. It dispatches `RETURN_TO_TITLE`, with no confirmation. Back is not a move: a Daily keeps its record and resumes from the title, and a Practice run is dropped.
 - **The ledger** lists the table's 8 rows. Each row shows its equation and the tiles it pays, and a mark once answered: correct or missed, in text or shape as well as colour. The current row is marked by more than colour. Each row is one accessible string (`ledger.row`).
 - **The rack** is five fixed sockets in a single row at every breakpoint (`PUZZLE_CAPACITY`). The grid never resizes; an empty socket is a tile spent, and a socket whose tile is lifted is on loan: it stays held for that tile, visibly distinct from an empty one, and the rack does not re-sort until the round resolves.
 - **The rail.** The tile past capacity (the newest arrival, `product.md` §1.7) perches on a band one tile high above the rack with a `1px` `--border-accent` top rule, right-aligned and drawn at the rack's tile size (where the rack's tracks shrink below it, a dropping tile narrows by a few pixels as it lands). The rail exists while a tile is past capacity, and until the tile it held has landed in a freed socket (`8a·2`). It never adds a row to the rack.
@@ -145,6 +145,7 @@ placeholder until the identity.
 | `share.copied` | `Result copied.` | `결과를 복사했습니다.` |
 | `share.failed` | `Could not share or copy the result.` | `결과를 공유하거나 복사하지 못했습니다.` |
 | `share.puzzleAsk` | `Can you make par?` | `목표를 달성할 수 있나요?` |
+| `share.par` | `par` | `목표` |
 | `answerSlot.filled` | `Answer slot {position}: {digit}` | `정답 칸 {position}: {digit}` |
 | `answerSlot.empty` | `Answer slot {position}: empty` | `정답 칸 {position}: 비어 있음` |
 | `tile.digitLabel` | `Digit {digit}` | `숫자 {digit}` |
@@ -194,7 +195,8 @@ no "and" is written in the dictionary.
 The name comes from `title.name`, and "Practice" / "연습" from `title.practice`.
 The other words are the existing keys: the outcome words are `gameOver.parTitle`
 and `gameOver.shortTitle`, and a Practice run that falls short uses
-`gameOver.shortTitle` in the same place.
+`gameOver.shortTitle` in the same place. "par" / "목표" before the par figure
+is `share.par`.
 
 ### 1.16 Persistence and reload
 

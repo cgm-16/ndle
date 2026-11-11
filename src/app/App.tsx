@@ -20,16 +20,22 @@ export interface AppDependencies {
   gameUrl: string;
   /** Deals a Practice table. Called only from event handlers, once per run. */
   dealPuzzle(): PuzzleTable;
-  /** Read on title render and in event handlers, never in the reducer. */
+  /** Read on mount, on Back and in event handlers, never in the reducer. */
   now(): Date;
   dailyStore: DailyStore;
   dailyTables: readonly PuzzleTable[];
 }
 
-function dailyEntry({ now, dailyStore, dailyTables }: AppDependencies): DailyEntry {
+// Within a tab the in-memory record is never older than storage, and when
+// storage is blocked or a save fails it is the only current copy.
+function todaysRecord(dailyStore: DailyStore, memory: DailyRecord | null, number: number): DailyRecord | null {
+  return memory?.number === number ? memory : dailyStore.load();
+}
+
+function dailyEntry({ now, dailyStore, dailyTables }: AppDependencies, memory: DailyRecord | null): DailyEntry {
   const today = todaysDaily(now(), dailyTables);
   if (today === null) return { status: "none" };
-  const record = dailyStore.load();
+  const record = todaysRecord(dailyStore, memory, today.number);
   const played = record !== null && record.number === today.number && record.outcome !== null;
   return { status: played ? "played" : "open", number: today.number };
 }
@@ -45,10 +51,13 @@ export function App({ dependencies, shareDependencies }: AppProps) {
   const { t } = useI18n();
   const [state, dispatch] = useReducer(gameReducer, undefined, createTitleState);
   const [play, setPlay] = useState<Play>({ kind: "practice" });
-  // The Daily's record as last saved. Only event handlers and the outcome
-  // effect write it, never render or the reducer, so StrictMode saves each
-  // move once.
+  // The Daily's record as App last saved it, whether or not storage kept it.
+  // Only event handlers and the outcome effect write it, never render or the
+  // reducer, so StrictMode saves each move once.
   const dailyRecord = useRef<DailyRecord | null>(null);
+  // The title's Daily entry, read when the title shows: on mount, and on Back,
+  // which can read the in-memory record where render cannot.
+  const [titleDaily, setTitleDaily] = useState(() => dailyEntry(dependencies, null));
 
   const handlePractice = useCallback(() => {
     dispatch(createPuzzleStart(dependencies.dealPuzzle(), dependencies.nextTileId));
@@ -60,7 +69,7 @@ export function App({ dependencies, shareDependencies }: AppProps) {
     const today = todaysDaily(now(), dailyTables);
     // The title disables Daily when there is no table, so this only guards the type.
     if (today === null) return;
-    const record = dailyStore.load();
+    const record = todaysRecord(dailyStore, dailyRecord.current, today.number);
     const replay = record?.number === today.number ? replayMoves(today.table, record.moves, nextTileId) : null;
     if (record !== null && replay !== null) {
       // The replay drew its ids from nextTileId, so live play continues past them.
@@ -76,7 +85,10 @@ export function App({ dependencies, shareDependencies }: AppProps) {
     setPlay({ kind: "daily", number: today.number });
   }, [dependencies]);
 
-  const handleBack = useCallback(() => dispatch({ type: "RETURN_TO_TITLE" }), []);
+  const handleBack = useCallback(() => {
+    setTitleDaily(dailyEntry(dependencies, dailyRecord.current));
+    dispatch({ type: "RETURN_TO_TITLE" });
+  }, [dependencies]);
 
   const handleRestart = useCallback(() => {
     // A Daily gets one attempt: Play Again does not start it over, and its R
@@ -118,6 +130,7 @@ export function App({ dependencies, shareDependencies }: AppProps) {
         return;
       }
       // The reducer takes a discard only in overflow, which the move's submit opened.
+      // Overflow is always one tile, so an accepted TOGGLE_DISCARD completes the discard.
       playMove(action, (moves) => [...moves.slice(0, -1), { ...moves[moves.length - 1], discard: tile.digit }]);
     },
     [state.inventory, playMove],
@@ -181,7 +194,7 @@ export function App({ dependencies, shareDependencies }: AppProps) {
       )}
 
       {state.phase === "title" && (
-        <TitleScreen daily={dailyEntry(dependencies)} onDaily={handleDaily} onPractice={handlePractice} />
+        <TitleScreen daily={titleDaily} onDaily={handleDaily} onPractice={handlePractice} />
       )}
 
       {(state.phase === "answering" || state.phase === "feedback" || state.phase === "overflow") && (
@@ -198,7 +211,6 @@ export function App({ dependencies, shareDependencies }: AppProps) {
           // A table played to its end stopped on no equation.
           equation={isRunComplete(state) ? null : state.equation}
           stats={getShareStats(state, play)}
-          variant={play}
           url={dependencies.gameUrl}
           dependencies={shareDependencies}
           onPlayAgain={handleRestart}

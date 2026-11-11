@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { I18nProvider } from "../../i18n/I18nContext";
-import type { ShareDependencies } from "../../services/sharing";
+import type { ShareDependencies, ShareStats } from "../../services/sharing";
 import { makeEquation } from "../../test/fixtures";
 import { LanguageToggle } from "../LanguageToggle/LanguageToggle";
 import { GameOverScreen, type GameOverScreenProps } from "./GameOverScreen";
@@ -10,7 +10,6 @@ import styles from "./GameOverScreen.module.css";
 
 // A table that ended early, two short of par: the run stopped on EQUATION.
 const STATS = { kind: "practice", won: false, par: 7, rows: 8, score: 5, longestStreak: 4 } as const;
-const PRACTICE = { kind: "practice" } as const;
 const EQUATION = makeEquation(2, 3);
 const URL = "https://example.test/";
 const EN_TEXT =
@@ -29,7 +28,6 @@ function renderScreen(overrides: Partial<GameOverScreenProps> = {}) {
       <GameOverScreen
         equation={EQUATION}
         stats={STATS}
-        variant={PRACTICE}
         url={URL}
         dependencies={dependencies}
         onPlayAgain={onPlayAgain}
@@ -101,7 +99,6 @@ describe("GameOverScreen", () => {
         <GameOverScreen
           equation={EQUATION}
           stats={STATS}
-          variant={PRACTICE}
           url={URL}
           dependencies={{ writeClipboard: vi.fn().mockResolvedValue(undefined) }}
           onPlayAgain={vi.fn()}
@@ -202,7 +199,6 @@ describe("GameOverScreen", () => {
         <GameOverScreen
           equation={EQUATION}
           stats={STATS}
-          variant={PRACTICE}
           url={URL}
           dependencies={{ nativeShare, writeClipboard }}
           onPlayAgain={vi.fn()}
@@ -293,11 +289,9 @@ describe("GameOverScreen verdicts", () => {
 });
 
 describe("GameOverScreen variants", () => {
-  const DAILY = { kind: "daily", number: 12 } as const;
-  const dailyStats = { ...STATS, ...DAILY };
+  const DAILY_STATS = { ...STATS, kind: "daily", number: 12 } as const;
 
-  function renderVariant(initialLanguage: "en" | "ko", variant: GameOverScreenProps["variant"]) {
-    const stats = variant.kind === "daily" ? dailyStats : STATS;
+  function renderVariant(initialLanguage: "en" | "ko", stats: ShareStats) {
     const onPlayAgain = vi.fn();
     const onPractice = vi.fn();
     render(
@@ -305,7 +299,6 @@ describe("GameOverScreen variants", () => {
         <GameOverScreen
           equation={EQUATION}
           stats={stats}
-          variant={variant}
           url={URL}
           dependencies={{ writeClipboard: vi.fn().mockResolvedValue(undefined) }}
           onPlayAgain={onPlayAgain}
@@ -320,7 +313,7 @@ describe("GameOverScreen variants", () => {
     ["en", "Table #12", "The next table opens at midnight.", "Practice", "Play Again", "Press R to play again"],
     ["ko", "12번째 판", "다음 판은 자정에 열립니다.", "연습", "다시 하기", "R 키를 눌러 다시 하기"],
   ] as const)("shows a Daily's number, next table and Practice, and no Play Again, in %s", async (language, number, next, practice, playAgain, hint) => {
-    const { onPractice } = renderVariant(language, DAILY);
+    const { onPractice } = renderVariant(language, DAILY_STATS);
 
     expect(screen.getByText(number)).toBeInTheDocument();
     expect(screen.getByText(next)).toBeInTheDocument();
@@ -334,7 +327,7 @@ describe("GameOverScreen variants", () => {
     ["en", "Play Again", "Press R to play again", "Table #12", "The next table opens at midnight.", "Practice"],
     ["ko", "다시 하기", "R 키를 눌러 다시 하기", "12번째 판", "다음 판은 자정에 열립니다.", "연습"],
   ] as const)("shows a Practice run's Play Again and R hint, and no number or next table, in %s", async (language, playAgain, hint, number, next, practice) => {
-    const { onPlayAgain } = renderVariant(language, PRACTICE);
+    const { onPlayAgain } = renderVariant(language, STATS);
 
     expect(screen.getByText(hint)).toBeInTheDocument();
     expect(screen.queryByText(number)).not.toBeInTheDocument();

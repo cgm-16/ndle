@@ -4,7 +4,7 @@ import styles from "./ActionButton.module.css";
 export type ActionButtonVariant = "primary" | "secondary" | "ghost";
 
 export interface ActionButtonProps {
-  /** Title Case label: "Start Run", "Confirm Discard". Rendered uppercase. */
+  /** Title Case label: "Play Again", "Next Round". Rendered uppercase. */
   children: ReactNode;
   /** Default "primary". */
   variant?: ActionButtonVariant;

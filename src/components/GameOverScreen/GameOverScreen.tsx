@@ -5,7 +5,6 @@ import {
   copyResult,
   formatShareText,
   shareResult,
-  type PlayVariant,
   type ShareDependencies,
   type ShareOutcome,
   type ShareStats,
@@ -17,8 +16,8 @@ import styles from "./GameOverScreen.module.css";
 export interface GameOverScreenProps {
   /** The equation the run stopped on; null when the table was played to its end. */
   equation: Equation | null;
+  /** Its `kind` picks the Daily or the Practice variant. */
   stats: ShareStats;
-  variant: PlayVariant;
   url: string;
   dependencies: ShareDependencies;
   /** Practice only. */
@@ -30,7 +29,6 @@ export interface GameOverScreenProps {
 export function GameOverScreen({
   equation,
   stats,
-  variant,
   url,
   dependencies,
   onPlayAgain,
@@ -68,7 +66,7 @@ export function GameOverScreen({
             thing it explains. */}
         <p className={styles.reason}>{t(reason)}</p>
       </div>
-      {variant.kind === "daily" && <p>{t("gameOver.dailyNumber", { number: variant.number })}</p>}
+      {stats.kind === "daily" && <p>{t("gameOver.dailyNumber", { number: stats.number })}</p>}
       <h1 className={`${styles.title} ${stats.won ? styles.won : styles.shortOfPar}`}>
         {title}
       </h1>
@@ -88,7 +86,7 @@ export function GameOverScreen({
         </div>
       </dl>
       <div className={styles.actions}>
-        {variant.kind === "daily" ? (
+        {stats.kind === "daily" ? (
           <>
             <ActionButton onClick={onPractice}>{t("title.practice")}</ActionButton>
             <p className={styles.restartHint}>{t("gameOver.nextTable")}</p>
