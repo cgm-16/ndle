@@ -69,7 +69,12 @@ the rack stays where it is.
 The prototype draws the rows at 32 px. They are 30 px here for the feedback
 band's margin (plan, ruling 3).
 
-**The band** starts 12 px below the ledger and is 120 px while answering.
+**The band** starts 12 px below the ledger. It is a fixed 150 px in every
+phase, so the rack never moves.
+- Answering fills 120 px of it from the top: the answer row, a 12 px gap and
+  the actions.
+- Feedback (T115) fills all 150 px, and overflow (T114) about 142.
+- At 393 × 660 with 30 px rows, the answering screen comes to about 638 px.
 - **Answer row,** 60 px tall:
   - the prompt `3 × 5 =` at `--type-prompt` (30), 700. `EquationBoard`
     moves here from the ledger, and keeps its rise hook;

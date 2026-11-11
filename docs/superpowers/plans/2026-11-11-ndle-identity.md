@@ -91,7 +91,9 @@ needs it.
        verdict line, another 8 px gap and the 48 px Next Round, so 150 px;
      - the miss screen is therefore 652 of 660 px, with 8 px to spare;
      - T113 takes ledger rows from 32 to 30 px, which brings the spare to
-       about 22 px.
+       about 22 px;
+     - the band is a fixed 150 px in every phase, so the rack never moves.
+       Every phase's screen is then about 638 px.
    - **If it doesn't fit,** for example because the verdict line wraps in
      Korean, the alternative is Ori's choice: the prototype's layout, with
      the miss motion moved elsewhere. T115 stops and reports rather than
@@ -326,6 +328,9 @@ The release is not a task, because it has no code. It runs in this order.
    - the evidence column of `docs/plan/traceability.md`, one row at a time,
      each pointing at its test or smoke step;
    - #19: comment, then close.
+
+**CI covers the release:** `ci.yml` runs on every pull request and on pushes
+to `main` and `prod`. So the release PR and its merge commit are each built.
 
 **[Ori], outside the code:** CI is not yet a required check. Making it
 required is a ruleset change, which agents cannot make.

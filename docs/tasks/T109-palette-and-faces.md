@@ -187,11 +187,17 @@ cards; 4 for pay tiles and game-over marks.
       focused control's computed `outline` is `3px solid` with a colour of
       `rgb(140, 207, 242)`, and its `outline-offset` is `3px`.
 - [ ] **Test** in `e2e/accessibility.spec.ts`'s face check, after
-      `document.fonts.ready`:
-  - `document.fonts.check('700 28px "Gaegu"', "9dle")` and
-    `document.fonts.check('400 16px "Atkinson Hyperlegible"', "Row 1")` are
-    true in en;
-  - Gothic A1 400 and 700 are loaded in ko, as today.
+      `document.fonts.ready`, in the existing Gothic A1 test's pattern:
+  - **The pattern:** a `FontFace` in `document.fonts` with that family and
+    weight, whose `status` is `"loaded"`.
+  - **Not `document.fonts.check()`.** It returns true for a face no
+    stylesheet declares; a probe on 2026-11-11 gave
+    `check("16px NoSuchFace") === true` with `document.fonts.size === 0`.
+  - **In en:** Atkinson Hyperlegible 400 and 700 are loaded.
+  - **On the title in en:** Gaegu 700 is loaded. The title is the
+    gallery's `title` state, or the app's title.
+  - **In ko:** Gothic A1 400 and 700 are loaded, as today.
+  - **A case it must fail:** the same lookup for `NoSuchFace` finds nothing.
 - [ ] **Implement** the values above. Each file this task touches loses its
       comments that cite the old palette (ratios, gold, ceramic, felt).
 - [ ] **Check Gaegu's slicing** before going on:
@@ -213,6 +219,11 @@ cards; 4 for pay tiles and game-over marks.
   - `public/favicon.svg` is recoloured slate and chalk, and its comments no
     longer cite felt or clay.
 - [ ] **Gates**, all of them.
+  - **If an existing fit check fails** after the face change, stop and
+    report the measured heights; `puzzle-fit.spec.ts` is the one most likely
+    to. Atkinson's metrics differ from the system face's.
+  - Do not shrink anything, and do not loosen a spec. Sizes belong to each
+    screen's own task.
 - [ ] **Manual check**, with a scratch script against `npm run build` and
       `npm run preview`, not committed. A Practice run in en, then in ko:
   - it makes zero requests to another origin;

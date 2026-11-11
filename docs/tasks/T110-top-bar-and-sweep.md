@@ -124,6 +124,10 @@ chrome.
   - **Coverage:** for every gallery state id, in en and ko, at `393 × 660`
     and `375 × 660`, open `gallery.html?state=<id>` and await
     `document.fonts.ready`.
+    - The ids come from the gallery itself, not a list typed into the spec.
+      For example, read them from the default gallery's picker.
+    - The spec asserts that their count equals `viewport.spec.ts`'s
+      `STATE_COUNT`, so a state added later is never skipped.
   - **The bar is counted:** the `TopBar`'s box is 52 px tall.
   - **The fit:** `document.documentElement.scrollHeight <= innerHeight` and
     `scrollWidth <= innerWidth`.

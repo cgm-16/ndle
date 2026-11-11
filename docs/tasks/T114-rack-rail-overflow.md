@@ -70,7 +70,8 @@ band. `{count}` is the number of seated tiles, at most 5.
 | Inert (feedback) | the resting look; not a pressable target |
 | Discard choice (overflow) | a `2px` dashed pink border and no bottom edge. Named `tile.discard`, plus `, ` and `tile.newLabel` for the arrival |
 
-**Overflow band,** below the answer row with an 8 px gap:
+**Overflow,** inside the band's fixed 150 px (T113), below the answer row
+with an 8 px gap:
 - **Left cell, the message:**
   - a `Mark` (correct), `result.correct`, ` · ` and `result.handFull`, at
     20 px, 700;
@@ -86,9 +87,9 @@ band. `{count}` is the number of seated tiles, at most 5.
   the left cell, and the component goes if nothing else uses it.
 
 **The arithmetic,** at 393 × 660:
-- in en and ko, the message wraps to two lines in its cell, so the band is
-  about 60 + 8 + 74 = 142 px;
-- with 30 px ledger rows, the overflow screen comes to about 630 px.
+- in en and ko, the message wraps to two lines in its cell, so its content
+  is about 60 + 8 + 74 = 142 px, inside the 150 px band;
+- the screen is the same height as answering, about 638 px.
 - The sweep decides.
 
 ## Copy

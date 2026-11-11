@@ -42,7 +42,7 @@ motion plays on them (plan, ruling 3).
 
 ## Values
 
-**The band in feedback,** 150 px:
+**The band in feedback** fills its fixed 150 px (T113):
 
 | Part | Height |
 |---|---|
