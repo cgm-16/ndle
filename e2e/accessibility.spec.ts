@@ -237,11 +237,10 @@ test("the verdict is announced, and carried by words rather than colour", async 
   expect(status.text, "the submitted value, announced with it").toMatch(/Your answer/);
 });
 
-test("every interactive target is at least 44px", async ({ page }) => {
-  await openArena(page);
-
-  const reading = await page.evaluate(() => {
-    const buttons = [...document.querySelectorAll("button")].map((el) => {
+/** Measures every button and disclosure summary on the page. */
+async function sweepTargets(page: Page) {
+  return page.evaluate(() => {
+    const targets = [...document.querySelectorAll("button, summary")].map((el) => {
       const box = el.getBoundingClientRect();
       return {
         name: (el.getAttribute("aria-label") || el.textContent || "").trim().slice(0, 24),
@@ -250,12 +249,18 @@ test("every interactive target is at least 44px", async ({ page }) => {
       };
     });
     return {
-      count: buttons.length,
-      undersized: buttons.filter((b) => b.width < 44 || b.height < 44),
-      minWidth: Math.min(...buttons.map((b) => b.width)),
-      minHeight: Math.min(...buttons.map((b) => b.height)),
+      count: targets.length,
+      undersized: targets.filter((b) => b.width < 44 || b.height < 44),
+      minWidth: Math.min(...targets.map((b) => b.width)),
+      minHeight: Math.min(...targets.map((b) => b.height)),
     };
   });
+}
+
+test("every interactive target is at least 44px", async ({ page }) => {
+  await openArena(page);
+
+  const reading = await sweepTargets(page);
 
   expect(reading.count, "targets swept").toBeGreaterThanOrEqual(5);
   expect(reading.undersized, "targets under 44px").toEqual([]);
@@ -263,14 +268,26 @@ test("every interactive target is at least 44px", async ({ page }) => {
   expect(reading.minHeight, "shortest target").toBeGreaterThanOrEqual(MIN_TARGET);
 });
 
+test("every interactive target on the title is at least 44px, More included", async ({ page }) => {
+  await page.setViewportSize({ ...VIEWPORT });
+  await page.goto("/");
+  await page.evaluate(() => document.fonts.ready);
+
+  const reading = await sweepTargets(page);
+
+  // Daily, Practice, the language toggle's two halves and the More summary.
+  expect(reading.count, "targets swept").toBeGreaterThanOrEqual(5);
+  expect(reading.undersized, "targets under 44px").toEqual([]);
+});
+
 test("Korean copy renders in a Hangul face and does not clip", async ({ page }) => {
   await page.addInitScript(() => window.localStorage.setItem("ndle.language", "ko"));
   await page.setViewportSize({ ...VIEWPORT });
   await page.goto("/");
   await page.evaluate(() => document.fonts.ready);
-  /* The title screen is the clipping risk: the pitch paragraph and the four
-     material rules are the longest strings in either locale, and the disclosure
-     holds four more. */
+  /* The title screen is the clipping risk: its three steps and the More
+     disclosure, which holds six topics, are the longest strings in either
+     locale. */
   await page.locator("details").evaluate((el: HTMLDetailsElement) => (el.open = true));
 
   /* The Hangul face is imported lazily, on the language rather than on load, so

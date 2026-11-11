@@ -69,6 +69,8 @@ interface Reading {
   innerHeight: number;
   innerWidth: number;
   ringFailures: string[];
+  /** How far the screen's content box is from the bar's in width; null without a `main`. */
+  contentWidthGap: number | null;
   /** How far the bar's centre label is from the bar's midpoint; null without a label. */
   centreOffset: number | null;
 }
@@ -120,10 +122,24 @@ async function read(page: Page): Promise<Reading> {
         (el) => el.getBoundingClientRect().width > 0,
       );
       const name = (el: Element) => `${el.tagName.toLowerCase()}.${String(el.className).split(" ")[0]}`;
+      type Edges = { left: number; right: number; top: number; bottom: number };
       // Two boxes' rings meet when they are closer than `reach` on both axes.
-      const near = (a: DOMRect, b: DOMRect) =>
+      const near = (a: Edges, b: Edges) =>
         Math.max(a.left - b.right, b.left - a.right) < reach - 0.01 &&
         Math.max(a.top - b.bottom, b.top - a.bottom) < reach - 0.01;
+      // A chalk or dust element's solid shadow is its edge too (the tile's
+      // `0 3px 0` thickness), so its box reaches as far below as the shadow's y.
+      const edgeOf = (el: HTMLElement) => {
+        const box = el.getBoundingClientRect();
+        const drop = Math.max(
+          0,
+          ...getComputedStyle(el)
+            .boxShadow.split(/,(?![^(]*\))/)
+            .filter((shadow) => shadow.trim() !== "none" && !shadow.includes("inset"))
+            .map((shadow) => Number(/(-?[\d.]+)px\s+(-?[\d.]+)px/.exec(shadow)?.[2] ?? 0)),
+        );
+        return { left: box.left, right: box.right, top: box.top, bottom: box.bottom + drop, width: box.width };
+      };
       const ringFailures: string[] = [];
       controls.forEach((a, i) => {
         const box = a.getBoundingClientRect();
@@ -135,13 +151,19 @@ async function read(page: Page): Promise<Reading> {
           if (a.contains(el) || el.contains(a)) continue;
           const bg = getComputedStyle(el).backgroundColor;
           if (bg !== chalk && bg !== dust) continue;
-          const other = el.getBoundingClientRect();
+          const other = edgeOf(el);
           if (other.width > 0 && near(box, other)) ringFailures.push(`${name(a)} / ${name(el)} (${bg})`);
         }
       });
+      const contentWidth = (el: Element) => {
+        const style = getComputedStyle(el);
+        return el.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+      };
+      const main = document.querySelector("main");
       const bar = document.querySelector("header")!.getBoundingClientRect();
       const centre = document.querySelector("header p")?.getBoundingClientRect();
       return {
+        contentWidthGap: main ? Math.abs(contentWidth(main) - contentWidth(document.querySelector("header")!)) : null,
         centreOffset: centre ? Math.abs(centre.left + centre.width / 2 - (bar.left + bar.width / 2)) : null,
         barHeight: document.querySelector("header")!.getBoundingClientRect().height,
         scrollHeight: de.scrollHeight,
@@ -161,6 +183,9 @@ async function measure(page: Page, id: string, language: string, width: number, 
   await openState(page, id, language, width, height);
   return read(page);
 }
+
+/** The title and game over fill the frame: `main`'s content box is the bar's. */
+const FILLS_FRAME = /^(title|game-over)/;
 
 const overflows = (r: Reading) => r.scrollHeight > r.innerHeight || r.scrollWidth > r.innerWidth;
 
@@ -189,6 +214,10 @@ for (const language of LANGUAGES) {
         expect(reading.barHeight, `${id}: the bar's height`).toBe(BAR_HEIGHT);
         // Back and the toggle differ in width, so only equal side columns keep the label centred.
         if (reading.centreOffset !== null) expect(reading.centreOffset, `${id}: label offset from the bar's midpoint`).toBeLessThanOrEqual(2);
+        if (FILLS_FRAME.test(id)) {
+          expect(reading.contentWidthGap, `${id}: has a main`).not.toBeNull();
+          expect(reading.contentWidthGap, `${id}: main's content width against the bar's`).toBeLessThanOrEqual(1);
+        }
         expect(await gaeguLoadedWhereUsed(page), `${id}: Gaegu loaded where used`).toBe(true);
 
         const key = `${id} ${language} ${width}`;
@@ -242,4 +271,26 @@ test("the sweep reports an overflow in a state whose stack fits only without the
   const withoutBar = await read(page);
   expect(overflows(withoutBar), `without the bar, page height ${withoutBar.scrollHeight} of ${height}`).toBe(false);
   expect(overflows(withBar), `with the bar, page height ${withBar.scrollHeight} of ${height}`).toBe(true);
+});
+
+/** Replaces the screen with `html` on a page the sweep passes, then reads it
+    through the sweep's own `read`. */
+async function readInjected(page: Page, html: string) {
+  await measure(page, "title", "en", 393, HEIGHT);
+  await page.evaluate((markup) => (document.querySelector("main")!.innerHTML = `<div>${markup}</div>`), html);
+  return read(page);
+}
+
+const button = (marginTop: number) => `<button style="display:block;width:100px;height:44px;margin-top:${marginTop}px">b</button>`;
+
+test("the ring-reach check reports two buttons 4px apart, and passes them 12px apart", async ({ page }) => {
+  expect((await readInjected(page, button(0) + button(12))).ringFailures, "12px apart").toEqual([]);
+  expect((await readInjected(page, button(0) + button(4))).ringFailures.length, "4px apart").toBeGreaterThan(0);
+});
+
+test("the ring-reach check counts a tile's solid shadow edge", async ({ page }) => {
+  const tile = `<div style="width:100px;height:44px;background:${CHALK};box-shadow:0 3px 0 ${DUST}"></div>`;
+  // 8px below the tile's border box is 5px below its shadow edge: under the reach.
+  expect((await readInjected(page, tile + button(12))).ringFailures, "12px below the border box").toEqual([]);
+  expect((await readInjected(page, tile + button(8))).ringFailures.length, "8px below the border box").toBeGreaterThan(0);
 });

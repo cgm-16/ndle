@@ -9,15 +9,15 @@ import styles from "./Gallery.module.css";
 // Skip empty groups entirely rather than rendering an empty heading.
 const GROUPS = Object.entries(GALLERY_STATES).filter(([, entries]) => entries.length > 0);
 const ALL_ENTRIES = GROUPS.flatMap(([, entries]) => entries);
-// The title and the interaction boards are not game screens, so their bar has no Back.
-const BARLESS_GROUPS = new Set(["title", "interaction"]);
+// The title and the interaction boards are not game screens, so their bar renders no Back.
+const GROUPS_WITHOUT_BACK = new Set(["title", "interaction"]);
 
 /** `gallery.html?state=<id>`: the state's bar and screen only, so a fit is measured as the app lays it out. */
 function SingleState({ id }: { id: string }) {
   const { t } = useI18n();
   const group = GROUPS.find(([, entries]) => entries.some((entry) => entry.id === id))!;
   const entry = group[1].find((candidate) => candidate.id === id)!;
-  const bar = BARLESS_GROUPS.has(group[0]) ? (
+  const bar = GROUPS_WITHOUT_BACK.has(group[0]) ? (
     <TopBar />
   ) : (
     <TopBar

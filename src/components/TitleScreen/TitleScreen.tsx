@@ -30,7 +30,11 @@ export function TitleScreen({ daily, onDaily, onPractice }: TitleScreenProps) {
           <span lang="ko" className={styles.korean}>{messages.ko.title.name}</span>
         </h1>
         <p className={styles.tagline}>{t("title.tagline")}</p>
-        <ol className={styles.steps}>
+        <ol
+          className={styles.steps}
+          // WebKit strips list semantics from unstyled lists, so the order goes with them.
+          role="list"
+        >
           {STEPS.map((step, index) => (
             <li key={step} className={styles.step}>
               <span className={styles.numeral} aria-hidden="true">{index + 1}</span>

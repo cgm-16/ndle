@@ -2,6 +2,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { I18nProvider } from "../../i18n/I18nContext";
+import { messages } from "../../i18n/messages";
 import { formatShareText, type ShareDependencies, type ShareStats } from "../../services/sharing";
 import { LanguageToggle } from "../LanguageToggle/LanguageToggle";
 import { GameOverScreen, type GameOverScreenProps } from "./GameOverScreen";
@@ -224,13 +225,13 @@ describe("GameOverScreen verdicts", () => {
 describe("GameOverScreen variants", () => {
   const DAILY_STATS = { ...STATS, kind: "daily", number: 12 } as const;
 
-  function renderVariant(initialLanguage: "en" | "ko", stats: ShareStats) {
+  function renderVariant(initialLanguage: "en" | "ko", stats: ShareStats, rowResults: GameOverScreenProps["rowResults"] = ROWS) {
     const onPlayAgain = vi.fn();
     const onPractice = vi.fn();
     render(
       <I18nProvider initialLanguage={initialLanguage}>
         <GameOverScreen
-          rowResults={ROWS}
+          rowResults={rowResults}
           stats={stats}
           url={URL}
           dependencies={{ writeClipboard: vi.fn().mockResolvedValue(undefined) }}
@@ -279,11 +280,23 @@ describe("GameOverScreen variants", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveAccessibleName(heading);
     const list = screen.getByRole("list", { name: rows });
     expect(within(list).getAllByRole("listitem")).toHaveLength(8);
-    expect(within(list).getByLabelText(first)).toBeInTheDocument();
-    expect(within(list).getByLabelText(third)).toBeInTheDocument();
-    expect(within(list).getByLabelText(sixth)).toBeInTheDocument();
+    // WebKit strips an unstyled list's role, so the attribute is explicit.
+    expect(list).toHaveAttribute("role", "list");
+    const item = (name: string) => within(list).getByText(name).closest("li") as HTMLElement;
+    // The words are text inside the item; the mark itself is hidden from assistive tech.
+    const shape = language === "ko" ? "circle" : "check";
+    expect(item(first).querySelector("svg")).toHaveAttribute("data-shape", shape);
+    expect(item(third).querySelector("svg")).toHaveAttribute("data-shape", "cross");
+    expect(item(sixth).querySelector("svg")).toBeNull();
     const buttons = screen.getAllByRole("button").map((button) => button.textContent);
     expect(buttons).toEqual([share, copy, last]);
+  });
+
+  it("says the table was played to its end when all eight rows are played and the last is a miss", () => {
+    const eight = ["correct", "correct", "incorrect", "correct", "correct", "correct", "correct", "incorrect"] as const;
+    renderVariant("en", STATS, eight);
+    expect(screen.getByText(messages.en.gameOver.tableReason)).toBeInTheDocument();
+    expect(screen.queryByText(messages.en.gameOver.reason)).not.toBeInTheDocument();
   });
 
   it("names a Practice heading by the verdict alone", () => {

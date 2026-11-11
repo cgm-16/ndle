@@ -167,10 +167,10 @@ const HOVER_NOTE =
   "Move a real pointer over each control: matches(':hover') is as unreadable in an automated probe as matches(':active') is. No component declares a :hover rule, so a hover reading equal to the resting reading is the system as built, not a failed probe.";
 
 const FOCUS_VISIBLE_NOTE =
-  "Tab to each control; never click it. :focus-visible survives a click on an already-focused element, so a click-driven reading shows a ring the spec withholds. Four rules draw a ring — the button's, the tile's two, and the language toggle's own — so the toggle is on this board and on no other.";
+  "Tab to each control; never click it. :focus-visible survives a click on an already-focused element, so a click-driven reading shows a ring the spec withholds. One global rule draws the ring on every focused control, and the reward tile has one of its own. The language toggle is mounted on this board, and on no other board, so a ring is read on a control that is not a button or a tile.";
 
 const DISABLED_NOTE =
-  "Every control here is disabled: flat, hairline outline, and resting 4px low so that becoming available reads as a rise (11d). It is a comparison against the enabled board, not a reading on its own.";
+  "Every control here is disabled: flat at 45% opacity, with no offset and no outline of its own. It is a comparison against the enabled board, not a reading on its own.";
 
 const REDUCED_MOTION_NOTE =
   "Read every element below under prefers-reduced-motion: reduce AND under normal. global.css neutralises animation and transition durations with !important, so the reduce reading alone cannot tell a wired animation from an unwired one — only the pair can. Animations: the ladder's top tier and the crack that takes its dust with it. Transitions: the button and the tile beneath them.";

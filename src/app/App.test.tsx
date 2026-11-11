@@ -522,7 +522,7 @@ describe("Puzzle", () => {
     await playRows(user, PUZZLE_SAMPLE_PAR_LINE);
     expect(await screen.findByRole("heading", { name: /Made par/ })).toBeInTheDocument();
     expect(hudField("Par")).toBe("7");
-    // The table was played to its end, so no terminal equation is shown.
+    // Game over never shows a terminal equation; this table was also played to its end.
     expect(screen.getByText("All eight rows played.")).toBeInTheDocument();
     expect(screen.queryByText("3 × 4 =")).not.toBeInTheDocument();
   });

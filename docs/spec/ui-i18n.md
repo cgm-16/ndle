@@ -28,7 +28,7 @@ satisfy.
 - **A tier's figures are the tile's maximum size, not a fixed size.** The rack is sized from its container rather than from the viewport, and scales down toward the `44 × 44` target minimum when the container is narrower than the tier's natural width. At every width where the tier already fits, the rendered size is exactly the figure above.
 - **The target minimum is a floor, and it outranks the layout.** A tile is a control, so below the content width where five tiles at `44` plus their gaps no longer fit — about `276px` once the arena's padding is counted — the rack stops shrinking and the page scrolls instead. The `320px` rule below is silent under `320px`, while the target minimum has no lower bound, so that is the order they resolve in.
 - **This is what the `320px` no-horizontal-scroll rule requires, because a boundary cannot carry it.** A `min-width` query matches the scrollbar-*inclusive* viewport while the content box excludes it, so wherever scrollbars take layout width every tier fires about `15px` early. Scaling within the tier fixes it, and the target minimum bounds how far.
-- **Known misses, owned by the second plan (M16):** the feedback and overflow states overflow `660` with the bar counted, and two states fail the focus-ring reach. `KNOWN_MISSES` in `e2e/fit.spec.ts` lists them, and each layout task removes its keys. Until then these states are the only exceptions to the first rule of this list.
+- **Known misses, owned by M17 (T114, T115):** the feedback and overflow states overflow `660` with the bar counted, and `overflow-required-1` fails the focus-ring reach. `KNOWN_MISSES` in `e2e/fit.spec.ts` lists them, and each layout task removes its keys. Until then these states are the only exceptions to the first rule of this list.
 
 **Phases**
 
@@ -38,11 +38,11 @@ satisfy.
 - **Game over.** One `h1` holds the verdict, **Made par** (`gameOver.parTitle`) or `{short} short of par` (`gameOver.shortTitle`), in text; a Daily's `gameOver.dailyNumber` is the first line inside it, so heading navigation reads "Table #12, Made par". Top to bottom:
   1. the heading, then the reason: `gameOver.tableReason` after row 8, else `gameOver.reason`. The equation the run stopped on is not drawn; after an early end, `gameOver.reason` says why and the row marks show where the run stopped;
   2. the score as `7 / 8`, then Par and Longest streak (within the table) as two cards;
-  3. the row marks, an `ol` named `gameOver.rowsLabel` with one item per row: answered (chalk, the correct mark), missed (pink outline, ✗) or unplayed (dashed outline, no mark). Each item is labelled by `gameOver.rowMark` with `ledger.answered`, `ledger.missed` or `gameOver.unplayed`. The correct mark is ✓ in English and ○ in Korean, from the `Mark` component;
+  3. the row marks, an `ol` named `gameOver.rowsLabel` with one item per row: answered (chalk, the correct mark), missed (pink outline, ✗) or unplayed (dashed outline, no mark). Each item holds `gameOver.rowMark` as visually hidden text, with `ledger.answered`, `ledger.missed` or `gameOver.unplayed`. The correct mark is ✓ in English and ○ in Korean, from the `Mark` component;
   4. a Daily's `gameOver.nextTable`;
   5. the share preview: `gameOver.shareText`, then exactly the text Share sends, which never names a row;
   6. Share and Copy Result side by side, then a Daily's **Practice** or a Practice run's **Play Again** with its `R` hint, then the status line.
-  - **Daily** also shows `gameOver.dailyNumber` and `gameOver.nextTable`, and a **Practice** button. It has no Play Again, and `R` does nothing.
+  - **Daily** has a **Practice** button, no Play Again, and `R` does nothing.
   - **Practice** shows **Play Again** with its `R` hint, which deals a new table.
 
 **Material and colour**
@@ -89,7 +89,7 @@ satisfy.
 | `oz-slide-off` | The marked tile sliding off the table on a discard (`8c`) |
 | `oz-perch-drop` | The perched tile dropping into the freed socket (`8a·2`) |
 | `oz-slot-arrive` | A tile arriving in its answer slot (`9b`) |
-| `oz-rise-ready` | A resting offset on a disabled action; defined and unused, because the rise is a transition (`11d`) |
+| `oz-rise-ready` | A resting offset on a disabled action; defined and unused, because a disabled action is flat at 45% opacity |
 
 - Respect `prefers-reduced-motion` by removing nonessential motion wholesale, including press offsets.
 - No audio.
@@ -109,8 +109,7 @@ satisfy.
 ### 1.14 Required copy
 
 The implementation may improve punctuation but may not change rule meaning.
-Every string lives in `src/i18n/messages.ts`, in both languages. The copy is
-placeholder until the identity.
+Every string lives in `src/i18n/messages.ts`, in both languages. This is the copy as the identity ships it.
 
 | Key | English | Korean |
 |---|---|---|

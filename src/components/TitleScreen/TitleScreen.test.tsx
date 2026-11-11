@@ -65,7 +65,10 @@ describe("TitleScreen", () => {
     const m = messages[language].title;
     expect(screen.getByRole("heading", { level: 1, name: "9dle 구들" })).toBeVisible();
     expect(screen.getByText(m.tagline)).toBeVisible();
-    const steps = within(screen.getAllByRole("list")[0]).getAllByRole("listitem");
+    const list = screen.getAllByRole("list")[0];
+    // WebKit strips an unstyled list's role, so the attribute is explicit.
+    expect(list).toHaveAttribute("role", "list");
+    const steps = within(list).getAllByRole("listitem");
     expect(steps.map((step) => step.textContent)).toEqual([
       `1${m.how1}`,
       `2${m.how2}`,

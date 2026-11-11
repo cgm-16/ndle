@@ -4,7 +4,7 @@ import styles from "./ActionButton.module.css";
 export type ActionButtonVariant = "primary" | "secondary" | "ghost";
 
 export interface ActionButtonProps {
-  /** Sentence-case label: "Play again", "Next round". */
+  /** Sentence-case label: "Play Again", "Next Round". */
   children: ReactNode;
   /** Default "primary". */
   variant?: ActionButtonVariant;
@@ -12,7 +12,7 @@ export interface ActionButtonProps {
   disabled?: boolean;
   onClick?: () => void;
   style?: CSSProperties;
-  /** Appended after the button's own classes, so a screen can set its buttons' height and type size. */
+  /** A screen's rule overrides the button's own (height, type size) because the screen's module stylesheet is emitted after ActionButton.module.css, at equal specificity. */
   className?: string;
 }
 

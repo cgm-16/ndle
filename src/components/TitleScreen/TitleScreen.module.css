@@ -3,8 +3,14 @@
   flex-direction: column;
   justify-content: space-between;
   gap: var(--space-4);
+
+  /* Fills the frame, so space-between puts the buttons at its foot. */
+  flex: 1;
+  width: 100%;
   max-width: var(--arena-max-width);
   margin: 0 auto;
+
+  /* The 16px side padding stands in for the frame gutter that T114 adds. */
   padding: var(--space-6) var(--space-4) var(--space-2);
 }
 
@@ -74,6 +80,10 @@
   font-size: var(--type-body);
   font-weight: var(--weight-bold);
   color: var(--text-primary);
+  min-height: var(--target-min);
+
+  /* Centres a one-line label in the 44px floor. */
+  padding-block: calc((var(--target-min) - 1lh) / 2);
 }
 
 .rules {

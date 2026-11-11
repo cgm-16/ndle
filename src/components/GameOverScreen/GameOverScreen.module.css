@@ -2,8 +2,11 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  width: 100%;
   max-width: var(--arena-max-width);
   margin: 0 auto;
+
+  /* The 16px side padding stands in for the frame gutter that T114 adds. */
   padding: var(--space-2) var(--space-4);
   text-align: center;
 }
@@ -16,12 +19,12 @@
 /* The Daily number leads the heading on a line of its own. */
 .number {
   display: block;
-  font-size: 15px;
+  font-size: var(--type-hud);
   color: var(--text-meta);
 }
 
 .reason {
-  font-size: 14px;
+  font-size: var(--type-secondary);
   color: var(--text-meta);
 }
 
@@ -42,11 +45,11 @@
   height: 52px;
   padding: 0 var(--space-3);
   border-radius: var(--radius-sm);
-  background: var(--raised);
+  background: var(--surface-raised);
 }
 
 .card dt {
-  font-size: 13px;
+  font-size: var(--type-label);
   color: var(--text-meta);
 }
 
@@ -62,6 +65,7 @@
 }
 
 .mark {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -70,9 +74,19 @@
   font-size: 18px;
 }
 
+/* The row's words, for assistive tech only: the same clip pattern as the ledger's. */
+.markLabel {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .answered {
-  background: var(--chalk);
-  color: var(--slate);
+  background: var(--surface-tile);
+  color: var(--text-on-tile);
 }
 
 .missed {
@@ -81,16 +95,16 @@
 }
 
 .unplayed {
-  border: 1.5px dashed var(--socket);
+  border: 1.5px dashed var(--border-slot-empty);
 }
 
 .nextTable {
-  font-size: 15px;
+  font-size: var(--type-hud);
   color: var(--text-meta);
 }
 
 .previewLabel {
-  font-size: 12px;
+  font-size: var(--type-small);
   color: var(--text-meta);
 }
 
@@ -98,8 +112,8 @@
 .preview {
   padding: 8px 10px;
   border-radius: var(--radius-sm);
-  background: var(--raised);
-  font-size: 13px;
+  background: var(--surface-raised);
+  font-size: var(--type-label);
   line-height: 18px;
   white-space: pre-line;
 }
@@ -120,21 +134,21 @@
 }
 
 .share {
-  font-size: 17px;
+  font-size: var(--type-row);
 }
 
 .copy,
 .last {
-  font-size: 16px;
+  font-size: var(--type-body);
 }
 
 .restartHint {
-  font-size: 13px;
+  font-size: var(--type-label);
   color: var(--text-meta);
 }
 
 .status {
   height: 18px;
-  font-size: 14px;
+  font-size: var(--type-secondary);
   color: var(--text-meta);
 }

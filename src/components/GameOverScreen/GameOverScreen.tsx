@@ -79,14 +79,20 @@ export function GameOverScreen({
           <dd>{stats.longestStreak}</dd>
         </div>
       </dl>
-      <ol className={styles.marks} aria-label={t("gameOver.rowsLabel")}>
+      <ol
+        className={styles.marks}
+        aria-label={t("gameOver.rowsLabel")}
+        // WebKit strips list semantics from unstyled lists, and the label with them.
+        role="list"
+      >
         {Array.from({ length: PUZZLE_ROWS }, (_, index) => {
           const result = rowResults[index];
           const word =
             result === undefined ? t("gameOver.unplayed") : result === "correct" ? t("ledger.answered") : t("ledger.missed");
           const look = result === undefined ? styles.unplayed : result === "correct" ? styles.answered : styles.missed;
           return (
-            <li key={index} className={`${styles.mark} ${look}`} aria-label={t("gameOver.rowMark", { row: index + 1, result: word })}>
+            <li key={index} className={`${styles.mark} ${look}`}>
+              <span className={styles.markLabel}>{t("gameOver.rowMark", { row: index + 1, result: word })}</span>
               {result !== undefined && <Mark result={result} />}
             </li>
           );
