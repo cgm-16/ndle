@@ -42,16 +42,18 @@ function renderApp(
     strictMode?: boolean;
     dealPuzzle?: () => PuzzleTable;
     now?: Date;
+    storage?: Pick<Storage, "getItem" | "setItem">;
+    dailyTables?: readonly PuzzleTable[];
   } = {},
 ) {
-  const storage = new MemoryStorage();
+  const storage = options.storage ?? new MemoryStorage();
   const dependencies: AppDependencies = {
     nextTileId: sequentialIds(),
     gameUrl: options.gameUrl ?? "https://example.test/",
     dealPuzzle: vi.fn(options.dealPuzzle ?? (() => PUZZLE_SAMPLE)),
     now: () => options.now ?? dayAfterLaunch(2),
     dailyStore: createDailyStore(storage),
-    dailyTables: [PUZZLE_SAMPLE, PUZZLE_SAMPLE, PUZZLE_SAMPLE],
+    dailyTables: options.dailyTables ?? [PUZZLE_SAMPLE, PUZZLE_SAMPLE, PUZZLE_SAMPLE],
   };
   const shareDependencies = makeShareDependencies();
   const tree = (
@@ -93,11 +95,18 @@ const LOSS_ROWS: PuzzleMove[] = [
   { spend: [4] }, //    "4"  != 9
 ];
 
-// Plays rows by pointer, each advanced by Next Round.
+// Plays rows by pointer. A row without a discard is advanced by Next Round; a
+// discard advances on its own once its departure has played.
 async function playRows(user: ReturnType<typeof userEvent.setup>, moves: PuzzleMove[]) {
-  for (const { spend } of moves) {
+  for (const { spend, discard } of moves) {
     await press(user, spend);
-    await user.click(screen.getByRole("button", { name: "Next Round" }));
+    if (discard === undefined) {
+      await user.click(screen.getByRole("button", { name: "Next Round" }));
+    } else {
+      // A reward tile is named "Digit 0, New tile", so the digit is matched as a prefix.
+      await user.click(screen.getAllByRole("button", { name: new RegExp(`^Digit ${discard}\\b`) })[0]!);
+      finishDeparture();
+    }
   }
 }
 
@@ -486,20 +495,234 @@ describe("Puzzle", () => {
     const user = userEvent.setup();
     renderApp();
     await startPuzzle(user);
-    for (const move of PUZZLE_SAMPLE_PAR_LINE) {
-      await press(user, move.spend);
-      if (move.discard === undefined) {
-        await user.click(screen.getByRole("button", { name: "Next Round" }));
-      } else {
-        // A reward tile is named "Digit 0, New tile", so the digit is matched as a prefix.
-        await user.click(screen.getAllByRole("button", { name: new RegExp(`^Digit ${move.discard}\\b`) })[0]!);
-        finishDeparture();
-      }
-    }
+    await playRows(user, PUZZLE_SAMPLE_PAR_LINE);
     expect(await screen.findByRole("heading", { name: "Made par" })).toBeInTheDocument();
     expect(hudField("Par")).toBe("7");
     // The table was played to its end, so no terminal equation is shown.
     expect(screen.getByText("All eight rows played.")).toBeInTheDocument();
     expect(screen.queryByText("3 × 4 =")).not.toBeInTheDocument();
+  });
+});
+
+// The Daily's tests: one table, #1 on launch day, under StrictMode.
+function renderDaily(options: Parameters<typeof renderApp>[0] = {}) {
+  return renderApp({ strictMode: true, dailyTables: [PUZZLE_SAMPLE], now: dayAfterLaunch(0), ...options });
+}
+
+function storedDaily(storage: Pick<Storage, "getItem">): unknown {
+  return JSON.parse(storage.getItem("ndle.daily") ?? "null");
+}
+
+const dailyRecordOf = (moves: PuzzleMove[], outcome: unknown = null) => ({ version: 1, number: 1, moves, outcome });
+
+async function openDaily(user: ReturnType<typeof userEvent.setup>, label = "Daily #1") {
+  await user.click(screen.getByRole("button", { name: label }));
+}
+
+// Row 2 of the par line, after row 1's sacrifice left 1 4 9.
+function expectRowTwo() {
+  expect(screen.getByText("7 × 2 =")).toBeInTheDocument();
+  expect(hudField("Round")).toBe("2");
+  expect(screen.getAllByRole("button", { name: /^Digit \d$/ }).map((tile) => tile.textContent)).toEqual(["1", "4", "9"]);
+}
+
+describe("Daily", () => {
+  it("starts today's table from the title and saves an empty record", async () => {
+    const user = userEvent.setup();
+    const { storage } = renderDaily();
+    await openDaily(user);
+    expect(screen.getByText("3 × 5 =")).toBeInTheDocument();
+    expect(hudField("Round")).toBe("1");
+    expect(storedDaily(storage)).toEqual(dailyRecordOf([]));
+  });
+
+  it("saves each move once under StrictMode", async () => {
+    const user = userEvent.setup();
+    const storage = new MemoryStorage();
+    const setItem = vi.spyOn(storage, "setItem");
+    renderDaily({ storage });
+    await openDaily(user);
+    await playRows(user, PUZZLE_SAMPLE_PAR_LINE.slice(0, 3));
+    expect(storedDaily(storage)).toEqual(dailyRecordOf(PUZZLE_SAMPLE_PAR_LINE.slice(0, 3)));
+    // The opening's empty record, then one save per move.
+    expect(setItem.mock.calls.filter(([key]) => key === "ndle.daily")).toHaveLength(4);
+  });
+
+  it("resumes mid-table after a remount", async () => {
+    const user = userEvent.setup();
+    const first = renderDaily();
+    await openDaily(user);
+    await playRows(user, PUZZLE_SAMPLE_PAR_LINE.slice(0, 1));
+    first.unmount();
+
+    // A new App with its own fresh ids, as after a page reload.
+    renderDaily({ storage: first.storage });
+    await openDaily(user);
+    expectRowTwo();
+    // Review Focus 1: a replay that restarted its own ids would pay row 2 with
+    // an id the hand's 9 already holds, and the reducer would refuse it.
+    await press(user, [1, 4]);
+    expect(screen.getByRole("status")).toHaveTextContent("Correct");
+    expect(hudField("Score")).toBe("1");
+  });
+
+  it("records a Daily played by keyboard alone", async () => {
+    const user = userEvent.setup();
+    const { storage } = renderDaily();
+    await openDaily(user);
+    for (const { spend } of PUZZLE_SAMPLE_PAR_LINE.slice(0, 3)) {
+      for (const digit of spend) await user.keyboard(String(digit));
+      await user.keyboard("{Enter}"); // submit
+      await user.keyboard("{Enter}"); // next round
+    }
+    await user.keyboard("7");
+    await user.keyboard("{Enter}");
+    expect(screen.getByText("Choose a tile to discard.")).toBeInTheDocument();
+    await user.keyboard("6"); // the discard, by digit
+    expect(storedDaily(storage)).toEqual(dailyRecordOf(PUZZLE_SAMPLE_PAR_LINE.slice(0, 4)));
+  });
+
+  it("resumes into the discard after a reload between submit and discard", async () => {
+    const user = userEvent.setup();
+    const first = renderDaily();
+    await openDaily(user);
+    await playRows(user, PUZZLE_SAMPLE_PAR_LINE.slice(0, 3));
+    await press(user, [7]); // row 4's answer: six tiles, so a discard is owed
+    first.unmount();
+
+    renderDaily({ storage: first.storage });
+    await openDaily(user);
+    expect(screen.getByText("Choose a tile to discard.")).toBeInTheDocument();
+    expect(hudField("Round")).toBe("4");
+    await user.click(screen.getByRole("button", { name: "Digit 6" }));
+    finishDeparture();
+    expect(screen.getByText("4 × 1 =")).toBeInTheDocument();
+    expect(storedDaily(first.storage)).toEqual(dailyRecordOf(PUZZLE_SAMPLE_PAR_LINE.slice(0, 4)));
+  });
+
+  it("shows the result after a finished Daily, and the next table the next day", async () => {
+    const user = userEvent.setup();
+    const first = renderDaily();
+    await openDaily(user);
+    await playRows(user, PUZZLE_SAMPLE_PAR_LINE);
+    expect(await screen.findByRole("heading", { name: "Made par" })).toBeInTheDocument();
+    expect(storedDaily(first.storage)).toEqual(
+      dailyRecordOf(PUZZLE_SAMPLE_PAR_LINE, { score: 7, par: 7, longestStreak: 7 }),
+    );
+    first.unmount();
+
+    const second = renderDaily({ storage: first.storage });
+    await openDaily(user, "Today's result #1");
+    expect(screen.getByRole("heading", { name: "Made par" })).toBeInTheDocument();
+
+    // The stub holds one table, so the day after has none.
+    second.dependencies.now = () => dayAfterLaunch(1);
+    await user.click(screen.getByRole("button", { name: "Back" }));
+    expect(screen.getByRole("button", { name: "No table today" })).toBeDisabled();
+  });
+
+  it("cannot restart a Daily", async () => {
+    const user = userEvent.setup();
+    const { dependencies, storage } = renderDaily();
+    await openDaily(user);
+    await playRows(user, LOSS_ROWS);
+    expect(screen.getByRole("heading", { name: "7 short of par" })).toBeInTheDocument();
+    const record = storage.getItem("ndle.daily");
+
+    await user.keyboard("r");
+    expect(screen.getByRole("heading", { name: "7 short of par" })).toBeInTheDocument();
+    expect(hudField("Score")).toBe("0 / 8");
+
+    // T108 removes Play Again from a Daily; until then it restarts nothing.
+    await user.click(screen.getByRole("button", { name: "Play Again" }));
+    expect(screen.getByRole("heading", { name: "7 short of par" })).toBeInTheDocument();
+    expect(hudField("Score")).toBe("0 / 8");
+
+    expect(dependencies.dealPuzzle).not.toHaveBeenCalled();
+    expect(storage.getItem("ndle.daily")).toBe(record);
+  });
+
+  it("ignores a corrupt record and starts fresh", async () => {
+    const user = userEvent.setup();
+    const storage = new MemoryStorage();
+    // It parses, but the hand holds no 3, so it cannot replay.
+    storage.setItem("ndle.daily", JSON.stringify(dailyRecordOf([{ spend: [3, 3] }])));
+    renderDaily({ storage });
+    await openDaily(user);
+    expect(screen.getByText("3 × 5 =")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /^Digit \d$/ })).toHaveLength(5);
+    expect(storedDaily(storage)).toEqual(dailyRecordOf([]));
+  });
+
+  it("keeps the run's number when the clock passes midnight", async () => {
+    const user = userEvent.setup();
+    const { dependencies, storage } = renderDaily();
+    await openDaily(user);
+    await playRows(user, PUZZLE_SAMPLE_PAR_LINE.slice(0, 1));
+    dependencies.now = () => dayAfterLaunch(1);
+    await playRows(user, PUZZLE_SAMPLE_PAR_LINE.slice(1, 2));
+    expect(storedDaily(storage)).toEqual(dailyRecordOf(PUZZLE_SAMPLE_PAR_LINE.slice(0, 2)));
+  });
+
+  it("resumes after Back mid-Daily", async () => {
+    const user = userEvent.setup();
+    const { dependencies, storage } = renderDaily();
+    await openDaily(user);
+    await playRows(user, PUZZLE_SAMPLE_PAR_LINE.slice(0, 1));
+    await user.click(screen.getByRole("button", { name: "Back" }));
+    expect(screen.getByRole("button", { name: "Daily #1" })).toBeEnabled();
+    expect(storedDaily(storage)).toEqual(dailyRecordOf(PUZZLE_SAMPLE_PAR_LINE.slice(0, 1)));
+
+    // Fresh ids for the new run, so a replay that restarted its own would collide.
+    dependencies.nextTileId = sequentialIds();
+    await openDaily(user);
+    expectRowTwo();
+    await press(user, [1, 4]);
+    expect(screen.getByRole("status")).toHaveTextContent("Correct");
+    expect(hudField("Score")).toBe("1");
+  });
+
+  it("writes no record when Practice is left by Back", async () => {
+    const user = userEvent.setup();
+    const { storage } = renderDaily();
+    await user.click(screen.getByRole("button", { name: "Practice" }));
+    await playRows(user, PUZZLE_SAMPLE_PAR_LINE.slice(0, 2));
+    await user.click(screen.getByRole("button", { name: "Back" }));
+    expect(storage.getItem("ndle.daily")).toBeNull();
+  });
+
+  it("keeps Practice moves out of a Daily left by Back", async () => {
+    const user = userEvent.setup();
+    const { storage } = renderDaily();
+    await openDaily(user);
+    await playRows(user, PUZZLE_SAMPLE_PAR_LINE.slice(0, 1));
+    await user.click(screen.getByRole("button", { name: "Back" }));
+    await user.click(screen.getByRole("button", { name: "Practice" }));
+    await playRows(user, PUZZLE_SAMPLE_PAR_LINE.slice(0, 1));
+    expect(storedDaily(storage)).toEqual(dailyRecordOf(PUZZLE_SAMPLE_PAR_LINE.slice(0, 1)));
+  });
+
+  it("records no move the reducer refuses", async () => {
+    const user = userEvent.setup();
+    const { dependencies, storage } = renderDaily();
+    // Ids that wrap after the opening hand, so row 1's pay reuses a held id and
+    // the reducer refuses the correct answer.
+    let index = 0;
+    dependencies.nextTileId = () => `tile-${index++ % 5}`;
+    await openDaily(user);
+    await press(user, [1, 5]); // 15, correct
+    expect(screen.getByRole("button", { name: "Submit" })).toBeInTheDocument();
+    expect(hudField("Score")).toBe("0");
+    expect(storedDaily(storage)).toEqual(dailyRecordOf([]));
+  });
+
+  it("stores only the language and today's daily", async () => {
+    const user = userEvent.setup();
+    renderDaily({ storage: localStorage });
+    await openDaily(user);
+    await playRows(user, PUZZLE_SAMPLE_PAR_LINE);
+    expect(await screen.findByRole("heading", { name: "Made par" })).toBeInTheDocument();
+    expect(localStorage.getItem("ndle.daily")).not.toBeNull();
+    expect(["ndle.language", "ndle.daily"]).toEqual(expect.arrayContaining(Object.keys(localStorage)));
   });
 });

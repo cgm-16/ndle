@@ -1,15 +1,16 @@
-import { useCallback, useEffect, useReducer } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { ActionButton } from "../components/ActionButton/ActionButton";
 import { GameOverScreen } from "../components/GameOverScreen/GameOverScreen";
 import { GameScreen } from "../components/GameScreen/GameScreen";
 import { LanguageToggle } from "../components/LanguageToggle/LanguageToggle";
 import { TitleScreen, type DailyEntry } from "../components/TitleScreen/TitleScreen";
-import { createPuzzleStart, createTiles, createTitleState } from "../game/factories";
+import { createPuzzleStart, createTitleState } from "../game/factories";
 import { gameReducer } from "../game/gameReducer";
-import { answerMatches, isRunComplete } from "../game/selectors";
+import { createSubmit, replayMoves } from "../game/replay";
+import { isRunComplete } from "../game/selectors";
 import { todaysDaily } from "../game/dailyTables";
-import type { PuzzleTable, TileIdFactory } from "../game/types";
-import type { DailyStore } from "../services/dailyStorage";
+import type { GameAction, PuzzleMove, PuzzleTable, TileIdFactory } from "../game/types";
+import type { DailyRecord, DailyStore } from "../services/dailyStorage";
 import { useI18n } from "../i18n/I18nContext";
 import { getShareStats, type ShareDependencies } from "../services/sharing";
 import styles from "./App.module.css";
@@ -38,46 +39,104 @@ export interface AppProps {
   shareDependencies: ShareDependencies;
 }
 
+type Play = { kind: "daily"; number: number } | { kind: "practice" };
+
 export function App({ dependencies, shareDependencies }: AppProps) {
   const { t } = useI18n();
   const [state, dispatch] = useReducer(gameReducer, undefined, createTitleState);
+  const [play, setPlay] = useState<Play>({ kind: "practice" });
+  // The Daily's record as last saved. Only event handlers and the outcome
+  // effect write it, never render or the reducer, so StrictMode saves each
+  // move once.
+  const dailyRecord = useRef<DailyRecord | null>(null);
 
   const handlePractice = useCallback(() => {
     dispatch(createPuzzleStart(dependencies.dealPuzzle(), dependencies.nextTileId));
+    setPlay({ kind: "practice" });
   }, [dependencies]);
 
-  // T107 starts the Daily here.
-  const handleDaily = useCallback(() => {}, []);
+  const handleDaily = useCallback(() => {
+    const { now, dailyTables, dailyStore, nextTileId } = dependencies;
+    const today = todaysDaily(now(), dailyTables);
+    // The title disables Daily when there is no table, so this only guards the type.
+    if (today === null) return;
+    const record = dailyStore.load();
+    const replay = record?.number === today.number ? replayMoves(today.table, record.moves, nextTileId) : null;
+    if (record !== null && replay !== null) {
+      // The replay drew its ids from nextTileId, so live play continues past them.
+      for (const action of replay.actions) dispatch(action);
+      dailyRecord.current = record;
+    } else {
+      // No record of today, or one that fails to replay: the day starts fresh
+      // and overwrites it.
+      dispatch(createPuzzleStart(today.table, nextTileId));
+      dailyRecord.current = { version: 1, number: today.number, moves: [], outcome: null };
+      dailyStore.save(dailyRecord.current);
+    }
+    setPlay({ kind: "daily", number: today.number });
+  }, [dependencies]);
 
   const handleBack = useCallback(() => dispatch({ type: "RETURN_TO_TITLE" }), []);
 
   const handleRestart = useCallback(() => {
+    // A Daily gets one attempt: Play Again does not start it over, and its R
+    // listener is off.
+    if (play.kind === "daily") return;
     dispatch({ ...createPuzzleStart(dependencies.dealPuzzle(), dependencies.nextTileId), type: "RESTART_RUN" });
-  }, [dependencies]);
+  }, [dependencies, play]);
+
+  // Dispatches a move's action. In a Daily it first records the move, but only
+  // if the reducer accepts the action: a record that fails to replay would
+  // restart the day.
+  const playMove = useCallback(
+    (action: GameAction, record: (moves: PuzzleMove[]) => PuzzleMove[]) => {
+      const daily = dailyRecord.current;
+      if (play.kind === "daily" && daily !== null && gameReducer(state, action) !== state) {
+        dailyRecord.current = { ...daily, moves: record(daily.moves) };
+        dependencies.dailyStore.save(dailyRecord.current);
+      }
+      dispatch(action);
+    },
+    [play, state, dependencies],
+  );
 
   const handleSubmit = useCallback(() => {
-    // Reducer invariant (§2.5): table and equation are null only in `title`,
-    // and Submit only renders in `answering`, so this only guards the type.
-    if (state.equation === null || state.table === null) return;
-    if (answerMatches(state.selectedTiles, state.equation.product)) {
-      // A row pays the tiles printed on it.
-      const rewardTiles = createTiles(state.table.rows[state.round - 1].pay, dependencies.nextTileId);
-      dispatch({ type: "SUBMIT_CORRECT", rewardTiles });
-    } else {
-      dispatch({ type: "SUBMIT_INCORRECT" });
-    }
-  }, [
-    state.equation,
-    state.selectedTiles,
-    state.table,
-    state.round,
-    dependencies,
-  ]);
+    const action = createSubmit(state, dependencies.nextTileId);
+    // Submit only renders in `answering`, which always has a current row, so
+    // this only guards the type.
+    if (action === null) return;
+    playMove(action, (moves) => [...moves, { spend: state.selectedTiles.map((tile) => tile.digit) }]);
+  }, [state, dependencies, playMove]);
+
+  // GameScreen's taps and keys both reach the reducer through this, so a
+  // discard is recorded however it was made.
+  const handleGameAction = useCallback(
+    (action: GameAction) => {
+      const tile = action.type === "TOGGLE_DISCARD" ? state.inventory.find((item) => item.id === action.tileId) : undefined;
+      if (tile === undefined) {
+        dispatch(action);
+        return;
+      }
+      // The reducer takes a discard only in overflow, which the move's submit opened.
+      playMove(action, (moves) => [...moves.slice(0, -1), { ...moves[moves.length - 1], discard: tile.digit }]);
+    },
+    [state.inventory, playMove],
+  );
 
   // The reducer reads the next row from the table, and ends the run past its last.
   const handleNextRound = useCallback(() => dispatch({ type: "NEXT_ROUND" }), []);
 
-  // §1.11: gameOver restarts the run on R, equivalent to Play Again. Enter has
+  // A finished Daily saves its outcome. The write is idempotent, so a second
+  // run of the effect under StrictMode changes nothing.
+  useEffect(() => {
+    const daily = dailyRecord.current;
+    if (state.phase !== "gameOver" || play.kind !== "daily" || daily === null) return;
+    const { score, par, longestStreak } = getShareStats(state);
+    dailyRecord.current = { ...daily, outcome: { score, par, longestStreak } };
+    dependencies.dailyStore.save(dailyRecord.current);
+  }, [state, play, dependencies]);
+
+  // §1.11: gameOver restarts a Practice run on R, as Play Again does. Enter has
   // no global shortcut in this phase — it destroyed the score screen with the
   // tap already in flight from the Submit/Enter rhythm that reached it — and R
   // activates no button, so this needs no focus guard. useGameKeyboard
@@ -86,7 +145,7 @@ export function App({ dependencies, shareDependencies }: AppProps) {
   // buttons keep ordinary browser behavior), so gameOver needs its own
   // listener here.
   useEffect(() => {
-    if (state.phase !== "gameOver") return;
+    if (state.phase !== "gameOver" || play.kind === "daily") return;
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.metaKey || event.ctrlKey || event.altKey) return;
@@ -102,7 +161,7 @@ export function App({ dependencies, shareDependencies }: AppProps) {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [state.phase, handleRestart]);
+  }, [state.phase, play.kind, handleRestart]);
 
   return (
     <div className={styles.app}>
@@ -128,7 +187,7 @@ export function App({ dependencies, shareDependencies }: AppProps) {
       {(state.phase === "answering" || state.phase === "feedback" || state.phase === "overflow") && (
         <GameScreen
           state={state}
-          dispatch={dispatch}
+          dispatch={handleGameAction}
           onSubmit={handleSubmit}
           onNextRound={handleNextRound}
         />

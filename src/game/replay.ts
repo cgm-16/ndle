@@ -35,18 +35,28 @@ function dispatchOnDigit(
   return tile !== undefined && dispatch(replay, { type, tileId: tile.id });
 }
 
+// The submit for the current selection, which App and the replay both play: a
+// correct answer is paid the tiles printed on its row. Null with no current row.
+export function createSubmit(state: GameState, nextTileId: TileIdFactory): GameAction | null {
+  const row = state.table?.rows[state.round - 1];
+  if (row === undefined) return null;
+  return answerMatches(state.selectedTiles, row.equation.product)
+    ? { type: "SUBMIT_CORRECT", rewardTiles: createTiles(row.pay, nextTileId) }
+    : { type: "SUBMIT_INCORRECT" };
+}
+
 // One move as App plays it: select, submit with the current row's pay, then
 // discard when asked. It stops before the advance. False means the hand or the
 // reducer refused a step.
 export function applyMove(replay: Replay, move: PuzzleMove, nextTileId: TileIdFactory): boolean {
-  const row = replay.state.table?.rows[replay.state.round - 1];
-  if (row === undefined) return false;
   if (!move.spend.every((digit) => dispatchOnDigit(replay, "SELECT_TILE", digit))) return false;
-  const submitted = answerMatches(replay.state.selectedTiles, row.equation.product)
-    ? dispatch(replay, { type: "SUBMIT_CORRECT", rewardTiles: createTiles(row.pay, nextTileId) })
-    : dispatch(replay, { type: "SUBMIT_INCORRECT" });
+  const submit = createSubmit(replay.state, nextTileId);
   // A discard outside overflow is refused by the reducer.
-  return submitted && (move.discard === undefined || dispatchOnDigit(replay, "TOGGLE_DISCARD", move.discard));
+  return (
+    submit !== null &&
+    dispatch(replay, submit) &&
+    (move.discard === undefined || dispatchOnDigit(replay, "TOGGLE_DISCARD", move.discard))
+  );
 }
 
 export function replayMoves(
