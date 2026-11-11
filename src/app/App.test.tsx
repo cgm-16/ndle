@@ -216,7 +216,7 @@ describe("App", () => {
     const user = userEvent.setup();
     renderApp({ initialLanguage: "en" });
 
-    expect(screen.getByRole("heading", { name: "9dle" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "9dle 구들" })).toBeVisible();
     expect(screen.queryByText(/×/)).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Practice" }));
@@ -468,7 +468,7 @@ describe("App", () => {
 
     renderApp(); // fresh mount: I18nProvider re-reads storage; App starts a new reducer
 
-    expect(screen.getByRole("heading", { name: "구들" })).toBeInTheDocument(); // back to title
+    expect(screen.getByRole("heading", { name: "9dle 구들" })).toBeInTheDocument(); // back to title
     expect(screen.getByRole("button", { name: "연습" })).toBeInTheDocument(); // language persisted
   });
 });

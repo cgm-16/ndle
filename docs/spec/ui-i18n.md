@@ -114,6 +114,11 @@ placeholder until the identity.
 | `title.dailyPlayed` | `Today's result #{number}` | `오늘의 결과 #{number}` |
 | `title.dailyNone` | `No table today` | `오늘은 판이 없습니다` |
 | `title.practice` | `Practice` | `연습` |
+| `title.tagline` | `A daily multiplication puzzle` | `매일 한 판, 곱셈 퍼즐` |
+| `title.how1` | `Spell each row's answer with tiles from your hand.` | `손에 든 숫자 타일로 각 줄의 답을 만드세요.` |
+| `title.how2` | `A right answer pays the tiles printed on its row. Your hand holds five.` | `맞히면 그 줄에 적힌 타일을 받습니다. 손에는 다섯 개까지 들 수 있습니다.` |
+| `title.how3` | `Par is the best score this table allows. Sometimes the way there is a miss.` | `목표는 이 판에서 낼 수 있는 최고 점수입니다. 때로는 일부러 틀려야 닿습니다.` |
+| `title.note` | `One Daily a day. Practice deals a new table every time.` | `오늘의 판은 하루 한 번. 연습은 매번 새 판을 냅니다.` |
 | `bar.daily` | `#{number}` | `#{number}` |
 | `action.back` | `Back` | `뒤로` |
 | `action.submit` | `Submit` | `제출` |
@@ -155,8 +160,9 @@ placeholder until the identity.
 | `tile.newLabel` | `New tile` | `새 타일` |
 | `tile.discardLabel` | `Marked for discard` | `버릴 타일로 표시됨` |
 
-The title's rule copy (`title.summary` and the `howToPlay.*` keys) states
-Puzzle's rules in both languages, and covers:
+The title's rule copy (`title.how1`–`3`, and under `title.more` the
+`howToPlay.*` topics `selecting`, `slots`, `incorrect`, `overflow`, `progress`
+and `keyboard`) states Puzzle's rules in both languages, and covers:
 
 - selecting and returning tiles;
 - ordered answer slots;
@@ -165,8 +171,8 @@ Puzzle's rules in both languages, and covers:
 - par, score, streak, round, and the end of a table;
 - keyboard controls.
 
-`title.more` labels the disclosure holding the rules beyond the always-visible
-ones.
+`title.more` labels the disclosure holding the rules the three steps do not
+state.
 
 `ledger.row` joins its pay with `Intl.ListFormat` in the current language, so
 no "and" is written in the dictionary.
