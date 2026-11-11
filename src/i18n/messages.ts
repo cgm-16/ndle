@@ -82,6 +82,10 @@ const en = {
     parTitle: "Made par",
     shortTitle: "{short} short of par",
     tableReason: "All eight rows played.",
+    rowsLabel: "Rows",
+    rowMark: "Row {row}: {result}",
+    unplayed: "not played",
+    shareText: "Share text",
   },
   share: {
     copied: "Result copied.",
@@ -173,6 +177,10 @@ const ko = {
     parTitle: "목표 달성",
     shortTitle: "목표까지 {short}점 부족",
     tableReason: "여덟 줄을 모두 풀었습니다.",
+    rowsLabel: "줄별 결과",
+    rowMark: "{row}번째 줄: {result}",
+    unplayed: "풀지 않음",
+    shareText: "공유 문구",
   },
   share: {
     copied: "결과를 복사했습니다.",

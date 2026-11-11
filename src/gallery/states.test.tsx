@@ -147,9 +147,8 @@ describe("gallery catalogue", () => {
   // is what holds it to a table's real 6 against par 7.
   it("shows the Daily's number, and a real line scoring 6 against par 7, on game-over-daily-short", async () => {
     await renderEntry(entryById("game-over-daily-short"));
-    expect(screen.getByText("Table #12")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "1 short of par" })).toBeInTheDocument();
-    expect(screen.getByText("Score").nextElementSibling).toHaveTextContent("6 / 8");
+    expect(screen.getByRole("heading", { name: "Table #12 1 short of par" })).toBeInTheDocument();
+    expect(screen.getByText("6 / 8")).toBeInTheDocument();
   });
 
   // Four rules in the system draw a focus ring, and LanguageToggle's is the

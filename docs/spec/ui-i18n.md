@@ -35,8 +35,14 @@ satisfy.
 - **Answering.** Selecting a tile moves it into the leftmost empty slot; a filled slot returns its tile. Submit is enabled only when every slot is filled (`product.md` §1.4). The remaining rows stay visible in the ledger.
 - **Feedback.** The verdict reads **Correct** or **Incorrect** in text. A correct answer shows the tiles received (`result.rewards`); an incorrect answer shows the submitted and the correct answer (`result.submitted`, `result.answer`). **Next Round** advances; `Enter` does the same.
 - **Overflow.** A correct answer at a full hand leaves one tile on the rail, and the prompt reads `overflow.instructionOne`. Any owned tile can be marked, by click or by digit key. The mark completes the discard, and no confirmation control is rendered. The marked tile leaves the rack, the rail tile takes the freed socket, and the round advances on its own once the discard and the verdict's celebration have both visibly finished.
-- **Game over.** The verdict is **Made par** (`gameOver.parTitle`) or `{short} short of par` (`gameOver.shortTitle`), in text. The screen shows the score as `7 / 8`, Par, and Longest streak (within the table), then Share and Copy Result. After an early end the terminal row stays visible with `gameOver.reason`; after row 8 the line is `gameOver.tableReason`.
-  - **Daily** also shows `gameOver.dailyNumber`, `gameOver.nextTable`, and a **Practice** button. It has no Play Again, and `R` does nothing.
+- **Game over.** One `h1` holds the verdict, **Made par** (`gameOver.parTitle`) or `{short} short of par` (`gameOver.shortTitle`), in text; a Daily's `gameOver.dailyNumber` is the first line inside it, so heading navigation reads "Table #12, Made par". Top to bottom:
+  1. the heading, then the reason: `gameOver.tableReason` after row 8, else `gameOver.reason`. The equation the run stopped on is not drawn; after an early end, `gameOver.reason` says why and the row marks show where the run stopped;
+  2. the score as `7 / 8`, then Par and Longest streak (within the table) as two cards;
+  3. the row marks, an `ol` named `gameOver.rowsLabel` with one item per row: answered (chalk, the correct mark), missed (pink outline, ✗) or unplayed (dashed outline, no mark). Each item is labelled by `gameOver.rowMark` with `ledger.answered`, `ledger.missed` or `gameOver.unplayed`. The correct mark is ✓ in English and ○ in Korean, from the `Mark` component;
+  4. a Daily's `gameOver.nextTable`;
+  5. the share preview: `gameOver.shareText`, then exactly the text Share sends, which never names a row;
+  6. Share and Copy Result side by side, then a Daily's **Practice** or a Practice run's **Play Again** with its `R` hint, then the status line.
+  - **Daily** also shows `gameOver.dailyNumber` and `gameOver.nextTable`, and a **Practice** button. It has no Play Again, and `R` does nothing.
   - **Practice** shows **Play Again** with its `R` hint, which deals a new table.
 
 **Material and colour**
@@ -149,6 +155,10 @@ placeholder until the identity.
 | `gameOver.shortTitle` | `{short} short of par` | `목표까지 {short}점 부족` |
 | `gameOver.tableReason` | `All eight rows played.` | `여덟 줄을 모두 풀었습니다.` |
 | `gameOver.dailyNumber` | `Table #{number}` | `{number}번째 판` |
+| `gameOver.rowsLabel` | `Rows` | `줄별 결과` |
+| `gameOver.rowMark` | `Row {row}: {result}` | `{row}번째 줄: {result}` |
+| `gameOver.unplayed` | `not played` | `풀지 않음` |
+| `gameOver.shareText` | `Share text` | `공유 문구` |
 | `gameOver.nextTable` | `The next table opens at midnight.` | `다음 판은 자정에 열립니다.` |
 | `share.copied` | `Result copied.` | `결과를 복사했습니다.` |
 | `share.failed` | `Could not share or copy the result.` | `결과를 공유하거나 복사하지 못했습니다.` |

@@ -6,7 +6,6 @@ import { TopBar } from "../components/TopBar/TopBar";
 import { createPuzzleStart, createTitleState } from "../game/factories";
 import { gameReducer } from "../game/gameReducer";
 import { createSubmit, replayMoves } from "../game/replay";
-import { isRunComplete } from "../game/selectors";
 import { todaysDaily } from "../game/dailyTables";
 import type { GameAction, PuzzleMove, PuzzleTable, TileIdFactory } from "../game/types";
 import type { DailyRecord, DailyStore } from "../services/dailyStorage";
@@ -205,8 +204,7 @@ export function App({ dependencies, shareDependencies }: AppProps) {
 
       {state.phase === "gameOver" && (
         <GameOverScreen
-          // A table played to its end stopped on no equation.
-          equation={isRunComplete(state) ? null : state.equation}
+          rowResults={state.rowResults}
           stats={getShareStats(state, play)}
           url={dependencies.gameUrl}
           dependencies={shareDependencies}

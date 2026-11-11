@@ -1,145 +1,140 @@
 .screen {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: var(--space-4);
+  gap: var(--space-2);
   max-width: var(--arena-max-width);
   margin: 0 auto;
-  padding: var(--space-8) var(--space-4);
+  padding: var(--space-2) var(--space-4);
   text-align: center;
 }
 
-/* The equation and its reason are one unit. A gap tighter than .screen's
-   keeps the reason reading as a caption on the equation rather than as the
-   first result. */
-.terminal {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-2);
+.title {
+  font: var(--weight-bold) var(--type-prompt) / 1.1 var(--font-ui);
+  color: var(--text-primary);
 }
 
-/* The equation that ended the run is a record, not a prompt. EquationBoard's
-   68px headline steps down to title size in meta ink, so the reason line below
-   supports it instead of rescuing it from reading live. The selector reaches
-   the board's own paragraph — .reason is the sibling that follows it — and at
-   (0,3,1) it beats EquationBoard's (0,1,0) rule whatever the sheet order.
-   A table played to its end has no board, so the reason is the first
-   paragraph: `:not(.reason)` keeps it a caption instead of a second headline. */
-.terminal > p:first-child:not(.reason) {
-  font-size: var(--size-title);
+/* The Daily number leads the heading on a line of its own. */
+.number {
+  display: block;
+  font-size: 15px;
   color: var(--text-meta);
 }
 
 .reason {
-  padding: 0 var(--space-4);
+  font-size: 14px;
   color: var(--text-meta);
-  text-align: center;
 }
 
-/* The verdict is a label, not a headline: the run's numbers below carry the
-   screen's one focal point. Every verdict is either .won or .shortOfPar, which
-   set the colour. */
-.title {
-  font: var(--weight-regular) var(--size-label) / var(--leading-tight) var(--font-ui);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
+.score {
+  font: var(--weight-bold) var(--type-score) / 1.1 var(--font-ui);
 }
 
-/* A win takes the accent, the hue for what was earned: --accent measures
-   9.06:1 on --surface-surround. */
-.title.won {
-  color: var(--accent);
-}
-
-/* A table that fell short of par is a score to read against its par,
-   so it keeps the ink of the figures beneath it. */
-.title.shortOfPar {
-  color: var(--text-primary);
-}
-
-
-.stats {
+.cards {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-6);
+  gap: var(--space-2);
+}
+
+.card {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  height: 52px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--raised);
+}
+
+.card dt {
+  font-size: 13px;
+  color: var(--text-meta);
+}
+
+.card dd {
+  font: var(--weight-bold) var(--type-value) / 1 var(--font-ui);
+}
+
+.marks {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px;
+  list-style: none;
+}
+
+.mark {
+  display: flex;
+  align-items: center;
   justify-content: center;
+  height: 32px;
+  border-radius: var(--radius-xs);
+  font-size: 18px;
 }
 
-.entry {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.answered {
+  background: var(--chalk);
+  color: var(--slate);
 }
 
-.entry dt {
-  font: var(--weight-regular) var(--size-label) / var(--leading-tight) var(--font-ui);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
+.missed {
+  border: 1.5px solid var(--state-incorrect);
+  color: var(--state-incorrect);
+}
+
+.unplayed {
+  border: 1.5px dashed var(--socket);
+}
+
+.nextTable {
+  font-size: 15px;
   color: var(--text-meta);
 }
 
-/* Run values take --font-ui, as equations and tile faces do. Family only:
-   the sizes stay literal rem, because the guard below compares two computed
-   font sizes and jsdom does not substitute var(). */
-.entry dd {
-  font-family: var(--font-ui);
-  font-size: 1.5rem;
-  font-weight: 600;
+.previewLabel {
+  font-size: 12px;
+  color: var(--text-meta);
 }
 
-/* The score against the table is the number the screen is built around.
-   `.entry dd.primary` is (0,2,1) against `.entry dd`'s (0,1,1): it wins on
-   specificity, not on source order. */
-.entry dd.primary {
-  font-size: 2.125rem;
+/* Exactly the text Share sends. */
+.preview {
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--raised);
+  font-size: 13px;
+  line-height: 18px;
+  white-space: pre-line;
 }
 
-/* The primary action leads on its own line; the two it is chosen over share
-   the row beneath. Their variants — raised and ghost — carry the rest. */
-.actions {
+.row {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-4);
+  gap: var(--space-2);
 }
 
-/* The hint names the key that presses the button above it, so it stays meta
-   text: label size, meta ink, and none of --size-label's uppercase/tracked
-   treatment, which belongs to labels rather than to a sentence. At 11px this is
-   body text and owes 4.5:1 — --text-meta is dust, which measures 7.29:1 on
-   --surface-surround. */
+.button {
+  height: 48px;
+  min-height: 0;
+  padding: 0;
+}
+
+.row .button {
+  flex: 1;
+}
+
+.share {
+  font-size: 17px;
+}
+
+.copy,
+.last {
+  font-size: 16px;
+}
+
 .restartHint {
-  font-size: var(--size-label);
+  font-size: 13px;
   color: var(--text-meta);
-}
-
-.secondaryActions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-  justify-content: center;
-}
-
-/* The confirmation's height is reserved whether or not a copy has happened,
-   so a copy confirms in place instead of pushing the screen down. */
-.confirmation {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 34px;
 }
 
 .status {
+  height: 18px;
+  font-size: 14px;
   color: var(--text-meta);
-}
-
-@media (width <= 40rem) {
-  .screen {
-    padding: var(--space-6) var(--space-3);
-  }
-
-  .stats {
-    gap: var(--space-4);
-  }
 }

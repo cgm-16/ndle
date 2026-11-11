@@ -4,7 +4,6 @@ import { GameScreen } from "../components/GameScreen/GameScreen";
 import { LanguageToggle } from "../components/LanguageToggle/LanguageToggle";
 import { TitleScreen } from "../components/TitleScreen/TitleScreen";
 import { gameReducer } from "../game/gameReducer";
-import { isRunComplete } from "../game/selectors";
 import type { Digit, GamePhase, GameState } from "../game/types";
 import { getShareStats, type PlayVariant, type ShareDependencies } from "../services/sharing";
 import {
@@ -43,9 +42,11 @@ function renderGameScreen(state: GameState): ReactNode {
   return <GameScreen state={state} dispatch={noop} onSubmit={noop} onNextRound={noop} />;
 }
 
-// GameOverScreen takes flat equation/stats props rather than a GameState;
-// this adapts a `makeGameOverState` fixture to that shape, as App does: a table
-// played to its end stopped on no equation.
+const DAILY_NUMBER = 12;
+const DAILY: PlayVariant = { kind: "daily", number: DAILY_NUMBER };
+
+// GameOverScreen takes flat rowResults/stats props rather than a GameState;
+// this adapts a `makeGameOverState` fixture to that shape, as App does.
 function renderGameOverScreen(
   state: GameState,
   dependencies: ShareDependencies,
@@ -53,7 +54,7 @@ function renderGameOverScreen(
 ): ReactNode {
   return (
     <GameOverScreen
-      equation={isRunComplete(state) ? null : state.equation}
+      rowResults={state.rowResults}
       stats={getShareStats(state, variant)}
       url="https://example.test/"
       dependencies={dependencies}
@@ -256,17 +257,17 @@ export const GALLERY_STATES: Record<GamePhase | "interaction", GalleryEntry[]> =
     },
     {
       id: "game-over-daily-par",
-      dailyNumber: 12,
+      dailyNumber: DAILY_NUMBER,
       label: "Game over — Daily, par made",
       render: () =>
-        renderGameOverScreen(GAME_OVER_STATE, RESOLVING_SHARE_DEPENDENCIES, { kind: "daily", number: 12 }),
+        renderGameOverScreen(GAME_OVER_STATE, RESOLVING_SHARE_DEPENDENCIES, DAILY),
     },
     {
       id: "game-over-daily-short",
-      dailyNumber: 12,
+      dailyNumber: DAILY_NUMBER,
       label: "Game over — Daily, 1 short of par",
       render: () =>
-        renderGameOverScreen(DAILY_SHORT_GAME_OVER_STATE, RESOLVING_SHARE_DEPENDENCIES, { kind: "daily", number: 12 }),
+        renderGameOverScreen(DAILY_SHORT_GAME_OVER_STATE, RESOLVING_SHARE_DEPENDENCIES, DAILY),
     },
     {
       id: "game-over-short",

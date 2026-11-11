@@ -328,18 +328,17 @@ describe("App", () => {
     expect(hudField("Round")).toBe("4");
   });
 
-  it("reaches game over when the next equation exceeds the surviving inventory, keeping the terminal equation visible", async () => {
+  it("reaches game over when the next equation exceeds the surviving inventory, with no equation drawn", async () => {
     const user = userEvent.setup();
     renderApp({ initialLanguage: "en" });
 
     await driveToGameOver(user);
 
-    expect(screen.getByRole("heading", { name: "7 short of par" })).toBeInTheDocument();
-    expect(screen.getByText("1 × 7 =")).toBeInTheDocument(); // terminal equation stays visible (§1.10)
-    // §1.8 keeps the equation to explain the loss, so the explanation has to be
-    // on screen too. Without it the equation reads as an unanswered prompt.
+    expect(screen.getByRole("heading", { name: /7 short of par/ })).toBeInTheDocument();
+    expect(screen.queryByText("1 × 7 =")).not.toBeInTheDocument(); // game over draws no equation
+    // The reason says why the run ended; the row marks show where.
     expect(screen.getByText("Not enough tiles left to answer.")).toBeInTheDocument();
-    expect(hudField("Score")).toBe("0 / 8"); // every submission above was incorrect
+    expect(screen.getByText("0 / 8")).toBeInTheDocument(); // every submission above was incorrect
     expect(hudField("Longest streak")).toBe("0");
     expect(screen.getByRole("button", { name: "Play Again" })).toBeInTheDocument();
   });
@@ -407,8 +406,8 @@ describe("App", () => {
     // Enter reaches the focused button and stops there: Share runs, the score
     // screen survives to be read.
     await waitFor(() => expect(shareDependencies.writeClipboard).toHaveBeenCalledTimes(1));
-    expect(screen.getByRole("heading", { name: "7 short of par" })).toBeInTheDocument();
-    expect(hudField("Score")).toBe("0 / 8");
+    expect(screen.getByRole("heading", { name: /7 short of par/ })).toBeInTheDocument();
+    expect(screen.getByText("0 / 8")).toBeInTheDocument();
     expect(dependencies.dealPuzzle).toHaveBeenCalledTimes(1);
   });
 
@@ -426,12 +425,12 @@ describe("App", () => {
       await user.keyboard("{Enter}"); // next round
     }
 
-    expect(screen.getByRole("heading", { name: "7 short of par" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /7 short of par/ })).toBeInTheDocument();
     expect(document.activeElement?.tagName).toBe("BODY");
 
     await user.keyboard("{Enter}");
 
-    expect(screen.getByRole("heading", { name: "7 short of par" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /7 short of par/ })).toBeInTheDocument();
     expect(dependencies.dealPuzzle).toHaveBeenCalledTimes(1);
   });
 
@@ -521,7 +520,7 @@ describe("Puzzle", () => {
     renderApp();
     await startPuzzle(user);
     await playRows(user, PUZZLE_SAMPLE_PAR_LINE);
-    expect(await screen.findByRole("heading", { name: "Made par" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /Made par/ })).toBeInTheDocument();
     expect(hudField("Par")).toBe("7");
     // The table was played to its end, so no terminal equation is shown.
     expect(screen.getByText("All eight rows played.")).toBeInTheDocument();
@@ -630,7 +629,7 @@ describe("Daily", () => {
     const first = renderDaily();
     await openDaily(user);
     await playRows(user, PUZZLE_SAMPLE_PAR_LINE);
-    expect(await screen.findByRole("heading", { name: "Made par" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /Made par/ })).toBeInTheDocument();
     expect(storedDaily(first.storage)).toEqual(
       dailyRecordOf(PUZZLE_SAMPLE_PAR_LINE, { score: 7, par: 7, longestStreak: 7 }),
     );
@@ -638,7 +637,7 @@ describe("Daily", () => {
 
     const second = renderDaily({ storage: first.storage });
     await openDaily(user, "Today's result #1");
-    expect(screen.getByRole("heading", { name: "Made par" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Made par/ })).toBeInTheDocument();
 
     // The stub holds one table, so the day after has none.
     second.dependencies.now = () => dayAfterLaunch(1);
@@ -651,12 +650,12 @@ describe("Daily", () => {
     const { dependencies, storage } = renderDaily();
     await openDaily(user);
     await playRows(user, LOSS_ROWS);
-    expect(screen.getByRole("heading", { name: "7 short of par" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /7 short of par/ })).toBeInTheDocument();
     const record = storage.getItem("ndle.daily");
 
     await user.keyboard("r");
-    expect(screen.getByRole("heading", { name: "7 short of par" })).toBeInTheDocument();
-    expect(hudField("Score")).toBe("0 / 8");
+    expect(screen.getByRole("heading", { name: /7 short of par/ })).toBeInTheDocument();
+    expect(screen.getByText("0 / 8")).toBeInTheDocument();
 
     expect(screen.queryByRole("button", { name: "Play Again" })).not.toBeInTheDocument();
 
@@ -714,7 +713,7 @@ describe("Daily", () => {
     await playRows(user, PUZZLE_SAMPLE_PAR_LINE.slice(0, 1));
     dependencies.now = () => dayAfterLaunch(1);
     await playRows(user, PUZZLE_SAMPLE_PAR_LINE.slice(1));
-    expect(await screen.findByRole("heading", { name: "Made par" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /Made par/ })).toBeInTheDocument();
     expect(screen.getByText("Table #1")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Back" }));
     expect(screen.getByRole("button", { name: "Daily #2" })).toBeEnabled();
@@ -760,11 +759,11 @@ describe("Daily", () => {
     expectRowTwo();
 
     await playRows(user, PUZZLE_SAMPLE_PAR_LINE.slice(1));
-    expect(await screen.findByRole("heading", { name: "Made par" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /Made par/ })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Back" }));
     await openDaily(user, "Today's result #1");
-    expect(screen.getByRole("heading", { name: "Made par" })).toBeInTheDocument();
-    expect(hudField("Score")).toBe("7 / 8");
+    expect(screen.getByRole("heading", { name: /Made par/ })).toBeInTheDocument();
+    expect(screen.getByText("7 / 8")).toBeInTheDocument();
   });
 
   it("resumes after Back at the row reached when saves fail after the first", async () => {
@@ -827,7 +826,7 @@ describe("Daily", () => {
     renderDaily({ storage: localStorage });
     await openDaily(user);
     await playRows(user, PUZZLE_SAMPLE_PAR_LINE);
-    expect(await screen.findByRole("heading", { name: "Made par" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /Made par/ })).toBeInTheDocument();
     expect(localStorage.getItem("ndle.daily")).not.toBeNull();
     expect(["ndle.language", "ndle.daily"]).toEqual(expect.arrayContaining(Object.keys(localStorage)));
   });
@@ -848,14 +847,14 @@ describe("Daily", () => {
 
     await openDaily(user);
     await playRows(user, PUZZLE_SAMPLE_PAR_LINE);
-    expect(await screen.findByRole("heading", { name: "Made par" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /Made par/ })).toBeInTheDocument();
     await copy("English", "9dle #1 — Made par — 7/8 · par 7\nhttps://example.test/");
     await copy("한국어", "구들 #1 — 목표 달성 — 7/8 · 목표 7\nhttps://example.test/");
 
     await user.click(screen.getByRole("button", { name: "English" }));
     await user.click(screen.getByRole("button", { name: "Practice" }));
     await playRows(user, PUZZLE_SAMPLE_PAR_LINE);
-    expect(await screen.findByRole("heading", { name: "Made par" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: /Made par/ })).toBeInTheDocument();
     await copy(
       "English",
       "9dle Practice — Made par — Score: 7/8 · par 7\nLongest streak: 7\n\nCan you make par?\nhttps://example.test/",
