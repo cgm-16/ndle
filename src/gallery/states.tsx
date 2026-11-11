@@ -5,8 +5,8 @@ import { LanguageToggle } from "../components/LanguageToggle/LanguageToggle";
 import { TitleScreen } from "../components/TitleScreen/TitleScreen";
 import { gameReducer } from "../game/gameReducer";
 import { isRunComplete } from "../game/selectors";
-import type { GamePhase, GameState } from "../game/types";
-import { getShareStats, type ShareDependencies } from "../services/sharing";
+import type { Digit, GamePhase, GameState } from "../game/types";
+import { getShareStats, type PlayVariant, type ShareDependencies } from "../services/sharing";
 import {
   makeAnsweringState,
   makeFeedbackState,
@@ -44,14 +44,19 @@ function renderGameScreen(state: GameState): ReactNode {
 // GameOverScreen takes flat equation/stats props rather than a GameState;
 // this adapts a `makeGameOverState` fixture to that shape, as App does: a table
 // played to its end stopped on no equation.
-function renderGameOverScreen(state: GameState, dependencies: ShareDependencies): ReactNode {
+function renderGameOverScreen(
+  state: GameState,
+  dependencies: ShareDependencies,
+  variant: PlayVariant = { kind: "practice" },
+): ReactNode {
   return (
     <GameOverScreen
       equation={isRunComplete(state) ? null : state.equation}
-      stats={getShareStats(state)}
+      stats={getShareStats(state, variant)}
       url="https://example.test/"
       dependencies={dependencies}
       onPlayAgain={noop}
+      onPractice={noop}
     />
   );
 }
@@ -133,6 +138,15 @@ const SHORT_GAME_OVER_STATE = (() => {
   return play(puzzleStart(PUZZLE_SAMPLE, ids), [{ spend: [5, 7] }, { spend: [9, 1] }, { spend: [4] }], ids);
 })();
 
+// The par line with row 8's 12 answered as 21: a real line scoring 6 against
+// par 7, found by changing the last answer of the par line, so the gallery
+// does not search at load. states.test.tsx asserts the score.
+const DAILY_SHORT_GAME_OVER_STATE = (() => {
+  const ids = sequentialIds();
+  const line = [...PUZZLE_SAMPLE_PAR_LINE.slice(0, 7), { spend: [2, 1] satisfies Digit[] }];
+  return play(puzzleStart(PUZZLE_SAMPLE, ids), line, ids);
+})();
+
 const RESOLVING_SHARE_DEPENDENCIES: ShareDependencies = {
   writeClipboard: async () => {},
 };
@@ -166,7 +180,7 @@ const REDUCED_MOTION_NOTE =
 // disabled and reduced motion are conditions any screen can be in rather than
 // moments the reducer can reach, and M5.5g's gate names all four.
 export const GALLERY_STATES: Record<GamePhase | "interaction", GalleryEntry[]> = {
-  title: [{ id: "title", label: "Title", render: () => <TitleScreen onStart={noop} /> }],
+  title: [{ id: "title", label: "Title", render: () => <TitleScreen daily={{ status: "open", number: 1 }} onDaily={noop} onPractice={noop} /> }],
   answering: [
     {
       id: "answering-empty",
@@ -230,9 +244,21 @@ export const GALLERY_STATES: Record<GamePhase | "interaction", GalleryEntry[]> =
   ],
   gameOver: [
     {
-      id: "game-over-idle",
-      label: "Game over — idle",
+      id: "game-over-practice",
+      label: "Game over — Practice, par made",
       render: () => renderGameOverScreen(GAME_OVER_STATE, RESOLVING_SHARE_DEPENDENCIES),
+    },
+    {
+      id: "game-over-daily-par",
+      label: "Game over — Daily, par made",
+      render: () =>
+        renderGameOverScreen(GAME_OVER_STATE, RESOLVING_SHARE_DEPENDENCIES, { kind: "daily", number: 12 }),
+    },
+    {
+      id: "game-over-daily-short",
+      label: "Game over — Daily, 1 short of par",
+      render: () =>
+        renderGameOverScreen(DAILY_SHORT_GAME_OVER_STATE, RESOLVING_SHARE_DEPENDENCIES, { kind: "daily", number: 12 }),
     },
     {
       id: "game-over-short",

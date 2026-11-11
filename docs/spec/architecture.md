@@ -375,7 +375,7 @@ export interface AppDependencies {
   nextTileId: TileIdFactory;
   gameUrl: string;
   dealPuzzle(): PuzzleTable;   // Practice only
-  now(): Date;                 // read in event handlers and on title render, never in the reducer
+  now(): Date;                 // read on mount, on Back and in event handlers, never in the reducer
   dailyStore: DailyStore;
   dailyTables: readonly PuzzleTable[];   // DAILY_TABLES in main.tsx; tests inject their own
 }

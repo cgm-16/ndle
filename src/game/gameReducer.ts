@@ -1,5 +1,5 @@
 import type { GameAction, GameState, PuzzleTable, Tile } from "./types";
-import { sortTiles } from "./factories";
+import { createTitleState, sortTiles } from "./factories";
 import {
   answerMatches,
   canAttemptEquation,
@@ -33,9 +33,9 @@ function freshRunState(table: PuzzleTable, inventory: Tile[]): GameState {
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
-    // Unguarded by phase, unlike RESTART_RUN: only TitleScreen dispatches it,
-    // so title is the only phase it arrives from, and a fresh run owes
-    // nothing to the state it replaces.
+    // Unguarded by phase, unlike RESTART_RUN: App dispatches it from the title
+    // and from the Daily game over's Practice, and a fresh run owes nothing to
+    // the state it replaces.
     case "START_RUN":
       return freshRunState(action.table, action.inventory);
 
@@ -193,6 +193,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case "RESTART_RUN":
       if (state.phase !== "gameOver") return state;
       return freshRunState(action.table, action.inventory);
+
+    case "RETURN_TO_TITLE":
+      return state.phase === "title" ? state : createTitleState();
 
     case "CLEAR_SELECTION": {
       if (state.phase !== "answering") return state;

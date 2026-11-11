@@ -12,6 +12,10 @@ const en = {
     summary:
       "A daily multiplication puzzle. Spell each row's answer with tiles from your hand. A correct answer pays the digits printed on its row, and your hand holds five. Par is the best score the table allows.",
     more: "More",
+    daily: "Daily #{number}",
+    dailyPlayed: "Today's result #{number}",
+    dailyNone: "No table today",
+    practice: "Practice",
   },
   language: {
     groupLabel: "Language",
@@ -30,10 +34,10 @@ const en = {
     progress:
       "Round shows which row of the table is current, score counts correct answers, and streak counts consecutive correct answers. The table ends after row 8, or sooner once you hold fewer tiles than the next answer needs.",
     keyboard:
-      "Press a digit key to select a matching tile or, during a discard, to mark it and complete the discard, Backspace to return the most recently selected tile, Escape to clear your selection, Enter to submit or continue, and R to play again once the run ends.",
+      "Press a digit key to select a matching tile or, during a discard, to mark it and complete the discard, Backspace to return the most recently selected tile, Escape to clear your selection, Enter to submit or continue, and R to deal a new table after a Practice run ends.",
   },
   action: {
-    start: "Start Run",
+    back: "Back",
     submit: "Submit",
     clear: "Clear",
     next: "Next Round",
@@ -69,6 +73,8 @@ const en = {
     reason: "Not enough tiles left to answer.",
     longestStreak: "Longest streak",
     restartHint: "Press R to play again",
+    dailyNumber: "Table #{number}",
+    nextTable: "The next table opens at midnight.",
     parTitle: "Made par",
     shortTitle: "{short} short of par",
     tableReason: "All eight rows played.",
@@ -77,6 +83,8 @@ const en = {
     copied: "Result copied.",
     failed: "Could not share or copy the result.",
     puzzleAsk: "Can you make par?",
+    // Lower case inside the share text, where `hud.par` would read "Par".
+    par: "par",
   },
   answerSlot: {
     filled: "Answer slot {position}: {digit}",
@@ -95,6 +103,10 @@ const ko = {
     summary:
       "매일 한 판, 곱셈 퍼즐. 손에 든 숫자 타일로 각 줄의 답을 만드세요. 정답이면 그 줄에 적힌 숫자 타일을 받고, 손에는 다섯 개까지 들 수 있습니다. 목표는 이 판에서 낼 수 있는 최고 점수입니다.",
     more: "더 보기",
+    daily: "오늘의 판 #{number}",
+    dailyPlayed: "오늘의 결과 #{number}",
+    dailyNone: "오늘은 판이 없습니다",
+    practice: "연습",
   },
   language: {
     groupLabel: "언어",
@@ -111,10 +123,10 @@ const ko = {
     progress:
       "라운드는 지금 풀고 있는 판의 줄을, 점수는 정답 횟수를, 연속 정답은 이어지는 정답 횟수를 나타냅니다. 판은 8번째 줄을 풀면 끝나고, 다음 답에 필요한 타일보다 보유한 타일이 적어지면 더 일찍 끝납니다.",
     keyboard:
-      "숫자 키를 누르면 일치하는 타일을 선택하거나, 버리기 중에는 타일을 표시해 바로 버리기를 완료하며, Backspace 키로 가장 최근에 선택한 타일을 되돌리고, Escape 키로 선택을 지우며, Enter 키로 제출하거나 다음으로 진행하고, 게임이 끝나면 R 키로 다시 시작합니다.",
+      "숫자 키를 누르면 일치하는 타일을 선택하거나, 버리기 중에는 타일을 표시해 바로 버리기를 완료하며, Backspace 키로 가장 최근에 선택한 타일을 되돌리고, Escape 키로 선택을 지우며, Enter 키로 제출하거나 다음으로 진행하고, 연습 게임이 끝나면 R 키로 새 판을 시작합니다.",
   },
   action: {
-    start: "게임 시작",
+    back: "뒤로",
     submit: "제출",
     clear: "지우기",
     next: "다음 라운드",
@@ -148,6 +160,8 @@ const ko = {
     reason: "답을 만들 타일이 부족합니다.",
     longestStreak: "최장 연속 정답",
     restartHint: "R 키를 눌러 다시 하기",
+    dailyNumber: "{number}번째 판",
+    nextTable: "다음 판은 자정에 열립니다.",
     parTitle: "목표 달성",
     shortTitle: "목표까지 {short}점 부족",
     tableReason: "여덟 줄을 모두 풀었습니다.",
@@ -156,6 +170,7 @@ const ko = {
     copied: "결과를 복사했습니다.",
     failed: "결과를 공유하거나 복사하지 못했습니다.",
     puzzleAsk: "목표를 달성할 수 있나요?",
+    par: "목표",
   },
   answerSlot: {
     filled: "정답 칸 {position}: {digit}",

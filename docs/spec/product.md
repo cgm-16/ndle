@@ -159,7 +159,7 @@ inventory.length < getAnswerLength(equation)
 - The game screen has the HUD (round, score, streak, par), the ledger, the slots, the actions and the rack.
 - Two game-over variants follow, one for Daily and one for Practice; their content is in `ui-i18n.md` §1.12.
 - A Daily resumes when opened again that day, and once finished it shows its result until the next table.
-- Every game and game-over screen has **Back** at the top, which returns to the title (Ori, 2026-11-09). Back is not a move: a Daily keeps its record and resumes, and a Practice run is dropped.
+- Every game and game-over screen has **Back** at the top, in the app's top bar rather than inside the screen, which returns to the title (Ori, 2026-11-09). Back is not a move: a Daily keeps its record and resumes, and a Practice run is dropped.
 - Round, score, streak and par are never shown by colour alone.
 - `gameOver` is the only phase that prints the product; during play the board shows `left × right = ?`, so the answer is never given away.
 - Clear is disabled while no tile is selected.

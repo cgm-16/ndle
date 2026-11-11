@@ -909,3 +909,19 @@ describe("Puzzle", () => {
     expect(next.score).toBe(0);
   });
 });
+
+describe("RETURN_TO_TITLE", () => {
+  it.each([
+    ["answering", makeAnsweringState()],
+    ["feedback", makeFeedbackState()],
+    ["overflow", makeOverflowState()],
+    ["gameOver", makeGameOverState()],
+  ])("returns to the title from %s", (_phase, state) => {
+    expect(gameReducer(state, { type: "RETURN_TO_TITLE" })).toEqual(createTitleState());
+  });
+
+  it("is refused in the title", () => {
+    const title = createTitleState();
+    expect(gameReducer(title, { type: "RETURN_TO_TITLE" })).toBe(title);
+  });
+});

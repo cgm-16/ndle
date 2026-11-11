@@ -5,7 +5,7 @@ import { START_LABEL, type Locale } from "./labels.js";
  * one test per clause.
  *
  * The clause "No horizontal scroll at 320px" is NOT here: `viewport.spec.ts`
- * already owns it across twenty gallery states, both locales, and the arena
+ * already owns it across twenty-two gallery states, both locales, and the arena
  * itself. This file owns the other eight, which had only ever been walked by
  * hand — the release walk of 2026-09-17 took a browser session and a page of
  * ad-hoc evaluate calls to produce readings no suite could reproduce.

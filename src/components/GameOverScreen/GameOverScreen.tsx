@@ -16,10 +16,14 @@ import styles from "./GameOverScreen.module.css";
 export interface GameOverScreenProps {
   /** The equation the run stopped on; null when the table was played to its end. */
   equation: Equation | null;
+  /** Its `kind` picks the Daily or the Practice variant. */
   stats: ShareStats;
   url: string;
   dependencies: ShareDependencies;
+  /** Practice only. */
   onPlayAgain(): void;
+  /** Daily only: the way into Practice. */
+  onPractice(): void;
 }
 
 export function GameOverScreen({
@@ -28,6 +32,7 @@ export function GameOverScreen({
   url,
   dependencies,
   onPlayAgain,
+  onPractice,
 }: GameOverScreenProps) {
   const { t, language } = useI18n();
   // "shared" renders no inline message: a successful native share hands off
@@ -61,6 +66,7 @@ export function GameOverScreen({
             thing it explains. */}
         <p className={styles.reason}>{t(reason)}</p>
       </div>
+      {stats.kind === "daily" && <p>{t("gameOver.dailyNumber", { number: stats.number })}</p>}
       <h1 className={`${styles.title} ${stats.won ? styles.won : styles.shortOfPar}`}>
         {title}
       </h1>
@@ -80,12 +86,21 @@ export function GameOverScreen({
         </div>
       </dl>
       <div className={styles.actions}>
-        <ActionButton onClick={onPlayAgain}>{t("action.playAgain")}</ActionButton>
-        {/* `gameOver.restartHint` belongs here, between the primary action and
-            the row of alternatives: it names the key that presses the button
-            directly above it, and as meta text under a button it explains, it
-            adds no focal point of its own. */}
-        <p className={styles.restartHint}>{t("gameOver.restartHint")}</p>
+        {stats.kind === "daily" ? (
+          <>
+            <ActionButton onClick={onPractice}>{t("title.practice")}</ActionButton>
+            <p className={styles.restartHint}>{t("gameOver.nextTable")}</p>
+          </>
+        ) : (
+          <>
+            <ActionButton onClick={onPlayAgain}>{t("action.playAgain")}</ActionButton>
+            {/* `gameOver.restartHint` belongs here, between the primary action and
+                the row of alternatives: it names the key that presses the button
+                directly above it, and as meta text under a button it explains, it
+                adds no focal point of its own. */}
+            <p className={styles.restartHint}>{t("gameOver.restartHint")}</p>
+          </>
+        )}
         <div className={styles.secondaryActions}>
           <ActionButton variant="secondary" onClick={handleShare}>
             {t("action.share")}

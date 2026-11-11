@@ -24,7 +24,7 @@ describe("gallery shell", () => {
       expect(screen.getByRole("status")).toHaveTextContent("Could not share or copy the result.");
     });
 
-    await user.click(screen.getByRole("button", { name: "Game over — idle" }));
+    await user.click(screen.getByRole("button", { name: "Game over — Practice, par made" }));
     expect(screen.getByRole("status").textContent).toBe("");
   });
 });

@@ -4,8 +4,15 @@ import { useI18n } from "../../i18n/I18nContext";
 import type { MessageTree } from "../../i18n/messages";
 import styles from "./TitleScreen.module.css";
 
+export type DailyEntry =
+  | { status: "open"; number: number }
+  | { status: "played"; number: number }
+  | { status: "none" };
+
 export interface TitleScreenProps {
-  onStart(): void;
+  daily: DailyEntry;
+  onDaily(): void;
+  onPractice(): void;
 }
 
 /**
@@ -26,7 +33,7 @@ const MATERIAL_RULES: { swatch: string; topic: keyof MessageTree["howToPlay"] }[
     of the four that no amount of playing reveals. */
 const MORE_TOPICS = ["keyboard", "selecting", "slots", "progress"] as const;
 
-export function TitleScreen({ onStart }: TitleScreenProps) {
+export function TitleScreen({ daily, onDaily, onPractice }: TitleScreenProps) {
   const { t } = useI18n();
 
   return (
@@ -50,7 +57,14 @@ export function TitleScreen({ onStart }: TitleScreenProps) {
         </ul>
       </details>
       <LanguageToggle />
-      <ActionButton onClick={() => onStart()}>{t("action.start")}</ActionButton>
+      <ActionButton onClick={onDaily} disabled={daily.status === "none"}>
+        {daily.status === "none"
+          ? t("title.dailyNone")
+          : t(daily.status === "open" ? "title.daily" : "title.dailyPlayed", { number: daily.number })}
+      </ActionButton>
+      <ActionButton variant="secondary" onClick={onPractice}>
+        {t("title.practice")}
+      </ActionButton>
     </main>
   );
 }
