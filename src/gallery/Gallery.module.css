@@ -84,6 +84,8 @@
 }
 
 .boardRow {
+  /* Clears the ring's reach below the slots above, whose tiles are transformed. */
+  margin-top: var(--space-2);
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -123,12 +125,4 @@
     padding-left: 0;
     padding-top: var(--space-6);
   }
-}
-
-/* The single-state page: .app's frame, the container GameScreen's arena reads. */
-.single {
-  display: flex;
-  flex-direction: column;
-  min-height: 100svh;
-  container: app / inline-size;
 }

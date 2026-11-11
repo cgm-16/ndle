@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { LanguageToggle } from "../components/LanguageToggle/LanguageToggle";
 import { TopBar } from "../components/TopBar/TopBar";
+import appStyles from "../app/App.module.css";
 import { useI18n } from "../i18n/I18nContext";
 import { GALLERY_STATES } from "./states";
 import styles from "./Gallery.module.css";
@@ -26,7 +27,7 @@ function SingleState({ id }: { id: string }) {
   );
 
   return (
-    <div className={styles.single}>
+    <div className={appStyles.app}>
       {bar}
       {entry.render()}
     </div>

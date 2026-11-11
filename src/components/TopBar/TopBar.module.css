@@ -1,9 +1,11 @@
-/* 52px tall inside the frame's 16px gutters, on every screen. The toggle's
-   margin-left keeps it at the right edge when Back and the centre are absent. */
+/* 52px tall inside the frame's 16px gutters, on every screen. The side
+   columns are equal, so the centre stays at the bar's midpoint whatever the
+   widths of Back and the toggle; the toggle keeps the right column when Back
+   and the centre are absent. */
 .bar {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-2);
   box-sizing: border-box;
   height: 52px;
@@ -14,10 +16,13 @@
 }
 
 .bar > :last-child {
-  margin-left: auto;
+  grid-column: 3;
+  justify-self: end;
 }
 
 .back {
+  grid-column: 1;
+  justify-self: start;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -29,6 +34,7 @@
 }
 
 .centre {
+  grid-column: 2;
   display: flex;
   align-items: baseline;
   gap: 6px;

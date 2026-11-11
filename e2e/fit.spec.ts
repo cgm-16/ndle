@@ -26,38 +26,34 @@ const DUST = "rgb(170, 179, 191)";
    scrollHeights. A listed key must still
    miss: fixing a state fails the sweep until its key is removed here. */
 const KNOWN_MISSES = new Set<string>([
-  "feedback-correct en 393", // scrollHeight 824 of 660
-  "feedback-correct en 375", // scrollHeight 824 of 660
-  "feedback-correct ko 393", // scrollHeight 827 of 660
-  "feedback-correct ko 375", // scrollHeight 827 of 660
-  "feedback-incorrect en 393", // scrollHeight 766 of 660
-  "feedback-incorrect en 375", // scrollHeight 766 of 660
-  "feedback-incorrect ko 393", // scrollHeight 769 of 660
-  "feedback-incorrect ko 375", // scrollHeight 769 of 660
-  "feedback-after-discard en 393", // scrollHeight 764 of 660
-  "feedback-after-discard en 375", // scrollHeight 764 of 660
-  "feedback-after-discard ko 393", // scrollHeight 767 of 660
-  "feedback-after-discard ko 375", // scrollHeight 767 of 660
-  "feedback-streak-5 en 393", // scrollHeight 764 of 660
-  "feedback-streak-5 en 375", // scrollHeight 764 of 660
-  "feedback-streak-5 ko 393", // scrollHeight 767 of 660
-  "feedback-streak-5 ko 375", // scrollHeight 767 of 660
-  "feedback-streak-8 en 393", // scrollHeight 764 of 660
-  "feedback-streak-8 en 375", // scrollHeight 764 of 660
-  "feedback-streak-8 ko 393", // scrollHeight 767 of 660
-  "feedback-streak-8 ko 375", // scrollHeight 767 of 660
-  "overflow-required-1 en 393", // scrollHeight 853 of 660
-  "overflow-required-1 en 375", // scrollHeight 853 of 660
-  "overflow-required-1 ko 393", // scrollHeight 857 of 660
-  "overflow-required-1 ko 375", // scrollHeight 857 of 660
-  "overflow-required-1 en 393 ring", // the perched rail tile and the rack tiles: tile buttons closer than 6px, and tile faces within 6px of a tile button
-  "overflow-required-1 en 375 ring", // the perched rail tile and the rack tiles: tile buttons closer than 6px, and tile faces within 6px of a tile button
-  "overflow-required-1 ko 393 ring", // the perched rail tile and the rack tiles: tile buttons closer than 6px, and tile faces within 6px of a tile button
-  "overflow-required-1 ko 375 ring", // the perched rail tile and the rack tiles: tile buttons closer than 6px, and tile faces within 6px of a tile button
-  "interaction-reduced-motion en 393 ring", // a button and a tile button, each within 6px of a chalk tile face
-  "interaction-reduced-motion en 375 ring", // a button and a tile button, each within 6px of a chalk tile face
-  "interaction-reduced-motion ko 393 ring", // a button and a tile button, each within 6px of a chalk tile face
-  "interaction-reduced-motion ko 375 ring", // a button and a tile button, each within 6px of a chalk tile face
+  "feedback-correct en 393", // scrollHeight 824 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
+  "feedback-correct en 375", // scrollHeight 824 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
+  "feedback-correct ko 393", // scrollHeight 827 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
+  "feedback-correct ko 375", // scrollHeight 827 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
+  "feedback-incorrect en 393", // scrollHeight 766 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
+  "feedback-incorrect en 375", // scrollHeight 766 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
+  "feedback-incorrect ko 393", // scrollHeight 769 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
+  "feedback-incorrect ko 375", // scrollHeight 769 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
+  "feedback-after-discard en 393", // scrollHeight 764 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
+  "feedback-after-discard en 375", // scrollHeight 764 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
+  "feedback-after-discard ko 393", // scrollHeight 767 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
+  "feedback-after-discard ko 375", // scrollHeight 767 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
+  "feedback-streak-5 en 393", // scrollHeight 764 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
+  "feedback-streak-5 en 375", // scrollHeight 764 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
+  "feedback-streak-5 ko 393", // scrollHeight 767 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
+  "feedback-streak-5 ko 375", // scrollHeight 767 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
+  "feedback-streak-8 en 393", // scrollHeight 764 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
+  "feedback-streak-8 en 375", // scrollHeight 764 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
+  "feedback-streak-8 ko 393", // scrollHeight 767 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
+  "feedback-streak-8 ko 375", // scrollHeight 767 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
+  "overflow-required-1 en 393", // scrollHeight 853 of 660: the rail row and the discard instruction sit between the actions and the rack (T114)
+  "overflow-required-1 en 375", // scrollHeight 853 of 660: the rail row and the discard instruction sit between the actions and the rack (T114)
+  "overflow-required-1 ko 393", // scrollHeight 857 of 660: the rail row and the discard instruction sit between the actions and the rack (T114)
+  "overflow-required-1 ko 375", // scrollHeight 857 of 660: the rail row and the discard instruction sit between the actions and the rack (T114)
+  "overflow-required-1 en 393 ring", // the perched rail tile sits under 6px from the rack tiles and their faces (T114)
+  "overflow-required-1 en 375 ring", // the perched rail tile sits under 6px from the rack tiles and their faces (T114)
+  "overflow-required-1 ko 393 ring", // the perched rail tile sits under 6px from the rack tiles and their faces (T114)
+  "overflow-required-1 ko 375 ring", // the perched rail tile sits under 6px from the rack tiles and their faces (T114)
 ]);
 
 /* The gallery's state count, as viewport.spec.ts counts it. Read from that
@@ -73,6 +69,8 @@ interface Reading {
   innerHeight: number;
   innerWidth: number;
   ringFailures: string[];
+  /** How far the bar's centre label is from the bar's midpoint; null without a label. */
+  centreOffset: number | null;
 }
 
 async function stateIds(page: Page): Promise<string[]> {
@@ -82,8 +80,8 @@ async function stateIds(page: Page): Promise<string[]> {
   );
 }
 
-/** Opens a state with the language set before load: switching it at runtime
-    hangs the renderer on the lazy Hangul font import. Returns once the
+/** Opens a state with the language set before load, so each reading is of a
+    page that loaded in that language with its faces settled. Returns once the
     self-hosted faces the page uses have loaded, so no reading is of a fallback. */
 async function openState(page: Page, id: string, language: string, width: number, height: number): Promise<void> {
   await page.addInitScript((lang) => window.localStorage.setItem("ndle.language", lang), language);
@@ -141,7 +139,10 @@ async function read(page: Page): Promise<Reading> {
           if (other.width > 0 && near(box, other)) ringFailures.push(`${name(a)} / ${name(el)} (${bg})`);
         }
       });
+      const bar = document.querySelector("header")!.getBoundingClientRect();
+      const centre = document.querySelector("header p")?.getBoundingClientRect();
       return {
+        centreOffset: centre ? Math.abs(centre.left + centre.width / 2 - (bar.left + bar.width / 2)) : null,
         barHeight: document.querySelector("header")!.getBoundingClientRect().height,
         scrollHeight: de.scrollHeight,
         scrollWidth: de.scrollWidth,
@@ -152,6 +153,13 @@ async function read(page: Page): Promise<Reading> {
     },
     { reach: RING_REACH, chalk: CHALK, dust: DUST },
   );
+}
+
+/** The one measuring function: opens a state and reads it. The sweep and the
+    must-fail cases both go through it and through `overflows`. */
+async function measure(page: Page, id: string, language: string, width: number, height: number) {
+  await openState(page, id, language, width, height);
+  return read(page);
 }
 
 const overflows = (r: Reading) => r.scrollHeight > r.innerHeight || r.scrollWidth > r.innerWidth;
@@ -175,11 +183,12 @@ for (const language of LANGUAGES) {
       const listed = (key: string) => (webkit ? KNOWN_MISSES.has(key) || KNOWN_MISSES.has(`${key} webkit`) : KNOWN_MISSES.has(key));
 
       for (const id of ids) {
-        await openState(page, id, language, width, HEIGHT);
-        const reading = await read(page);
+        const reading = await measure(page, id, language, width, HEIGHT);
         expect(reading.innerWidth, `${id}: window width the harness produced`).toBe(width);
         expect(reading.innerHeight, `${id}: window height the harness produced`).toBe(HEIGHT);
         expect(reading.barHeight, `${id}: the bar's height`).toBe(BAR_HEIGHT);
+        // Back and the toggle differ in width, so only equal side columns keep the label centred.
+        if (reading.centreOffset !== null) expect(reading.centreOffset, `${id}: label offset from the bar's midpoint`).toBeLessThanOrEqual(2);
         expect(await gaeguLoadedWhereUsed(page), `${id}: Gaegu loaded where used`).toBe(true);
 
         const key = `${id} ${language} ${width}`;
@@ -199,21 +208,38 @@ for (const language of LANGUAGES) {
   }
 }
 
-test("the sweep fails a window too short for the screen", async ({ page }) => {
-  await openState(page, "answering-empty", "en", 393, 400);
-  const reading = await read(page);
-  expect(reading.innerHeight, "window height the harness produced").toBe(400);
-  expect(reading.scrollHeight, "page height at 393 x 400").toBeGreaterThan(reading.innerHeight);
+test("every KNOWN_MISSES key names a state, language, width and engine the sweep visits", async ({ page }) => {
+  const visited = new Set<string>();
+  for (const id of await stateIds(page)) {
+    for (const language of LANGUAGES) {
+      for (const width of WIDTHS) {
+        for (const check of ["", " ring"]) {
+          for (const engine of ["", " webkit"]) visited.add(`${id} ${language} ${width}${check}${engine}`);
+        }
+      }
+    }
+  }
+  expect([...KNOWN_MISSES].filter((key) => !visited.has(key)), "keys the sweep never asserts").toEqual([]);
 });
 
-test("the sweep fails a state whose stack fits only without the bar", async ({ page }) => {
-  await openState(page, "answering-empty", "en", 393, 1400);
-  const screenHeight = await page.evaluate(() => document.querySelector("main")!.getBoundingClientRect().height);
-  // One pixel short of the whole stack: the screen alone fits, the bar tips it over.
-  const height = Math.ceil(screenHeight) + BAR_HEIGHT - 1;
-  await openState(page, "answering-empty", "en", 393, height);
-  const reading = await read(page);
-  expect(reading.innerHeight, "window height the harness produced").toBe(height);
-  expect(screenHeight, "the screen alone fits").toBeLessThanOrEqual(height);
-  expect(reading.scrollHeight, "the stack with its bar overflows").toBeGreaterThan(height);
+test("the sweep reports an overflow in a window too short for the screen", async ({ page }) => {
+  const reading = await measure(page, "answering-empty", "en", 393, 400);
+  expect(reading.innerHeight, "window height the harness produced").toBe(400);
+  expect(overflows(reading), `page height ${reading.scrollHeight} at 393 x 400`).toBe(true);
+});
+
+test("the sweep reports an overflow in a state whose stack fits only without the bar", async ({ page }) => {
+  const tall = await measure(page, "answering-empty", "en", 393, 1400);
+  expect(overflows(tall), "the screen fits a tall window").toBe(false);
+  const screenHeight = Math.ceil(await page.evaluate(() => document.querySelector("main")!.getBoundingClientRect().height));
+  // Taller than the screen, shorter than the screen and its bar.
+  const height = screenHeight + BAR_HEIGHT - 1;
+  const withBar = await measure(page, "answering-empty", "en", 393, height);
+  expect(withBar.innerHeight, "window height the harness produced").toBe(height);
+  expect(withBar.barHeight, "the bar is counted").toBe(BAR_HEIGHT);
+  // Measured, not derived: hide the bar and the same window fits.
+  await page.addStyleTag({ content: "header { display: none !important; }" });
+  const withoutBar = await read(page);
+  expect(overflows(withoutBar), `without the bar, page height ${withoutBar.scrollHeight} of ${height}`).toBe(false);
+  expect(overflows(withBar), `with the bar, page height ${withBar.scrollHeight} of ${height}`).toBe(true);
 });

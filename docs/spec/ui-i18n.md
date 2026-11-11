@@ -97,6 +97,7 @@ satisfy.
 - An invalid saved value is ignored.
 - Language changes take effect immediately in every phase.
 - Language changes do not reset the run.
+- The language toggle shows `EN` and `한`, in both interface languages, and each half is at least `44 × 44 px`. Its accessible names stay `English` and `한국어`, so each visible label is part of its name.
 - Only the language preference and today's daily persist across a refresh. A refresh returns to `title`; opening Daily that day resumes or shows its result.
 
 ### 1.14 Required copy
