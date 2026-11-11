@@ -1,5 +1,5 @@
 .equation {
-  /* The round's headline: the display serif at its largest size, matching
+  /* The round's headline: the largest type in the app, matching
      the weight Tile.module.css gives the same numerals on a tile face. */
   font: var(--weight-bold) var(--size-equation) / var(--leading-tight) var(--font-ui);
   text-align: center;

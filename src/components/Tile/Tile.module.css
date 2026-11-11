@@ -8,7 +8,7 @@
   color: var(--text-on-tile);
 
   /* The engraved digit: a light top edge under dark ink reads as cut into the
-     ceramic rather than printed on it. */
+     chalk rather than printed on it. */
   text-shadow: 0 1px 0 rgb(255 255 255 / 85%);
   box-shadow: var(--tile-edge);
 
@@ -47,7 +47,7 @@ button.tile:not(:disabled):active {
 
   width: var(--tile-w);
   height: var(--tile-h);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   font: var(--weight-bold) var(--size-tile) / var(--leading-tight) var(--font-ui);
 }
 
@@ -56,7 +56,7 @@ button.tile:not(:disabled):active {
 
   width: var(--tile-w-sm);
   height: var(--tile-h-sm);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-xs);
   font: var(--weight-bold) var(--size-tile-sm) / var(--leading-tight) var(--font-ui);
 }
 

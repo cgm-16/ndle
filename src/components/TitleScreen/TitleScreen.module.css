@@ -52,17 +52,11 @@
   border-radius: var(--radius-sm);
 }
 
-/* The one place the socket fill is not --surface-socket. At 18px on
-   --surface-surround that fill measures 1.025:1 — the same dead-pixel failure
-   as the capacity pip that read 1.27:1 and turned out not to be painting at
-   all. The raised felt step reads 1.691:1 there, so the well is drawn from the
-   raised face inward instead: a hand-softened inset plus --rim-socket. That
-   inset is the whole of what makes this read as cut rather than laid on, so it
-   is softened to the size it sits at. A 3px blur over 18px dilutes 45% black to
-   about 11% by the time it paints: sampled, it gave a top band only 1.161:1
-   against the floor, which is at the threshold of being seen at all. 2px of
-   blur concentrates it into a band 1.399:1 against the floor, under a bottom
-   rim 1.686:1 lighter again than the band. */
+/* The one place the socket fill is not --surface-socket: this pip is drawn
+   from the raised face inward, with a hand-softened inset plus --rim-socket.
+   The inset is the whole of what makes it read as cut rather than laid on, so
+   it is softened to the size it sits at: a blur any wider would dilute 55%
+   black to nothing on an 18px square. */
 .socket {
   background: var(--surface-raised);
   box-shadow:

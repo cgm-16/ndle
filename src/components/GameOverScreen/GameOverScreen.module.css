@@ -105,10 +105,10 @@
 }
 
 /* The hint names the key that presses the button above it, so it stays meta
-   text: label size, meta ink, and none of --size-label's mono/uppercase/tracked
+   text: label size, meta ink, and none of --size-label's uppercase/tracked
    treatment, which belongs to labels rather than to a sentence. At 11px this is
-   body text and owes 4.5:1 — --text-meta composites to #909090 over
-   --surface-surround and measures 6.05:1. */
+   body text and owes 4.5:1 — --text-meta is dust, which measures 7.29:1 on
+   --surface-surround. */
 .restartHint {
   font-size: var(--size-label);
   color: var(--text-meta);

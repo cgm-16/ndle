@@ -5,7 +5,7 @@
   justify-content: center;
 }
 
-/* The empty slot is the one ceramic-adjacent case the Tile primitive does not
+/* The empty slot is the one chalk-adjacent case the Tile primitive does not
    collapse: it is a socket on the field — --surface-socket, a rim and a
    dashed border — with no tile face to draw. It stays a disabled
    button because role and accessible name are load-bearing here
@@ -20,7 +20,7 @@
      background and an empty socket borrowed the page behind it instead. */
   width: var(--tile-w);
   height: var(--tile-h);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background: var(--surface-socket);
   box-shadow: var(--rim-socket);
 
@@ -95,13 +95,13 @@
    element can only run one of those shapes.
    It is drawn before the tile, and the cracking span's transform makes that
    span paint with the positioned boxes, so the two paint in document order and
-   the cloud stays behind the ceramic — uncovered as the tile drops out of it.
+   the cloud stays behind the chalk — uncovered as the tile drops out of it.
    No z-index does this job: .filled has z-index auto and is no stacking
    context, so a negative one would sink past it and out of the slot. */
 .dust {
   position: absolute;
   inset: -14%;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background: radial-gradient(circle at 50% 55%, rgb(240 231 214 / 50%), transparent 68%);
   animation-name: global(oz-dust);
   animation-duration: var(--dur-crack);
@@ -150,11 +150,11 @@
 
 /* Tier 2 and tier 3's rim: state, not motion. It sits on the moment span so it
    travels with the bloom, and carries the tile's own radius so it traces the
-   ceramic rather than boxing it. One outline per element, so the two tiers
+   tile rather than boxing it. One outline per element, so the two tiers
    replace each other where the rings accumulate. */
 .rim,
 .rimBright {
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   outline-offset: -1px;
 }
 

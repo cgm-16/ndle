@@ -71,12 +71,12 @@
 
 /* You are here. A rim rather than a fill, drawn inset as the socket's rim is,
    so it takes no layout; the larger equation is the second cue, so the row
-   does not rely on the gold alone (§1.12). EquationBoard sets its size from
+   does not rely on the accent alone (§1.12). EquationBoard sets its size from
    --size-equation, scaled here to the display size. */
 .current .visual {
   --size-equation: var(--size-display);
 
   padding-block: var(--space-1);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   box-shadow: inset 0 0 0 1px var(--border-accent);
 }

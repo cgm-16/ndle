@@ -13,8 +13,8 @@
   background: var(--surface-panel);
 }
 
-/* 14.84:1 on --surface-panel. The instruction was --text-meta, which is the
-   register of a label rather than of the only irreversible choice in the game. */
+/* Chalk measures 11.27:1 on --surface-panel. --text-meta is the register of a
+   label rather than of the only irreversible choice in the game. */
 .instruction {
   font: var(--weight-regular) var(--size-body) / var(--leading-snug) var(--font-ui);
   color: var(--text-primary);

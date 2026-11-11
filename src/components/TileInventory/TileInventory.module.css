@@ -80,7 +80,7 @@
 .socket {
   width: 100%;
   height: var(--tile-h);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background: var(--surface-socket);
   box-shadow: var(--rim-socket);
 }
@@ -91,7 +91,7 @@
   outline-offset: var(--outline-socket-lifted-offset);
 }
 
-/* The tile is the Tile primitive's own ceramic face; the cell is only sized
+/* The tile is the Tile primitive's own chalk face; the cell is only sized
    to it, matching the fixed --tile-w x --tile-h grid track: every cell
    occupies the same footprint whether or not the tile inside it is a
    reward.
@@ -109,7 +109,7 @@
 
 /* The Tile inside the cell, which is the primitive's own `.lg` and carries a
    flat --tile-w. It fills the cell instead, so a shrunken track reaches the
-   ceramic face and not just the box around it.
+   chalk face and not just the box around it.
 
    Scoped here rather than changed on `.lg` itself: AnswerSlots wraps its
    filled tiles in an inline-flex `.filled`, and a percentage width inside a

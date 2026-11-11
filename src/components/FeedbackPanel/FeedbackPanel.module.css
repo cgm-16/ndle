@@ -1,6 +1,6 @@
 /* The verdict's only color is its edge. §1.12 permits semantic color on the
    object concerned and forbids a full-screen wash, so the panel takes a border
-   and no fill. Measured on --surface-surround: jade 5.66:1, vermilion 3.34:1. */
+   and no fill. Measured on --surface-surround: chalk 13.45:1, pink 8.08:1. */
 .panel {
   display: flex;
   flex-direction: column;
@@ -21,9 +21,8 @@
    color; the branch class adds color as reinforcement only (§1.12). The class
    comes from the same `kind` the headline is rendered from, so the two cannot
    disagree — a selector keyed off a sibling element's presence can, and does so
-   silently. At --size-title/600 the headline is large text, so vermilion's
-   3.34:1 clears its 3:1 floor; it does not clear 4.5:1 and must not be reused
-   at body size. */
+   silently. Pink measures 8.08:1 on --surface-surround, which clears 4.5:1 at
+   any size. */
 .headline {
   font: var(--weight-bold) var(--size-title) / var(--leading-tight) var(--font-display);
 }
@@ -44,10 +43,9 @@
   color: var(--state-incorrect);
 }
 
-/* §1.14's result.rewards. Gold rather than the caption grey .submitted takes,
-   so the line groups with the arrivals it counts. Same pair the badge below
-   measures at 7.87:1 on --surface-surround, and this line is body size rather
-   than 11px, so it clears its 4.5:1 floor with more room than the badge does. */
+/* §1.14's result.rewards. Blue rather than the caption dust .submitted takes,
+   so the line groups with the arrivals it counts. Blue measures 9.06:1 on
+   --surface-surround, which clears 4.5:1 at body size. */
 .rewardSummary {
   color: var(--state-reward);
 }
@@ -61,7 +59,7 @@
   padding: 0;
 }
 
-/* The ceramic face belongs to the Tile primitive; this list item only
+/* The chalk face belongs to the Tile primitive; this list item only
    centres it. */
 .reward {
   display: flex;

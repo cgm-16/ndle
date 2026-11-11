@@ -40,7 +40,7 @@
   font-size: 1.5rem;
 }
 
-/* Streak renders gold once it's above zero (GameHud.d.ts) — a plain color
+/* Streak renders in the accent once it's above zero (GameHud.d.ts) — a plain color
    rule, not competing with the .primary/.entry dd rules above. */
 dd.streakActive {
   color: var(--accent);
