@@ -39,7 +39,9 @@ export interface AnswerSlotsProps {
   /**
    * How the round judged the tiles in these slots, once it has judged them.
    * Omitted while the player is still answering: unjudged is a third state,
-   * not a default of either verdict, and the tiles are neither yet.
+   * not a default of either verdict, and the tiles are neither yet. Omitted
+   * in overflow too, where the verdict's moment waits for the discard: the
+   * tiles keep the arrival they already played, and nothing settles.
    */
   verdict?: RoundResult["kind"];
   /**

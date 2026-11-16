@@ -38,8 +38,9 @@ export function FeedbackPanel({ result, equation, rewardTiles }: FeedbackPanelPr
         {detail !== null && <span className={styles.detail}> · {detail}</span>}
       </span>
       {/* The slots show the submitted tiles, so a miss announces them too and
-          the region carries both the played and the right answer (§1.12). */}
-      {!isCorrect && <span className={styles.hidden}>{t("result.played", { value: result.submittedValue })}</span>}
+          the region carries both the played and the right answer (§1.12). The
+          period ends the visible line's sentence, which has none of its own. */}
+      {!isCorrect && <span className={styles.hidden}>. {t("result.played", { value: result.submittedValue })}</span>}
     </div>
   );
 }

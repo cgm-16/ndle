@@ -1,5 +1,5 @@
 import { StrictMode } from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { I18nProvider } from "../i18n/I18nContext";
@@ -71,7 +71,7 @@ function renderApp(
 // only one of those screens is ever mounted at a time, so the label text is
 // unambiguous. Digit tiles show plain digit text, never these labels.
 // Plays out a discard: the 8c exits, then the 8a·2 drops of any rail tile the
-// discard spared, and the verdict's moments on the answer slots, which mount
+// discard spared, and the verdict's moments on the answer slots, which start
 // with the feedback the discard completes. jsdom runs no animations, so each
 // is ended by hand, on both event names React may bind (see
 // TileInventory.test's endAnimation).
@@ -183,7 +183,7 @@ describe("App", () => {
 
   it("shows the bar on the title with the toggle and no Back", () => {
     renderApp();
-    expect(screen.getByRole("group", { name: "Language" })).toBeInTheDocument();
+    expect(within(screen.getByRole("banner")).getByRole("group", { name: "Language" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Back" })).not.toBeInTheDocument();
   });
 

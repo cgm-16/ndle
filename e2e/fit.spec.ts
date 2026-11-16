@@ -252,3 +252,58 @@ for (const language of LANGUAGES) {
     expect(foot.buttonBottomGap, "Practice's distance from the viewport's bottom").toBeLessThanOrEqual(foot.padding + foot.noteHeight + 16);
   });
 }
+
+/* After a discard the verdict line keeps to the left of the band's rail cell,
+   which still draws the leaving tile. Its widest form lists three digits
+   received. The line is a centred `nowrap` flex row, so a line too wide for
+   its box spills past both edges, and `scrollWidth` counts only the right
+   one. A flex item can also shrink below what it draws, so the line is read
+   as the Mark's box and the words' own text, against the panel's content box. */
+async function verdictLine(page: Page) {
+  return page.evaluate(() => {
+    const panel = document.querySelector<HTMLElement>('[role="status"][class*="beforeRail"]')!;
+    const style = getComputedStyle(panel);
+    const box = panel.getBoundingClientRect();
+    const [mark, words] = [...panel.children];
+    const markBox = mark!.getBoundingClientRect();
+    const range = document.createRange();
+    range.selectNodeContents(words!);
+    const text = range.getBoundingClientRect();
+    return {
+      text: panel.textContent ?? "",
+      markWidth: markBox.width,
+      fontSize: parseFloat(style.fontSize),
+      contentLeft: box.left + parseFloat(style.paddingLeft),
+      contentRight: box.right - parseFloat(style.paddingRight),
+      lineLeft: Math.min(markBox.left, text.left),
+      lineRight: Math.max(markBox.right, text.right),
+      wordsHeight: words!.getBoundingClientRect().height,
+      panelHeight: box.height,
+      railLeft: document.querySelector('[class*="railCell"]')!.getBoundingClientRect().left,
+    };
+  });
+}
+
+type VerdictLine = Awaited<ReturnType<typeof verdictLine>>;
+
+const lineEscapes = (line: VerdictLine) =>
+  line.lineLeft < line.contentLeft - 0.5 || line.lineRight > line.contentRight + 0.5 || line.lineRight > line.railLeft;
+
+for (const language of LANGUAGES) {
+  test(`three digits received after a discard stay on one line, clear of the rail cell, at 375 x ${HEIGHT} in ${language}`, async ({ page }) => {
+    await openState(page, "feedback-after-discard-three", language, 375, HEIGHT);
+    const line = await verdictLine(page);
+    expect(line.text, "the line lists three digits").toMatch(/0 7 7$/);
+    // The Mark is 1em square; a line short of room squeezes it first.
+    expect(line.markWidth, "the Mark's width").toBeCloseTo(line.fontSize, 0);
+    expect(lineEscapes(line), `line ${line.lineLeft}–${line.lineRight} in ${line.contentLeft}–${line.contentRight}, rail at ${line.railLeft}`).toBe(false);
+    // The words' box is one 26.4px line box; a second line would double it.
+    expect(line.wordsHeight, "one line").toBeLessThan(line.panelHeight * 1.5);
+  });
+}
+
+test("the verdict line check reports a line wider than its box", async ({ page }) => {
+  await openState(page, "feedback-after-discard-three", "en", 375, HEIGHT);
+  await page.addStyleTag({ content: '[class*="beforeRail"] { padding-right: 260px !important; }' });
+  expect(lineEscapes(await verdictLine(page)), "a 260px reserve leaves 83px for the line").toBe(true);
+});

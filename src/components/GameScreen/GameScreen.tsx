@@ -28,7 +28,7 @@ export function GameScreen({ state, dispatch, onSubmit, onNextRound }: GameScree
 
   // After a discard the round advances on its own (§1.7), once both halves of
   // the moment have played: the rack's exit and the verdict's celebration on
-  // the answer slots. The celebration mounts with feedback, when the discard
+  // the answer slots. The celebration starts with feedback, when the discard
   // completes, so the 320ms streak-8 fan can still be playing when the 200ms
   // exit and the perch drop after it end, and advancing on the exit alone
   // would unmount it midway. Each half reports the
@@ -57,10 +57,12 @@ export function GameScreen({ state, dispatch, onSubmit, onNextRound }: GameScree
   if (state.equation === null || state.table === null) return null;
 
   const { lastResult } = state;
+  // In the row's printed order, which rewardTileIds keeps and the sorted hand
+  // does not; a paid tile already discarded is no longer held, so it drops out.
   const rewardTiles =
     lastResult === null
       ? []
-      : state.inventory.filter((tile) => lastResult.rewardTileIds.includes(tile.id));
+      : lastResult.rewardTileIds.flatMap((id) => state.inventory.filter((tile) => tile.id === id));
 
   return (
     <main className={styles.screen}>
@@ -81,30 +83,24 @@ export function GameScreen({ state, dispatch, onSubmit, onNextRound }: GameScree
         <div className={styles.answerRow}>
           <EquationBoard equation={state.equation} />
 
-          {state.phase === "answering" && (
-            <AnswerSlots
-              slotCount={getAnswerLength(state.equation)}
-              selectedTiles={state.selectedTiles}
-              onReturn={(tileId) => dispatch({ type: "RETURN_TILE", tileId })}
-              disabled={false}
-            />
-          )}
-
-          {/* Feedback keeps the slots mounted so the verdict lands on the tiles
-              the player submitted. The reducer clears selectedTiles on submit
-              and hands the same array to lastResult.submittedTiles, so that is
-              where they are. No onReturn: read-only slots carry no button role,
-              and the phase offers no control to take a tile back. */}
-          {state.phase === "feedback" && lastResult !== null && (
-            <AnswerSlots
-              slotCount={getAnswerLength(state.equation)}
-              selectedTiles={lastResult.submittedTiles}
-              verdict={lastResult.kind}
-              streak={state.currentStreak}
-              disabled={false}
-              onSettled={() => setSlotsSettled(state.totalRounds)}
-            />
-          )}
+          {/* One group for the whole round, so a played tile keeps its node from
+              answering through overflow into feedback: a remounted slot would
+              replay its arrival. Keyed by the round, so each round's group
+              settles afresh. After submit the tiles are
+              lastResult.submittedTiles, the array the reducer moved them to.
+              Past answering there is no onReturn: read-only slots carry no
+              button role, and no phase after it takes a tile back. The verdict
+              waits for feedback, where the celebration plays. */}
+          <AnswerSlots
+            key={state.round}
+            slotCount={getAnswerLength(state.equation)}
+            selectedTiles={state.phase === "answering" ? state.selectedTiles : (lastResult?.submittedTiles ?? [])}
+            onReturn={state.phase === "answering" ? (tileId) => dispatch({ type: "RETURN_TILE", tileId }) : undefined}
+            verdict={state.phase === "feedback" ? lastResult?.kind : undefined}
+            streak={state.currentStreak}
+            disabled={false}
+            onSettled={() => setSlotsSettled(state.totalRounds)}
+          />
         </div>
 
         {/* Both live regions stay mounted in every phase, and only the phase's

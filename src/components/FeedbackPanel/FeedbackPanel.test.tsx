@@ -66,6 +66,16 @@ describe("FeedbackPanel", () => {
     expect(status.querySelector("svg")).toHaveAttribute("data-shape", "cross");
   });
 
+  // toHaveTextContent normalises whitespace and matches a substring, so it
+  // cannot see two sentences run together. The region's raw text can.
+  it.each([
+    ["en", "Missed · 3 × 5 = 15. You played 57"],
+    ["ko", "오답 · 3 × 5 = 15. 제출한 답 57"],
+  ] as const)("announces a miss as two sentences in %s", (language, text) => {
+    renderPanel(incorrect, [], language);
+    expect(screen.getByRole("status").textContent).toBe(text);
+  });
+
   it("states a correct verdict in words, with no played-answer sentence", () => {
     renderPanel(correct, rewards);
     expect(screen.getByRole("status")).not.toHaveTextContent("You played");

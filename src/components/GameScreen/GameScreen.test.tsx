@@ -333,6 +333,15 @@ describe("GameScreen phase composition", () => {
     expect(document.querySelectorAll(`.${slotStyles.ring}`)).toHaveLength(1);
   });
 
+  // The reducer sorts the pay into the hand, so the hand's order is not the
+  // row's: the verdict lists row 2's pay as the ledger prints it.
+  it("lists the received digits in the order the row prints them", () => {
+    const ids = sequentialIds();
+    renderScreen(playRow(parLineAt(2, ids), PUZZLE_SAMPLE_PAR_LINE[1]!, ids));
+
+    expect(filledStatus()).toHaveTextContent("Correct · Received 8 1 6");
+  });
+
   it("keeps the answer row mounted in feedback, and Next Round replaces Clear and Submit", () => {
     renderScreen(makeFeedbackState());
 
@@ -358,6 +367,47 @@ describe("GameScreen phase composition", () => {
     // HUD -> equation/feedback context -> phase action -> inventory (§1.10).
     expect(status.compareDocumentPosition(nextRound) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(nextRound.compareDocumentPosition(inventoryTile) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  // Ruling 3: the played tiles stay in the slots through overflow, read-only.
+  it("keeps the played tile in the answer row in overflow, with no answer-slot button", () => {
+    renderScreen(makeOverflowState()); // row 4, 1 × 7, answered with the 7
+
+    const slots = document.querySelector<HTMLElement>(`.${slotStyles.slots}`);
+    expect(slots).not.toBeNull();
+    expect(slots).toHaveTextContent("7");
+    expect(screen.queryByRole("button", { name: /Answer slot/ })).not.toBeInTheDocument();
+  });
+
+  // A remounted slot restarts its CSS animation, so the tile the player just
+  // placed would arrive again. The same node carries it from answering through
+  // overflow, and feedback's bloom is the first moment it plays after arriving.
+  it("keeps the played tile's slot node from answering through overflow into feedback", () => {
+    const ids = sequentialIds();
+    const row4 = parLineAt(4, ids);
+    const answering = selectDigits(row4, 7);
+    const overflow = playRow(row4, { spend: [7] }, ids);
+    const feedback = gameReducer(overflow, { type: "TOGGLE_DISCARD", tileId: tileWith(overflow, 6).id });
+    const screenFor = (state: GameState) => (
+      <I18nProvider initialLanguage="en">
+        <GameScreen state={state} dispatch={vi.fn()} onSubmit={vi.fn()} onNextRound={vi.fn()} />
+      </I18nProvider>
+    );
+    const { container, rerender } = render(screenFor(answering));
+    const filled = () => container.querySelector(`.${slotStyles.filled}`);
+    const slot = filled()!;
+    const moment = slot.querySelector(`.${slotStyles.arriving}`)!;
+    expect(moment).not.toBeNull();
+
+    rerender(screenFor(overflow));
+    expect(filled()).toBe(slot);
+    expect(moment).toHaveClass(slotStyles.arriving);
+    expect(moment).not.toHaveClass(slotStyles.bloom);
+
+    rerender(screenFor(feedback));
+    expect(filled()).toBe(slot);
+    expect(moment).toHaveClass(slotStyles.bloom);
+    expect(moment).not.toHaveClass(slotStyles.arriving);
   });
 
   it("renders a discard-mode inventory, one message with the verdict and the instruction, and no Confirm in overflow", () => {
@@ -566,7 +616,7 @@ describe("GameScreen after a discard", () => {
 
   it("waits for the verdict's celebration as well as the departure before advancing", () => {
     // A correct answer at streak 8 plays the bloom, three rings and the burst
-    // on its slot. Those mount with feedback, after the discard completes, so
+    // on its slot. Those start with feedback, after the discard completes, so
     // the 420ms exit ends before the 720ms burst does. No table reaches
     // streak 8 by row 4, so it is set on row 4's answer.
     const overflow = { ...makeOverflowState(), currentStreak: 8 };

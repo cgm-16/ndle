@@ -129,6 +129,14 @@ const FEEDBACK_AFTER_DISCARD_STATE = gameReducer(OVERFLOW_REQUIRED_1_STATE, {
   tileId: tileWith(OVERFLOW_REQUIRED_1_STATE, 6).id,
 });
 
+// The widest verdict line after a discard: row 6 pays 0 7 7, and discarding the
+// old 1 rather than the par line's 0 keeps all three, so "Received" lists three
+// digits beside the rail cell.
+const FEEDBACK_AFTER_DISCARD_THREE_STATE = (() => {
+  const ids = sequentialIds();
+  return playRow(parLineAt(6, ids), { spend: [2, 4], discard: 1 }, ids);
+})();
+
 // The sample's par line played to its end with par made, so the heading
 // says par was made and no equation is shown.
 const GAME_OVER_STATE = makeGameOverState();
@@ -229,6 +237,11 @@ export const GALLERY_STATES: Record<GamePhase | "interaction", GalleryEntry[]> =
       id: "feedback-after-discard",
       label: "Feedback — after a discard (no Next Round)",
       render: () => renderGameScreen(FEEDBACK_AFTER_DISCARD_STATE),
+    },
+    {
+      id: "feedback-after-discard-three",
+      label: "Feedback — after a discard, three digits received",
+      render: () => renderGameScreen(FEEDBACK_AFTER_DISCARD_THREE_STATE),
     },
     {
       id: "feedback-streak-5",
