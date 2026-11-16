@@ -14,8 +14,8 @@ export default defineConfig({
   },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-    // Every iPhone browser is WebKit; only the fit sweep runs in it.
-    { name: "webkit", use: { ...devices["iPhone 15"] }, testMatch: /(^|\/)fit\.spec\.ts$/ },
+    // Every iPhone browser is WebKit, so every spec runs in it too.
+    { name: "webkit", use: { ...devices["iPhone 15"] } },
   ],
   webServer: {
     command: "npm run dev",
