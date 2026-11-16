@@ -35,6 +35,14 @@ async function openArena(page: Page, locale: Locale = "en"): Promise<void> {
   await expect(page.locator('[class*="inventory"]')).toBeVisible();
 }
 
+/** The answer slots a deal draws: one per digit of the equation's product, read
+    from the prompt rather than from the controls a sweep counts. */
+async function slotCount(page: Page): Promise<number> {
+  const equation = await page.locator("p", { hasText: /^\d × \d =$/ }).first().innerText();
+  const [left, right] = equation.match(/\d/g)!.map(Number);
+  return String(left * right).length;
+}
+
 test("every action, tile and slot is a semantic button", async ({ page }) => {
   await openArena(page);
 
@@ -66,6 +74,7 @@ test("focus order follows the visual hierarchy", async ({ page }) => {
      sweeping before the click would measure a third of the screen. */
   await page.locator('button[aria-label^="Digit"]:not([disabled])').first().click();
 
+  const slots = await slotCount(page);
   const reading = await page.evaluate(() => {
     const focusable = [
       ...document.querySelectorAll<HTMLElement>(
@@ -101,7 +110,9 @@ test("focus order follows the visual hierarchy", async ({ page }) => {
     };
   });
 
-  expect(reading.count, "focusable controls swept").toBe(9);
+  /* Back, the language toggle's two halves, Clear, the filled slot and four
+     digits; Submit joins them only when the one tile fills every slot. */
+  expect(reading.count, "focusable controls swept").toBe(slots === 1 ? 10 : 9);
   expect(reading.positiveTabindex, "controls with a positive tabindex").toBe(0);
   expect(reading.inversions, "tab steps that move up or left").toEqual([]);
 });
@@ -250,9 +261,11 @@ async function sweepTargets(page: Page) {
 test("every interactive target is at least 44px", async ({ page }) => {
   await openArena(page);
 
+  const slots = await slotCount(page);
+  /* Back, the toggle's two halves, Clear, Submit and five digits, plus a slot a digit. */
   const reading = await sweepTargets(page);
 
-  expect(reading.count, "targets swept").toBe(11);
+  expect(reading.count, "targets swept").toBe(10 + slots);
   expect(reading.undersized, "targets under 44px").toEqual([]);
   expect(reading.minWidth, "narrowest target").toBeGreaterThanOrEqual(MIN_TARGET);
   expect(reading.minHeight, "shortest target").toBeGreaterThanOrEqual(MIN_TARGET);
