@@ -333,13 +333,22 @@ describe("GameScreen phase composition", () => {
     expect(document.querySelectorAll(`.${slotStyles.ring}`)).toHaveLength(1);
   });
 
+  it("keeps the answer row mounted in feedback, and Next Round replaces Clear and Submit", () => {
+    renderScreen(makeFeedbackState());
+
+    expect(document.querySelector(`.${slotStyles.slots}`)).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Next Round" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Clear" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Submit" })).not.toBeInTheDocument();
+  });
+
   it("renders a read-only inventory, feedback, and Next Round in feedback, with no answer-slot button", () => {
     renderScreen(makeFeedbackState());
 
     const status = filledStatus();
     const nextRound = screen.getByRole("button", { name: "Next Round" });
     const inventoryTile = screen.getByRole("button", { name: "Digit 1" });
-    expect(status).toHaveTextContent("Incorrect");
+    expect(status).toHaveTextContent("Missed");
     expect(inventoryTile).toBeDisabled();
     expect(screen.queryByRole("button", { name: /Answer slot/ })).not.toBeInTheDocument();
 
@@ -381,7 +390,7 @@ describe("GameScreen phase composition", () => {
     rerender(screenFor(makeFeedbackState()));
 
     expect(screen.getAllByRole("status")[0]).toBe(status);
-    expect(status).toHaveTextContent("Incorrect");
+    expect(status).toHaveTextContent("Missed");
   });
 
   // Both live regions exist, empty, in every phase, and only the phase's own

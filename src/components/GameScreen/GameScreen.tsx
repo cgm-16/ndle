@@ -76,7 +76,7 @@ export function GameScreen({ state, dispatch, onSubmit, onNextRound }: GameScree
 
       {/* One band holds the answer row and the phase's action in every phase,
           so the rack never moves. */}
-      <div className={styles.band} data-overflow={state.phase === "overflow" ? "" : undefined}>
+      <div className={styles.band} data-compact={state.phase === "overflow" || state.phase === "feedback" ? "" : undefined}>
         <div className={styles.answerRow}>
           <EquationBoard equation={state.equation} />
 
@@ -108,7 +108,11 @@ export function GameScreen({ state, dispatch, onSubmit, onNextRound }: GameScree
 
         {/* Both live regions stay mounted in every phase, and only the phase's
             own holds content: overflow's message is OverflowControls. */}
-        <FeedbackPanel result={state.phase === "overflow" ? null : lastResult} rewardTiles={rewardTiles} />
+        <FeedbackPanel
+          result={state.phase === "overflow" ? null : lastResult}
+          equation={state.equation}
+          rewardTiles={rewardTiles}
+        />
 
         {state.phase === "answering" && (
           <div className={styles.actions}>
@@ -134,7 +138,7 @@ export function GameScreen({ state, dispatch, onSubmit, onNextRound }: GameScree
         {/* After a discard the round advances on its own once the rack has
             settled (§1.7), so there is nothing to press. */}
         {state.phase === "feedback" && !lastResult?.discarded && (
-          <ActionButton onClick={onNextRound}>{t("action.next")}</ActionButton>
+          <ActionButton className={styles.next} onClick={onNextRound}>{t("action.next")}</ActionButton>
         )}
 
         <div className={styles.overflow} data-active={state.phase === "overflow" ? "" : undefined}>

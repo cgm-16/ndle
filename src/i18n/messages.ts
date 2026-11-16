@@ -67,10 +67,9 @@ const en = {
   },
   result: {
     correct: "Correct",
-    incorrect: "Incorrect",
-    submitted: "Your answer: {value}",
-    answer: "Correct answer: {value}",
-    rewards: "Received {count} tiles",
+    incorrect: "Missed",
+    rewards: "Received {digits}",
+    played: "You played {value}",
     handFull: "hand full",
   },
   overflow: {
@@ -173,9 +172,8 @@ const ko = {
   result: {
     correct: "정답",
     incorrect: "오답",
-    submitted: "제출한 답: {value}",
-    answer: "정답: {value}",
-    rewards: "타일 {count}개 획득",
+    rewards: "받은 타일 {digits}",
+    played: "제출한 답 {value}",
     handFull: "손이 가득 참",
   },
   overflow: {

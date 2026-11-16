@@ -299,9 +299,8 @@ describe("App", () => {
     // Row 3: "3 x 3 = 9"; deliberately submit "8" instead.
     await press(user, [8]);
 
-    expect(filledStatus()).toHaveTextContent("Incorrect");
-    expect(screen.getByText("Your answer: 8")).toBeInTheDocument();
-    expect(screen.getByText("Correct answer: 9")).toBeInTheDocument();
+    expect(filledStatus()).toHaveTextContent("Missed · 3 × 3 = 9");
+    expect(filledStatus()).toHaveTextContent("You played 8");
     expect(hudField("Score")).toBe("1"); // unchanged: no reward for an incorrect answer
     expect(hudField("Streak")).toBe("0"); // reset
     expect(hudField("Row")).toBe("3/8"); // feedback: round === totalRounds

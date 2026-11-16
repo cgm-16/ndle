@@ -233,8 +233,9 @@ test("the verdict is announced, and carried by words rather than colour", async 
   /* The verdict as a word is what makes the state legible without the hue —
      §1.12's "never colour alone" clause, checked where colour actually carries
      meaning. */
-  expect(status.text, "the announced verdict").toMatch(/Correct|Incorrect/);
-  expect(status.text, "the submitted value, announced with it").toMatch(/Your answer/);
+  expect(status.text, "the announced verdict").toMatch(/Correct|Missed/);
+  /* Whether submitAnAnswer's answer is right decides which sentence is present. */
+  if (/Missed/.test(status.text)) expect(status.text, "the submitted value, announced with it").toMatch(/You played/);
 });
 
 /** Measures every button and disclosure summary on the page. */

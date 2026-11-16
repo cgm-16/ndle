@@ -25,28 +25,7 @@ const DUST = "rgb(170, 179, 191)";
    counted; Chromium and Playwright's WebKit missed the same keys, by the same
    scrollHeights. A listed key must still
    miss: fixing a state fails the sweep until its key is removed here. */
-const KNOWN_MISSES = new Set<string>([
-  "feedback-correct en 393", // scrollHeight 789 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-correct en 375", // scrollHeight 789 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-correct ko 393", // scrollHeight 792 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-correct ko 375", // scrollHeight 792 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-incorrect en 393", // scrollHeight 731 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-incorrect en 375", // scrollHeight 731 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-incorrect ko 393", // scrollHeight 734 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-incorrect ko 375", // scrollHeight 734 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-after-discard en 393", // scrollHeight 733 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-after-discard en 375", // scrollHeight 733 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-after-discard ko 393", // scrollHeight 736 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-after-discard ko 375", // scrollHeight 736 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-streak-5 en 393", // scrollHeight 733 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-streak-5 en 375", // scrollHeight 733 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-streak-5 ko 393", // scrollHeight 736 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-streak-5 ko 375", // scrollHeight 736 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-streak-8 en 393", // scrollHeight 733 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-streak-8 en 375", // scrollHeight 733 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-streak-8 ko 393", // scrollHeight 736 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-streak-8 ko 375", // scrollHeight 736 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-]);
+const KNOWN_MISSES = new Set<string>([]);
 
 /* The gallery's state count, as viewport.spec.ts counts it. Read from that
    file so there is one number to change. */

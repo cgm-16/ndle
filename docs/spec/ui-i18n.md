@@ -28,12 +28,12 @@ satisfy.
 - **Rack sizing is one size.** Five equal columns of the arena's content, `8 px` apart, `56 px` tall, never narrower than `44 px`. The arena is at most `393 px` wide with a `16 px` gutter on each side, so its content is at most `361 px` and the columns at most `65.8 px`; a wider viewport shows the phone layout, centred.
 - **The target minimum is a floor, and it outranks the layout.** A tile is a control, so below the viewport width where five tiles at `44` plus their gaps and the gutters no longer fit — `284 px` — the rack stops shrinking and the page scrolls instead. The `320px` rule below is silent under `320px`, while the target minimum has no lower bound, so that is the order they resolve in.
 - **The columns are sized from the arena, not from a media query.** A `min-width` query matches the scrollbar-*inclusive* viewport while the content box excludes it, so wherever scrollbars take layout width a boundary fires about `15px` early; the `320px` no-horizontal-scroll rule is carried by the columns shrinking with their container, bounded by the target minimum.
-- **Known misses, owned by M17 (T115):** the feedback states overflow `660` with the bar counted. `KNOWN_MISSES` in `e2e/fit.spec.ts` lists them, and T115 removes its keys. Until then these states are the only exceptions to the first rule of this list.
+- **Known misses:** none. `KNOWN_MISSES` in `e2e/fit.spec.ts` is empty.
 
 **Phases**
 
 - **Answering.** Selecting a tile moves it into the leftmost empty slot; a filled slot returns its tile. Submit is enabled only when every slot is filled (`product.md` §1.4). The remaining rows stay visible in the ledger.
-- **Feedback.** The verdict reads **Correct** or **Incorrect** in text. A correct answer shows the tiles received (`result.rewards`); an incorrect answer shows the submitted and the correct answer (`result.submitted`, `result.answer`). **Next Round** advances; `Enter` does the same.
+- **Feedback.** The verdict takes the actions' place in the band, below the answer row, which stays mounted with the submitted tiles in its slots. One `26 px` line in the existing `role="status"` region: a `Mark` and the word at `22 px` bold (`result.correct` in chalk, `result.incorrect` in pink), then ` · ` and a detail at `16 px` in dust. A correct answer's detail lists the digits received (`result.rewards`); a miss's is the row's equation and product, `3 × 5 = 15`. A miss also announces, in visually hidden text, the answer played (`result.played`), so the region carries both the submitted and the correct answer. **Next Round** (`48 px`, `17 px`) follows, and `Enter` does the same; after a discard the round advances on its own, and the line keeps clear of the rail cell.
 - **Overflow.** A correct answer at a full hand leaves one tile on the rail. The answer row stays above the band's content, and below it the left cell holds one `role="status"` message: the `Mark` (correct), `result.correct`, ` · ` and `result.handFull` at `20 px` bold, then `overflow.instructionOne` at `16 px` in dust. The rail is the right cell. Both status regions, this message's and the feedback panel's, stay mounted in every phase and are empty outside their own phase, so a verdict or message arrives in a region that already exists. Every tile is a discard choice, with a `2 px` dashed pink border and no bottom edge, named `tile.discard` (and `tile.newLabel` for the arrival). Any owned tile can be marked, by click or by digit key. The mark completes the discard, and no confirmation control is rendered. The marked tile leaves the rack, the rail tile takes the freed socket, and the round advances on its own once the discard and the verdict's celebration have both visibly finished.
 - **Game over.** One `h1` holds the verdict, **Made par** (`gameOver.parTitle`) or `{short} short of par` (`gameOver.shortTitle`), in text; a Daily's `gameOver.dailyNumber` is the first line inside it, so heading navigation reads "Table #12, Made par". Top to bottom:
   1. the heading, then the reason: `gameOver.tableReason` after row 8, else `gameOver.reason`. The equation the run stopped on is not drawn; after an early end, `gameOver.reason` says why and the row marks show where the run stopped;
@@ -144,10 +144,9 @@ Every string lives in `src/i18n/messages.ts`, in both languages. This is the cop
 | `ledger.now` | `Now` | `지금` |
 | `ledger.pays` | `pays` | `보상` |
 | `result.correct` | `Correct` | `정답` |
-| `result.incorrect` | `Incorrect` | `오답` |
-| `result.submitted` | `Your answer: {value}` | `제출한 답: {value}` |
-| `result.answer` | `Correct answer: {value}` | `정답: {value}` |
-| `result.rewards` | `Received {count} tiles` | `타일 {count}개 획득` |
+| `result.incorrect` | `Missed` | `오답` |
+| `result.rewards` | `Received {digits}` | `받은 타일 {digits}` |
+| `result.played` | `You played {value}` | `제출한 답 {value}` |
 | `result.handFull` | `hand full` | `손이 가득 참` |
 | `overflow.instructionOne` | `Six tiles, five sockets. Choose a tile to discard.` | `타일 여섯 개, 칸 다섯 개. 버릴 타일 1개를 선택하세요.` |
 | `rack.hand` | `Hand · {count} of 5` | `손 · 5칸 중 {count}개` |

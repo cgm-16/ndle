@@ -17,9 +17,9 @@
   margin-top: var(--space-2);
 }
 
-/* 150px in every phase, so the rack never moves. Feedback grows it until it is
-   restyled; a fixed height would let that content overlap the rack without the
-   page ever reporting it. */
+/* 150px in every phase, so the rack never moves. A minimum, not a height: a
+   fixed height would let taller content overlap the rack without the page
+   ever reporting it. */
 .band {
   position: relative;
   display: flex;
@@ -30,8 +30,8 @@
   margin-top: var(--space-3);
 }
 
-/* Overflow's content sits 8px below the answer row. */
-.band[data-overflow] {
+/* Overflow's and feedback's content sit 8px below the answer row. */
+.band[data-compact] {
   gap: var(--space-2);
 }
 
@@ -51,9 +51,14 @@
 /* The screen's rule beats the button's own at equal specificity: its
    stylesheet is emitted after ActionButton's. */
 .clear,
-.submit {
+.submit,
+.next {
   height: 48px;
   padding: 0;
+}
+
+.next {
+  font-size: var(--type-row);
 }
 
 .clear {
