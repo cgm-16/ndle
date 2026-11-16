@@ -336,7 +336,10 @@ describe("GameScreen phase composition", () => {
   it("keeps the answer row mounted in feedback, and Next Round replaces Clear and Submit", () => {
     renderScreen(makeFeedbackState());
 
-    expect(document.querySelector(`.${slotStyles.slots}`)).not.toBeNull();
+    // The sacrifice plays 5 then 7; the ledger draws digits too, so the slots are read on their own.
+    const slots = document.querySelector<HTMLElement>(`.${slotStyles.slots}`)!;
+    expect(slots).not.toBeNull();
+    expect(slots).toHaveTextContent(/5\s*7/);
     expect(screen.getByRole("button", { name: "Next Round" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Clear" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Submit" })).not.toBeInTheDocument();

@@ -35,21 +35,6 @@ async function openArena(page: Page, locale: Locale = "en"): Promise<void> {
   await expect(page.locator('[class*="inventory"]')).toBeVisible();
 }
 
-/** Fills every answer slot and submits, to reach `feedback`. The slot count is
-    the product's digit length and the product is random, so the number of tiles
-    to spend has to be read off the screen — Submit stays disabled until the last
-    slot is filled. The verdict is whichever it is: the clause is that a verdict
-    is announced, not which one. */
-async function submitAnAnswer(page: Page): Promise<void> {
-  const slots = await page.locator('button[aria-label^="Answer slot"]').count();
-  expect(slots, "answer slots to fill").toBeGreaterThan(0);
-  for (let i = 0; i < slots; i++) {
-    await page.locator('button[aria-label^="Digit"]:not([disabled])').first().click();
-  }
-  await page.getByRole("button", { name: "Submit", exact: true }).click();
-  await expect(page.locator('[role="status"]:not(:empty)')).toBeVisible();
-}
-
 test("every action, tile and slot is a semantic button", async ({ page }) => {
   await openArena(page);
 
@@ -213,9 +198,29 @@ test("Korean loads Gothic A1 400 and 700", async ({ page }) => {
   expect(await loadedFaces(page, "Gothic A1")).toEqual(expect.arrayContaining(["400", "700"]));
 });
 
-test("the verdict is announced, and carried by words rather than colour", async ({ page }) => {
+/** Reaches a miss on every run: the slots are filled with hand digits read off
+    the screen, rotated until the number they spell is not the equation's product. */
+async function submitAMiss(page: Page): Promise<void> {
+  const slots = await page.locator('button[aria-label^="Answer slot"]').count();
+  expect(slots, "answer slots to fill").toBeGreaterThan(0);
+  const equation = await page.locator("p", { hasText: /^\d × \d =$/ }).first().innerText();
+  const [left, right] = equation.match(/\d/g)!.map(Number);
+  const hand = (await page.locator('button[aria-label^="Digit"]:not([disabled])').evaluateAll((buttons) =>
+    buttons.map((b) => b.getAttribute("aria-label")!.replace("Digit ", "")),
+  )).slice(0, slots + 1);
+  const spell = (digits: string[]) => Number(digits.slice(0, slots).join(""));
+  const pick = hand.map((_, i) => [...hand.slice(i), ...hand.slice(0, i)]).find((d) => spell(d) !== left * right);
+  expect(pick, "a spelling that is not the product").toBeDefined();
+  for (const digit of pick!.slice(0, slots)) {
+    await page.locator(`button[aria-label="Digit ${digit}"]:not([disabled])`).first().click();
+  }
+  await page.getByRole("button", { name: "Submit", exact: true }).click();
+  await expect(page.locator('[role="status"]:not(:empty)')).toBeVisible();
+}
+
+test("a miss is announced, and carried by words rather than colour", async ({ page }) => {
   await openArena(page);
-  await submitAnAnswer(page);
+  await submitAMiss(page);
 
   const reading = await page.evaluate(() => {
     const regions = [...document.querySelectorAll('[aria-live], [role="status"], [role="alert"]')];
@@ -233,9 +238,8 @@ test("the verdict is announced, and carried by words rather than colour", async 
   /* The verdict as a word is what makes the state legible without the hue —
      §1.12's "never colour alone" clause, checked where colour actually carries
      meaning. */
-  expect(status.text, "the announced verdict").toMatch(/Correct|Missed/);
-  /* Whether submitAnAnswer's answer is right decides which sentence is present. */
-  if (/Missed/.test(status.text)) expect(status.text, "the submitted value, announced with it").toMatch(/You played/);
+  expect(status.text, "the announced verdict").toMatch(/Missed/);
+  expect(status.text, "the submitted value, announced with it").toMatch(/You played/);
 });
 
 /** Measures every button and disclosure summary on the page. */
