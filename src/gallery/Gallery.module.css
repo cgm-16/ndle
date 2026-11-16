@@ -84,6 +84,8 @@
 }
 
 .boardRow {
+  /* Clears the ring's reach below the slots above, whose tiles are transformed. */
+  margin-top: var(--space-2);
   display: flex;
   flex-wrap: wrap;
   justify-content: center;

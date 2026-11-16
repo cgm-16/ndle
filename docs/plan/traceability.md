@@ -16,6 +16,9 @@
 | R-10 the share text hides the rows | T108 | exact-match share tests in en and ko |
 | R-11 both game-over variants | T108 | component tests for the Daily and Practice game-over screens |
 | R-12 the bilingual copy | T106–T108 | typed dictionary has an `en` and a `ko` entry for every string; component tests in both locales |
-| R-13 the fit at 393 × 660 | M16 | the geometry suite (`e2e/viewport.spec.ts`, `e2e/puzzle-fit.spec.ts`, `e2e/accessibility.spec.ts`) |
-| R-14 zero non-origin requests | T100 | a full run in en and ko makes no request to another origin |
+| R-13 the fit at 393 × 660 and 375 wide, in en and ko | T110–T117 | the sweep, `e2e/fit.spec.ts`, over every gallery state, with `e2e/viewport.spec.ts`, `e2e/puzzle-fit.spec.ts` and `e2e/accessibility.spec.ts` |
+| R-14 zero non-origin requests | T100, T109 | a full run in en and ko makes no request to another origin, rechecked with B's faces |
 | R-15 Back returns to the title and is not a move | T106, T107 | `gameReducer.test.ts`, `App.test.tsx` |
+| R-16 contrast: text at least 4.5:1, the focus ring and non-text marks at least 3:1 | T109 | `src/styles/tokens/contrast.test.ts`; the ring checks in `e2e/accessibility.spec.ts` and `e2e/fit.spec.ts` |
+| R-17 correct and wrong marks by shape as well as colour: ✓ in English, ○ in Korean, ✗ in both | T112, T113 | `Mark.test.tsx`; the ledger and game-over tests |
+| R-18 the launch date is set once, and the review file matches it | T118 | `daily.test.ts`, `dailyTables.test.ts` |

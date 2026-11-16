@@ -141,7 +141,7 @@ The loss check compares tile count with the answer-slot count only:
 inventory.length < getAnswerLength(equation)
 ```
 
-**Par** is the solver's best score for the table, shown before the first move. **Made par** is a game over with a score equal to par. The terminal row remains visible to explain an early end. It is not counted as a submitted round.
+**Par** is the solver's best score for the table, shown before the first move. **Made par** is a game over with a score equal to par. `gameOver.reason` explains an early end, and the row marks show where the run stopped; no terminal row is drawn, and it is not counted as a submitted round.
 
 ### 1.9 Statistics semantics
 
@@ -161,7 +161,7 @@ inventory.length < getAnswerLength(equation)
 - A Daily resumes when opened again that day, and once finished it shows its result until the next table.
 - Every game and game-over screen has **Back** at the top, in the app's top bar rather than inside the screen, which returns to the title (Ori, 2026-11-09). Back is not a move: a Daily keeps its record and resumes, and a Practice run is dropped.
 - Round, score, streak and par are never shown by colour alone.
-- `gameOver` is the only phase that prints the product; during play the board shows `left × right = ?`, so the answer is never given away.
+- No phase prints the product: the board shows `left × right = ?` throughout, so the answer is never given away.
 - Clear is disabled while no tile is selected.
 - A lifted tile's socket is on loan: it stays held for that tile, visibly distinct from a socket emptied by a spent tile, and the rack does not re-sort until the round resolves.
 

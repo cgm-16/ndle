@@ -1,5 +1,6 @@
 import { useState } from "react";
-import type { Equation } from "../../game/types";
+import { PUZZLE_ROWS } from "../../game/balance";
+import type { RoundResult } from "../../game/types";
 import { useI18n } from "../../i18n/I18nContext";
 import {
   copyResult,
@@ -10,12 +11,12 @@ import {
   type ShareStats,
 } from "../../services/sharing";
 import { ActionButton } from "../ActionButton/ActionButton";
-import { EquationBoard } from "../EquationBoard/EquationBoard";
+import { Mark } from "../Mark/Mark";
 import styles from "./GameOverScreen.module.css";
 
 export interface GameOverScreenProps {
-  /** The equation the run stopped on; null when the table was played to its end. */
-  equation: Equation | null;
+  /** One entry per row played; a row past the end of the list is unplayed. */
+  rowResults: readonly RoundResult["kind"][];
   /** Its `kind` picks the Daily or the Practice variant. */
   stats: ShareStats;
   url: string;
@@ -27,7 +28,7 @@ export interface GameOverScreenProps {
 }
 
 export function GameOverScreen({
-  equation,
+  rowResults,
   stats,
   url,
   dependencies,
@@ -39,82 +40,90 @@ export function GameOverScreen({
   // to the OS share sheet, so there is nothing further to confirm here.
   const [status, setStatus] = useState<ShareOutcome | null>(null);
 
+  // The preview is the text Share and Copy Result send.
+  const shareText = formatShareText(stats, language, url);
+
   const handleShare = async () => {
-    const text = formatShareText(stats, language, url);
-    const outcome = await shareResult(text, url, dependencies);
-    setStatus(outcome);
+    setStatus(await shareResult(shareText, url, dependencies));
   };
 
   const handleCopy = async () => {
-    const text = formatShareText(stats, language, url);
-    const outcome = await copyResult(text, dependencies);
-    setStatus(outcome);
+    setStatus(await copyResult(shareText, dependencies));
   };
 
-  const reason = equation === null ? "gameOver.tableReason" : "gameOver.reason";
+  // A table played to its end stopped on no row; an early end says why.
+  const reason = rowResults.length === stats.rows ? "gameOver.tableReason" : "gameOver.reason";
   const title = stats.won
     ? t("gameOver.parTitle")
     : t("gameOver.shortTitle", { short: stats.par - stats.score });
 
   return (
     <main className={styles.screen}>
-      <div className={styles.terminal}>
-        {equation === null ? null : <EquationBoard equation={equation} showProduct />}
-        {/* §1.8 keeps the terminal equation on screen to explain the loss, but
-            the equation alone reads as a live prompt. The reason sits with the
-            equation rather than inside the results block, so it defuses the
-            thing it explains. */}
-        <p className={styles.reason}>{t(reason)}</p>
-      </div>
-      {stats.kind === "daily" && <p>{t("gameOver.dailyNumber", { number: stats.number })}</p>}
-      <h1 className={`${styles.title} ${stats.won ? styles.won : styles.shortOfPar}`}>
+      <h1 className={styles.title}>
+        {stats.kind === "daily" && (
+          <>
+            <span className={styles.number}>{t("gameOver.dailyNumber", { number: stats.number })}</span>{" "}
+          </>
+        )}
         {title}
       </h1>
-      <dl className={styles.stats}>
-        {/* The score is read against its table, so Par sits beside it. */}
-        <div className={styles.entry}>
-          <dt>{t("hud.score")}</dt>
-          <dd className={styles.primary}>{`${stats.score} / ${stats.rows}`}</dd>
-        </div>
-        <div className={styles.entry}>
+      <p className={styles.reason}>{t(reason)}</p>
+      <p className={styles.score}>{`${stats.score} / ${stats.rows}`}</p>
+      <dl className={styles.cards}>
+        <div className={styles.card}>
           <dt>{t("hud.par")}</dt>
           <dd>{stats.par}</dd>
         </div>
-        <div className={styles.entry}>
+        <div className={styles.card}>
           <dt>{t("gameOver.longestStreak")}</dt>
           <dd>{stats.longestStreak}</dd>
         </div>
       </dl>
-      <div className={styles.actions}>
-        {stats.kind === "daily" ? (
-          <>
-            <ActionButton onClick={onPractice}>{t("title.practice")}</ActionButton>
-            <p className={styles.restartHint}>{t("gameOver.nextTable")}</p>
-          </>
-        ) : (
-          <>
-            <ActionButton onClick={onPlayAgain}>{t("action.playAgain")}</ActionButton>
-            {/* `gameOver.restartHint` belongs here, between the primary action and
-                the row of alternatives: it names the key that presses the button
-                directly above it, and as meta text under a button it explains, it
-                adds no focal point of its own. */}
-            <p className={styles.restartHint}>{t("gameOver.restartHint")}</p>
-          </>
-        )}
-        <div className={styles.secondaryActions}>
-          <ActionButton variant="secondary" onClick={handleShare}>
-            {t("action.share")}
-          </ActionButton>
-          <ActionButton variant="ghost" onClick={handleCopy}>
-            {t("action.copy")}
-          </ActionButton>
-        </div>
+      <ol
+        className={styles.marks}
+        aria-label={t("gameOver.rowsLabel")}
+        // WebKit strips list semantics from unstyled lists, and the label with them.
+        role="list"
+      >
+        {Array.from({ length: PUZZLE_ROWS }, (_, index) => {
+          const result = rowResults[index];
+          const word =
+            result === undefined ? t("gameOver.unplayed") : result === "correct" ? t("ledger.answered") : t("ledger.missed");
+          const look = result === undefined ? styles.unplayed : result === "correct" ? styles.answered : styles.missed;
+          return (
+            <li key={index} className={`${styles.mark} ${look}`}>
+              <span className={styles.markLabel}>{t("gameOver.rowMark", { row: index + 1, result: word })}</span>
+              {result !== undefined && <Mark result={result} />}
+            </li>
+          );
+        })}
+      </ol>
+      {stats.kind === "daily" && <p className={styles.nextTable}>{t("gameOver.nextTable")}</p>}
+      <p className={styles.previewLabel}>{t("gameOver.shareText")}</p>
+      <p className={styles.preview}>{shareText}</p>
+      <div className={styles.row}>
+        <ActionButton className={`${styles.button} ${styles.share}`} onClick={handleShare}>
+          {t("action.share")}
+        </ActionButton>
+        <ActionButton variant="secondary" className={`${styles.button} ${styles.copy}`} onClick={handleCopy}>
+          {t("action.copy")}
+        </ActionButton>
       </div>
-      <div className={styles.confirmation}>
-        <p className={styles.status} role="status" aria-live="polite">
-          {status === "copied" ? t("share.copied") : status === "failed" ? t("share.failed") : ""}
-        </p>
-      </div>
+      {stats.kind === "daily" ? (
+        <ActionButton variant="secondary" className={`${styles.button} ${styles.last}`} onClick={onPractice}>
+          {t("title.practice")}
+        </ActionButton>
+      ) : (
+        <>
+          <ActionButton variant="secondary" className={`${styles.button} ${styles.last}`} onClick={onPlayAgain}>
+            {t("action.playAgain")}
+          </ActionButton>
+          <p className={styles.restartHint}>{t("gameOver.restartHint")}</p>
+        </>
+      )}
+      <p className={styles.status} role="status" aria-live="polite">
+        {status === "copied" ? t("share.copied") : status === "failed" ? t("share.failed") : ""}
+      </p>
     </main>
   );
 }

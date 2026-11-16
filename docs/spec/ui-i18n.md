@@ -5,19 +5,20 @@ The game rules live in `docs/spec/product.md`.
 
 ### 1.12 Responsive and visual contract
 
-Token values live in `src/styles/tokens/`. The palette and type are
-placeholders until the identity replaces them (the second plan); this section
-states the contract any values must satisfy.
+Token values live in `src/styles/tokens/`. The palette and type are the
+Chalkboard identity's (direction B); this section states the contract they
+satisfy.
 
 **Layout and information architecture**
 
 - **Every screen fits `393 × 660` with no page scroll, and `375` wide.** 393 × 660
   is a common phone's viewport less its browser chrome. The geometry specs in
-  `e2e/` assert it.
+  `e2e/` assert it, and `fit.spec.ts` sweeps every gallery state with the top
+  bar counted, in Chromium and in Playwright's WebKit.
 - Use one centered vertical arena on desktop and mobile.
 - Preserve order across breakpoints: Back (in the app's top bar) → HUD → ledger → equation/slots → phase action → rail (while a tile is past capacity, and until a dropping tile lands) → rack. The rail sits directly above the rack, because a perched tile drops from it into a socket.
 - Mobile changes spacing, wrapping, and control size, not information architecture.
-- **Back** (`action.back`, `Back` / `뒤로`) sits in the app's top bar, ahead of the language toggle and outside the screen's `<main>`, on the game screen and the game-over screen, for Daily and Practice alike, so it is the first focusable element on the page. It is at least `44 px` tall and carries an `aria-hidden` inline-SVG arrow. It has no key binding, because `Escape` already clears the selection. It dispatches `RETURN_TO_TITLE`, with no confirmation. Back is not a move: a Daily keeps its record and resumes from the title, and a Practice run is dropped.
+- **Back** (`action.back`, `Back` / `뒤로`) sits at the left edge of the app's top bar, with the wordmark and the label (`#12` or `Practice`) in the centre and the language toggle at the right, ahead of the toggle in tab order and outside the screen's `<main>`, on the game screen and the game-over screen, for Daily and Practice alike, so it is the first focusable element on the page. It is at least `44 px` tall and carries an `aria-hidden` inline-SVG arrow. It has no key binding, because `Escape` already clears the selection. It dispatches `RETURN_TO_TITLE`, with no confirmation. Back is not a move: a Daily keeps its record and resumes from the title, and a Practice run is dropped.
 - **The ledger** lists the table's 8 rows. Each row shows its equation and the tiles it pays, and a mark once answered: correct or missed, in text or shape as well as colour. The current row is marked by more than colour. Each row is one accessible string (`ledger.row`).
 - **The rack** is five fixed sockets in a single row at every breakpoint (`PUZZLE_CAPACITY`). The grid never resizes; an empty socket is a tile spent, and a socket whose tile is lifted is on loan: it stays held for that tile, visibly distinct from an empty one, and the rack does not re-sort until the round resolves.
 - **The rail.** The tile past capacity (the newest arrival, `product.md` §1.7) perches on a band one tile high above the rack with a `1px` `--border-accent` top rule, right-aligned and drawn at the rack's tile size (where the rack's tracks shrink below it, a dropping tile narrows by a few pixels as it lands). The rail exists while a tile is past capacity, and until the tile it held has landed in a freed socket (`8a·2`). It never adds a row to the rack.
@@ -27,29 +28,35 @@ states the contract any values must satisfy.
 - **A tier's figures are the tile's maximum size, not a fixed size.** The rack is sized from its container rather than from the viewport, and scales down toward the `44 × 44` target minimum when the container is narrower than the tier's natural width. At every width where the tier already fits, the rendered size is exactly the figure above.
 - **The target minimum is a floor, and it outranks the layout.** A tile is a control, so below the content width where five tiles at `44` plus their gaps no longer fit — about `276px` once the arena's padding is counted — the rack stops shrinking and the page scrolls instead. The `320px` rule below is silent under `320px`, while the target minimum has no lower bound, so that is the order they resolve in.
 - **This is what the `320px` no-horizontal-scroll rule requires, because a boundary cannot carry it.** A `min-width` query matches the scrollbar-*inclusive* viewport while the content box excludes it, so wherever scrollbars take layout width every tier fires about `15px` early. Scaling within the tier fixes it, and the target minimum bounds how far.
-- **Two known misses, owned by the second plan (M16):** the Next Round action sits below `660` after a miss, and the overflow page reaches `859 px`. Until then these two states are the only exceptions to the first rule of this list.
+- **Known misses, owned by M17 (T114, T115):** the feedback and overflow states overflow `660` with the bar counted, and `overflow-required-1` fails the focus-ring reach. `KNOWN_MISSES` in `e2e/fit.spec.ts` lists them, and each layout task removes its keys. Until then these states are the only exceptions to the first rule of this list.
 
 **Phases**
 
 - **Answering.** Selecting a tile moves it into the leftmost empty slot; a filled slot returns its tile. Submit is enabled only when every slot is filled (`product.md` §1.4). The remaining rows stay visible in the ledger.
 - **Feedback.** The verdict reads **Correct** or **Incorrect** in text. A correct answer shows the tiles received (`result.rewards`); an incorrect answer shows the submitted and the correct answer (`result.submitted`, `result.answer`). **Next Round** advances; `Enter` does the same.
 - **Overflow.** A correct answer at a full hand leaves one tile on the rail, and the prompt reads `overflow.instructionOne`. Any owned tile can be marked, by click or by digit key. The mark completes the discard, and no confirmation control is rendered. The marked tile leaves the rack, the rail tile takes the freed socket, and the round advances on its own once the discard and the verdict's celebration have both visibly finished.
-- **Game over.** The verdict is **Made par** (`gameOver.parTitle`) or `{short} short of par` (`gameOver.shortTitle`), in text. The screen shows the score as `7 / 8`, Par, and Longest streak (within the table), then Share and Copy Result. After an early end the terminal row stays visible with `gameOver.reason`; after row 8 the line is `gameOver.tableReason`.
-  - **Daily** also shows `gameOver.dailyNumber`, `gameOver.nextTable`, and a **Practice** button. It has no Play Again, and `R` does nothing.
+- **Game over.** One `h1` holds the verdict, **Made par** (`gameOver.parTitle`) or `{short} short of par` (`gameOver.shortTitle`), in text; a Daily's `gameOver.dailyNumber` is the first line inside it, so heading navigation reads "Table #12, Made par". Top to bottom:
+  1. the heading, then the reason: `gameOver.tableReason` after row 8, else `gameOver.reason`. The equation the run stopped on is not drawn; after an early end, `gameOver.reason` says why and the row marks show where the run stopped;
+  2. the score as `7 / 8`, then Par and Longest streak (within the table) as two cards;
+  3. the row marks, an `ol` named `gameOver.rowsLabel` with one item per row: answered (chalk, the correct mark), missed (pink outline, ✗) or unplayed (dashed outline, no mark). Each item holds `gameOver.rowMark` as visually hidden text, with `ledger.answered`, `ledger.missed` or `gameOver.unplayed`. The correct mark is ✓ in English and ○ in Korean, from the `Mark` component;
+  4. a Daily's `gameOver.nextTable`;
+  5. the share preview: `gameOver.shareText`, then exactly the text Share sends, which never names a row;
+  6. Share and Copy Result side by side, then a Daily's **Practice** or a Practice run's **Play Again** with its `R` hint, then the status line.
+  - **Daily** has a **Practice** button, no Play Again, and `R` does nothing.
   - **Practice** shows **Play Again** with its `R` hint, which deals a new table.
 
 **Material and colour**
 
-- Tiles carry the light values of the system, with a hard bottom edge that reads as the tile's thickness, never a blurred all-round shadow. This treatment is provisional; the identity replaces it.
-- One meaning per hue: one accent for focus and the current row, one for correct, one for wrong or a tile leaving.
+- A tile is a flat chalk face with a `0 3px 0` dust bottom edge that reads as its thickness, never a blurred shadow.
+- One meaning per hue: blue marks focus, the current row and actions; pink marks wrong, or a tile leaving; correct has no hue, and its mark and its word carry it.
 - Semantic colour appears only at the moment of the event and only on the object concerned. There is no full-screen colour wash.
 - Transparency is used only for ink and hairlines. No backdrop blur.
 - **State is never shown by colour alone.** Use colour plus text or shape for correctness, selection, the current row, and discard state.
 
 **Typography**
 
-- Interface text is never below `11px`.
-- Each locale must render in a face that covers its script. A face that does not cover Hangul may not be the sole `ko` interface face. The Latin interface and the digits use the system stack; the placeholder Hangul face is self-hosted and loaded on Korean.
+- Interface text is never below `12px`, with no uppercase transform and no letter tracking.
+- Each locale must render in a face that covers its script. A face that does not cover Hangul may not be the sole `ko` interface face. Atkinson Hyperlegible (400 and 700) sets the Latin interface and every digit, and Gaegu 700 sets both wordmarks and the title's step numerals; both are self-hosted and loaded eagerly. Gothic A1 (400 and 700) sets Hangul, is self-hosted, and loads on Korean.
 - Fonts are self-hosted, and the app makes zero non-origin requests.
 
 **Accessibility**
@@ -57,7 +64,7 @@ states the contract any values must satisfy.
 - Interactive targets are at least `44 × 44` CSS pixels.
 - Text contrast is at least `4.5:1`.
 - All controls use semantic HTML buttons.
-- Visible focus styles are required. The focus indicator must reach at least `3:1` contrast against **every** surface it can appear on, including the tile face.
+- Visible focus styles are required: a `3px` solid outline at a `3px` offset, drawn outside the control. The focus indicator must reach at least `3:1` contrast against **every** surface it can appear on, including the tile face.
 - Status changes use an appropriate `aria-live` region.
 - No horizontal scroll at `320px`.
 
@@ -82,7 +89,7 @@ states the contract any values must satisfy.
 | `oz-slide-off` | The marked tile sliding off the table on a discard (`8c`) |
 | `oz-perch-drop` | The perched tile dropping into the freed socket (`8a·2`) |
 | `oz-slot-arrive` | A tile arriving in its answer slot (`9b`) |
-| `oz-rise-ready` | A resting offset on a disabled action; defined and unused, because the rise is a transition (`11d`) |
+| `oz-rise-ready` | A resting offset on a disabled action; defined and unused, because a disabled action is flat at 45% opacity |
 
 - Respect `prefers-reduced-motion` by removing nonessential motion wholesale, including press offsets.
 - No audio.
@@ -96,13 +103,13 @@ states the contract any values must satisfy.
 - An invalid saved value is ignored.
 - Language changes take effect immediately in every phase.
 - Language changes do not reset the run.
+- The language toggle shows `EN` and `한`, in both interface languages, and each half is at least `44 × 44 px`. Its accessible names stay `English` and `한국어`, so each visible label is part of its name.
 - Only the language preference and today's daily persist across a refresh. A refresh returns to `title`; opening Daily that day resumes or shows its result.
 
 ### 1.14 Required copy
 
 The implementation may improve punctuation but may not change rule meaning.
-Every string lives in `src/i18n/messages.ts`, in both languages. The copy is
-placeholder until the identity.
+Every string lives in `src/i18n/messages.ts`, in both languages. This is the copy as the identity ships it.
 
 | Key | English | Korean |
 |---|---|---|
@@ -112,6 +119,12 @@ placeholder until the identity.
 | `title.dailyPlayed` | `Today's result #{number}` | `오늘의 결과 #{number}` |
 | `title.dailyNone` | `No table today` | `오늘은 판이 없습니다` |
 | `title.practice` | `Practice` | `연습` |
+| `title.tagline` | `A daily multiplication puzzle` | `매일 한 판, 곱셈 퍼즐` |
+| `title.how1` | `Spell each row's answer with tiles from your hand.` | `손에 든 숫자 타일로 각 줄의 답을 만드세요.` |
+| `title.how2` | `A right answer pays the tiles printed on its row. Your hand holds five.` | `맞히면 그 줄에 적힌 타일을 받습니다. 손에는 다섯 개까지 들 수 있습니다.` |
+| `title.how3` | `Par is the best score this table allows. Sometimes the way there is a miss.` | `목표는 이 판에서 낼 수 있는 최고 점수입니다. 때로는 일부러 틀려야 닿습니다.` |
+| `title.note` | `One Daily a day. Practice deals a new table every time.` | `오늘의 판은 하루 한 번. 연습은 매번 새 판을 냅니다.` |
+| `bar.daily` | `#{number}` | `#{number}` |
 | `action.back` | `Back` | `뒤로` |
 | `action.submit` | `Submit` | `제출` |
 | `action.clear` | `Clear` | `지우기` |
@@ -141,6 +154,10 @@ placeholder until the identity.
 | `gameOver.shortTitle` | `{short} short of par` | `목표까지 {short}점 부족` |
 | `gameOver.tableReason` | `All eight rows played.` | `여덟 줄을 모두 풀었습니다.` |
 | `gameOver.dailyNumber` | `Table #{number}` | `{number}번째 판` |
+| `gameOver.rowsLabel` | `Rows` | `줄별 결과` |
+| `gameOver.rowMark` | `Row {row}: {result}` | `{row}번째 줄: {result}` |
+| `gameOver.unplayed` | `not played` | `풀지 않음` |
+| `gameOver.shareText` | `Share text` | `공유 문구` |
 | `gameOver.nextTable` | `The next table opens at midnight.` | `다음 판은 자정에 열립니다.` |
 | `share.copied` | `Result copied.` | `결과를 복사했습니다.` |
 | `share.failed` | `Could not share or copy the result.` | `결과를 공유하거나 복사하지 못했습니다.` |
@@ -152,8 +169,9 @@ placeholder until the identity.
 | `tile.newLabel` | `New tile` | `새 타일` |
 | `tile.discardLabel` | `Marked for discard` | `버릴 타일로 표시됨` |
 
-The title's rule copy (`title.summary` and the `howToPlay.*` keys) states
-Puzzle's rules in both languages, and covers:
+The title's rule copy (`title.how1`–`3`, and under `title.more` the
+`howToPlay.*` topics `selecting`, `slots`, `incorrect`, `overflow`, `progress`
+and `keyboard`) states Puzzle's rules in both languages, and covers:
 
 - selecting and returning tiles;
 - ordered answer slots;
@@ -162,8 +180,8 @@ Puzzle's rules in both languages, and covers:
 - par, score, streak, round, and the end of a table;
 - keyboard controls.
 
-`title.more` labels the disclosure holding the rules beyond the always-visible
-ones.
+`title.more` labels the disclosure holding the rules the three steps do not
+state.
 
 `ledger.row` joins its pay with `Intl.ListFormat` in the current language, so
 no "and" is written in the dictionary.

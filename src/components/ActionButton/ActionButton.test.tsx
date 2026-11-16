@@ -4,12 +4,10 @@ import { describe, expect, it, vi } from "vitest";
 import { ActionButton, type ActionButtonProps, type ActionButtonVariant } from "./ActionButton";
 import styles from "./ActionButton.module.css";
 // Tokens live in :root and are otherwise imported only by main.tsx, which
-// this render tree never reaches. Without them var(--btn-edge-depth) is
-// invalid at computed-value time and box-shadow resolves to "none" for every
-// button alike, which would make the disabled-has-no-edge test below pass
-// vacuously. Importing the real tokens here makes it a genuine assertion.
+// this render tree never reaches. Without them var(--accent) is invalid at
+// computed-value time, so importing the real tokens keeps the look assertions
+// below genuine.
 import "../../styles/tokens/colors.css";
-import "../../styles/tokens/elevation.css";
 
 function renderButton(overrides: Partial<ActionButtonProps> = {}) {
   const onClick = vi.fn();
@@ -56,46 +54,18 @@ describe("ActionButton", () => {
     });
   });
 
-  // Step 4/acceptance criterion: a disabled button carries no edge. Asserted
-  // against an enabled sibling so the check cannot pass by both sides
-  // resolving to "none" (see the token-import comment above).
-  it("carries no box-shadow edge when disabled, unlike an enabled button", () => {
+  it("appends a caller's className after its own classes", () => {
+    const { button } = renderButton({ className: "screenOwned" });
+    expect(button.className).toBe(`${styles.button} ${styles.primary} screenOwned`);
+  });
+
+  // Disabled is 45% opacity and nothing else: no edge, no shadow to lose.
+  it("fades when disabled, unlike an enabled button", () => {
     const { button: enabled } = renderButton({ children: "Enabled" });
     const { button: disabled } = renderButton({ children: "Disabled", disabled: true });
 
-    const enabledShadow = getComputedStyle(enabled).boxShadow;
-    const disabledShadow = getComputedStyle(disabled).boxShadow;
-
-    expect(enabledShadow).not.toBe("none");
-    expect(disabledShadow).toBe("none");
-  });
-
-  /* 11d — an action that becomes available rises to meet the hand. It is a
-     transition and not a keyframe: the button element persists across the
-     enable (GameScreen keeps Submit and Clear mounted for the whole answering
-     phase and only flips `disabled`), so the resting offset below is a value
-     change on a live element, which is exactly what a transition interpolates.
-     jsdom runs no transition, so what is asserted is what jsdom decides: that
-     the two states resolve to different transforms, and that the transition
-     covering transform is in force in both of them. */
-  describe("rise to ready", () => {
-    it("rests low while disabled and level once enabled", () => {
-      const { button: enabled } = renderButton({ children: "Enabled" });
-      const { button: disabled } = renderButton({ children: "Disabled", disabled: true });
-
-      expect(getComputedStyle(disabled).transform).toBe("translateY(4px)");
-      expect(getComputedStyle(enabled).transform).toBe("translateY(0)");
-    });
-
-    // Gate the transition on :not(:disabled) and the rise would be a jump: the
-    // rule stops applying at the same moment the transform changes.
-    it("keeps the transform transition in force in both states", () => {
-      const { button: enabled } = renderButton({ children: "Enabled" });
-      const { button: disabled } = renderButton({ children: "Disabled", disabled: true });
-
-      expect(getComputedStyle(enabled).transition).toContain("transform");
-      expect(getComputedStyle(disabled).transition).toContain("transform");
-    });
+    expect(getComputedStyle(enabled).opacity).toBe("1");
+    expect(getComputedStyle(disabled).opacity).toBe("0.45");
   });
 
   // Defect 1 guard: the reference implementation used onFocus/onBlur to swap
@@ -126,44 +96,43 @@ describe("ActionButton", () => {
   // outright — the button silently stops pressing. jsdom cannot enter :active,
   // so the rule is read from the CSSOM instead, the way Tile.test.tsx reads
   // its own composition guard.
-  describe("press rules", () => {
+  describe("look", () => {
     const ownClasses = Object.values(styles);
 
-    function ownRules() {
+    function ownRule(selector: string) {
       return Array.from(document.styleSheets)
         .flatMap((sheet) => Array.from(sheet.cssRules))
         .filter((rule): rule is CSSStyleRule => rule instanceof CSSStyleRule)
-        .filter((rule) => ownClasses.some((name) => rule.selectorText.includes(name)));
+        .find((rule) => rule.selectorText === selector && ownClasses.some((name) => rule.selectorText.includes(name)));
     }
 
-    it("presses through :active, and only while enabled", () => {
+    it("presses 1px down through :active, and only while enabled", () => {
       renderButton();
-      const press = ownRules().find(
-        (rule) => rule.selectorText.includes(":active") && !rule.selectorText.includes(":focus-visible"),
-      );
-      expect(press?.selectorText).toBe(`.${styles.button}:not(:disabled):active`);
-      expect(press?.style.transform).toBe("translateY(var(--press-offset))");
-      expect(press?.style.boxShadow).toBe("var(--btn-edge-depth-pressed) var(--btn-edge)");
+      const press = ownRule(`.${styles.button}:not(:disabled):active`);
+      expect(press?.style.transform).toBe("translateY(calc(var(--press-offset) / 2))");
+      expect(press?.style.boxShadow).toBe("");
     });
 
-    // Defect 3 guard: the reference applied one hard-coded vermilion shadow to
-    // every variant, so a pressed secondary showed a vermilion edge against its
-    // own green one. The pressed depth is shared; the colour never is.
-    it("gives every variant its own edge colour", () => {
+    it("fills primary with the accent and slate text, and never a pink token", () => {
       renderButton();
-      const edges = new Map(
-        (["primary", "secondary", "ghost"] as ActionButtonVariant[]).map((v) => [
-          v,
-          ownRules()
-            .find((rule) => rule.selectorText === `.${styles[v]}`)
-            ?.style.getPropertyValue("--btn-edge")
-            .trim(),
-        ]),
-      );
-      expect(edges.get("primary")).toBe("var(--verm-800)");
-      expect(edges.get("secondary")).toBe("var(--felt-800)");
-      expect(edges.get("ghost")).toBe("transparent");
-      expect(new Set(edges.values()).size).toBe(3);
+      const primary = ownRule(`.${styles.primary}`);
+      expect(primary?.style.background).toBe("var(--accent)");
+      expect(primary?.style.color).toBe("var(--text-on-accent)");
+      expect(primary?.cssText).not.toMatch(/incorrect|pink|discard/);
+    });
+
+    it("outlines secondary in dust and ghost in hairline, both at 1.5px", () => {
+      renderButton();
+      expect(ownRule(`.${styles.secondary}`)?.style.border).toBe("1.5px solid var(--text-meta)");
+      expect(ownRule(`.${styles.ghost}`)?.style.border).toBe("1.5px solid var(--border-hairline)");
+    });
+
+    it("sets no text transform, tracking or raised edge", () => {
+      renderButton();
+      const base = ownRule(`.${styles.button}`);
+      expect(base?.style.textTransform).toBe("");
+      expect(base?.style.letterSpacing).toBe("");
+      expect(base?.style.boxShadow).toBe("");
     });
   });
 });

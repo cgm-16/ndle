@@ -9,13 +9,19 @@ type MessageShape<T> = T extends string
 const en = {
   title: {
     name: "9dle",
-    summary:
-      "A daily multiplication puzzle. Spell each row's answer with tiles from your hand. A correct answer pays the digits printed on its row, and your hand holds five. Par is the best score the table allows.",
+    tagline: "A daily multiplication puzzle",
+    how1: "Spell each row's answer with tiles from your hand.",
+    how2: "A right answer pays the tiles printed on its row. Your hand holds five.",
+    how3: "Par is the best score this table allows. Sometimes the way there is a miss.",
+    note: "One Daily a day. Practice deals a new table every time.",
     more: "More",
     daily: "Daily #{number}",
     dailyPlayed: "Today's result #{number}",
     dailyNone: "No table today",
     practice: "Practice",
+  },
+  bar: {
+    daily: "#{number}",
   },
   language: {
     groupLabel: "Language",
@@ -25,10 +31,8 @@ const en = {
       "Click or tap an inventory tile to place it in the next empty answer slot. Click a filled slot to return that tile to your inventory.",
     slots:
       "Answer slots fill in the order you select tiles: the first tile you choose fills the leftmost slot, so selection order determines the number you submit.",
-    correct: "A correct answer spends its tiles and pays the digits printed on its row.",
     incorrect:
       "An incorrect answer removes the tiles you spent and grants no reward.",
-    capacity: "Your hand holds at most five tiles.",
     overflow:
       "If a pay would push your hand past five tiles, choose one tile to discard before play continues.",
     progress:
@@ -78,6 +82,10 @@ const en = {
     parTitle: "Made par",
     shortTitle: "{short} short of par",
     tableReason: "All eight rows played.",
+    rowsLabel: "Rows",
+    rowMark: "Row {row}: {result}",
+    unplayed: "not played",
+    shareText: "Share text",
   },
   share: {
     copied: "Result copied.",
@@ -100,13 +108,19 @@ const en = {
 const ko = {
   title: {
     name: "구들",
-    summary:
-      "매일 한 판, 곱셈 퍼즐. 손에 든 숫자 타일로 각 줄의 답을 만드세요. 정답이면 그 줄에 적힌 숫자 타일을 받고, 손에는 다섯 개까지 들 수 있습니다. 목표는 이 판에서 낼 수 있는 최고 점수입니다.",
+    tagline: "매일 한 판, 곱셈 퍼즐",
+    how1: "손에 든 숫자 타일로 각 줄의 답을 만드세요.",
+    how2: "맞히면 그 줄에 적힌 타일을 받습니다. 손에는 다섯 개까지 들 수 있습니다.",
+    how3: "목표는 이 판에서 낼 수 있는 최고 점수입니다. 때로는 일부러 틀려야 닿습니다.",
+    note: "오늘의 판은 하루 한 번. 연습은 매번 새 판을 냅니다.",
     more: "더 보기",
     daily: "오늘의 판 #{number}",
     dailyPlayed: "오늘의 결과 #{number}",
     dailyNone: "오늘은 판이 없습니다",
     practice: "연습",
+  },
+  bar: {
+    daily: "#{number}",
   },
   language: {
     groupLabel: "언어",
@@ -116,9 +130,7 @@ const ko = {
       "인벤토리 타일을 클릭하거나 탭하면 다음 빈 정답 칸에 놓입니다. 채워진 칸을 클릭하면 타일이 인벤토리로 돌아갑니다.",
     slots:
       "정답 칸은 선택한 순서대로 채워집니다. 먼저 선택한 타일이 맨 왼쪽 칸에 들어가므로 선택 순서가 제출할 숫자를 결정합니다.",
-    correct: "정답이면 사용한 타일이 빠지고 그 줄에 적힌 숫자 타일을 받습니다.",
     incorrect: "오답이면 사용한 타일이 보상 없이 사라집니다.",
-    capacity: "손에는 타일을 최대 다섯 개까지 들 수 있습니다.",
     overflow: "받은 타일로 손이 다섯 개를 넘으면, 계속하기 전에 버릴 타일 1개를 선택해야 합니다.",
     progress:
       "라운드는 지금 풀고 있는 판의 줄을, 점수는 정답 횟수를, 연속 정답은 이어지는 정답 횟수를 나타냅니다. 판은 8번째 줄을 풀면 끝나고, 다음 답에 필요한 타일보다 보유한 타일이 적어지면 더 일찍 끝납니다.",
@@ -165,6 +177,10 @@ const ko = {
     parTitle: "목표 달성",
     shortTitle: "목표까지 {short}점 부족",
     tableReason: "여덟 줄을 모두 풀었습니다.",
+    rowsLabel: "줄별 결과",
+    rowMark: "{row}번째 줄: {result}",
+    unplayed: "풀지 않음",
+    shareText: "공유 문구",
   },
   share: {
     copied: "결과를 복사했습니다.",

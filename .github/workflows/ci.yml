@@ -31,10 +31,10 @@ jobs:
         run: npm test
 
       # jsdom performs no layout, so the unit suite cannot see an overflow at
-      # all — which is how #84 survived a measurement pass. This is the only
+      # all, so an overflow can survive a measurement pass. This is the only
       # step that reads a real box.
       - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium webkit
 
       - name: Viewport sweep
         run: npm run test:e2e

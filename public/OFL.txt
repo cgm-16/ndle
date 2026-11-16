@@ -1,7 +1,15 @@
-9dle serves one typeface from its own origin, under /assets/: Gothic A1, in
-its Korean subset. It is licensed under the SIL Open Font License, Version 1.1,
-whose section 2 requires that every copy travel with its copyright notice and
-the licence. Both are below: the notice, then the licence, reproduced verbatim.
+9dle serves three typefaces from its own origin, under /assets/: Atkinson
+Hyperlegible (Latin and every digit), Gaegu (the wordmarks and the title's step
+numerals) and Gothic A1 (Korean). Each is licensed under the SIL Open Font
+License, Version 1.1, whose section 2 requires that every copy travel with its
+copyright notice and the licence. Below are the three notices, then the licence,
+reproduced verbatim.
+
+Atkinson Hyperlegible
+Copyright 2020 Braille Institute of America, Inc. AtkinsonHyperlegible-Italic.ttf: Copyright 2020 Braille Institute of America, Inc. AtkinsonHyperlegible-Bold.ttf: Copyright 2020 Braille Institute of America, Inc. AtkinsonHyperlegible-BoldItalic.ttf: Copyright 2020 Braille Institute of America, Inc.
+
+Gaegu
+Copyright 2018 The Gaegu Project Authors Gaegu-Regular.ttf: Copyright 2018 The Gaegu Project Authors Gaegu-Bold.ttf: Copyright 2018 The Gaegu Project Authors
 
 Gothic A1
 (C) Copyright HanYang I&C Co.,Ltd. All rights reserved. GothicA1-ExtraLight.ttf: (C) Copyright HanYang I&C Co.,Ltd. All rights reserved. GothicA1-Light.ttf: (C) Copyright HanYang I&C Co.,Ltd. All rights reserved. GothicA1-Regular.ttf: (C) Copyright HanYang I&C Co.,Ltd. All rights reserved. GothicA1-Medium.ttf: (C) Copyright HanYang I&C Co.,Ltd. All rights reserved. GothicA1-SemiBold.ttf: (C) Copyright HanYang I&C Co.,Ltd. All rights reserved. GothicA1-Bold.ttf: (C) Copyright HanYang I&C Co.,Ltd. All rights reserved. GothicA1-ExtraBold.ttf: (C) Copyright HanYang I&C Co.,Ltd. All rights reserved. GothicA1-Black.ttf: (C) Copyright HanYang I&C Co.,Ltd. All rights reserved.

@@ -4,7 +4,6 @@ import { GameScreen } from "../components/GameScreen/GameScreen";
 import { LanguageToggle } from "../components/LanguageToggle/LanguageToggle";
 import { TitleScreen } from "../components/TitleScreen/TitleScreen";
 import { gameReducer } from "../game/gameReducer";
-import { isRunComplete } from "../game/selectors";
 import type { Digit, GamePhase, GameState } from "../game/types";
 import { getShareStats, type PlayVariant, type ShareDependencies } from "../services/sharing";
 import {
@@ -29,6 +28,8 @@ export interface GalleryEntry {
   id: string;
   /** Picker label. English only — the gallery is a dev tool, not a screen. */
   label: string;
+  /** The Daily number the bar shows; a screen without one is a Practice screen. */
+  dailyNumber?: number;
   render: () => ReactNode;
 }
 
@@ -41,9 +42,11 @@ function renderGameScreen(state: GameState): ReactNode {
   return <GameScreen state={state} dispatch={noop} onSubmit={noop} onNextRound={noop} />;
 }
 
-// GameOverScreen takes flat equation/stats props rather than a GameState;
-// this adapts a `makeGameOverState` fixture to that shape, as App does: a table
-// played to its end stopped on no equation.
+const DAILY_NUMBER = 12;
+const DAILY: PlayVariant = { kind: "daily", number: DAILY_NUMBER };
+
+// GameOverScreen takes flat rowResults/stats props rather than a GameState;
+// this adapts a `makeGameOverState` fixture to that shape, as App does.
 function renderGameOverScreen(
   state: GameState,
   dependencies: ShareDependencies,
@@ -51,7 +54,7 @@ function renderGameOverScreen(
 ): ReactNode {
   return (
     <GameOverScreen
-      equation={isRunComplete(state) ? null : state.equation}
+      rowResults={state.rowResults}
       stats={getShareStats(state, variant)}
       url="https://example.test/"
       dependencies={dependencies}
@@ -164,10 +167,10 @@ const HOVER_NOTE =
   "Move a real pointer over each control: matches(':hover') is as unreadable in an automated probe as matches(':active') is. No component declares a :hover rule, so a hover reading equal to the resting reading is the system as built, not a failed probe.";
 
 const FOCUS_VISIBLE_NOTE =
-  "Tab to each control; never click it. :focus-visible survives a click on an already-focused element, so a click-driven reading shows a ring the spec withholds. Four rules draw a ring — the button's, the tile's two, and the language toggle's own — so the toggle is on this board and on no other.";
+  "Tab to each control; never click it. :focus-visible survives a click on an already-focused element, so a click-driven reading shows a ring the spec withholds. One global rule draws the ring on every focused control, and the reward tile has one of its own. The language toggle is mounted on this board, and on no other board, so a ring is read on a control that is not a button or a tile.";
 
 const DISABLED_NOTE =
-  "Every control here is disabled: flat, hairline outline, and resting 4px low so that becoming available reads as a rise (11d). It is a comparison against the enabled board, not a reading on its own.";
+  "Every control here is disabled: flat at 45% opacity, with no offset and no outline of its own. It is a comparison against the enabled board, not a reading on its own.";
 
 const REDUCED_MOTION_NOTE =
   "Read every element below under prefers-reduced-motion: reduce AND under normal. global.css neutralises animation and transition durations with !important, so the reduce reading alone cannot tell a wired animation from an unwired one — only the pair can. Animations: the ladder's top tier and the crack that takes its dust with it. Transitions: the button and the tile beneath them.";
@@ -180,7 +183,11 @@ const REDUCED_MOTION_NOTE =
 // disabled and reduced motion are conditions any screen can be in rather than
 // moments the reducer can reach, and M5.5g's gate names all four.
 export const GALLERY_STATES: Record<GamePhase | "interaction", GalleryEntry[]> = {
-  title: [{ id: "title", label: "Title", render: () => <TitleScreen daily={{ status: "open", number: 1 }} onDaily={noop} onPractice={noop} /> }],
+  title: [
+    { id: "title", label: "Title", render: () => <TitleScreen daily={{ status: "open", number: 1 }} onDaily={noop} onPractice={noop} /> },
+    { id: "title-played", label: "Title — Daily played", render: () => <TitleScreen daily={{ status: "played", number: 1 }} onDaily={noop} onPractice={noop} /> },
+    { id: "title-none", label: "Title — no table today", render: () => <TitleScreen daily={{ status: "none" }} onDaily={noop} onPractice={noop} /> },
+  ],
   answering: [
     {
       id: "answering-empty",
@@ -250,15 +257,17 @@ export const GALLERY_STATES: Record<GamePhase | "interaction", GalleryEntry[]> =
     },
     {
       id: "game-over-daily-par",
+      dailyNumber: DAILY_NUMBER,
       label: "Game over — Daily, par made",
       render: () =>
-        renderGameOverScreen(GAME_OVER_STATE, RESOLVING_SHARE_DEPENDENCIES, { kind: "daily", number: 12 }),
+        renderGameOverScreen(GAME_OVER_STATE, RESOLVING_SHARE_DEPENDENCIES, DAILY),
     },
     {
       id: "game-over-daily-short",
+      dailyNumber: DAILY_NUMBER,
       label: "Game over — Daily, 1 short of par",
       render: () =>
-        renderGameOverScreen(DAILY_SHORT_GAME_OVER_STATE, RESOLVING_SHARE_DEPENDENCIES, { kind: "daily", number: 12 }),
+        renderGameOverScreen(DAILY_SHORT_GAME_OVER_STATE, RESOLVING_SHARE_DEPENDENCIES, DAILY),
     },
     {
       id: "game-over-short",

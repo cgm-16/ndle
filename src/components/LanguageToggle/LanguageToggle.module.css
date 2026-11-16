@@ -1,21 +1,19 @@
-/* A pill of two joined segments, not two separate bordered buttons: one
-   hairline border around the group, clipped corners so neither segment's
-   own corner shows square inside the pill. */
+/* Two separate bordered halves, 6px apart on the field. There is no
+   overflow clipping, so a focus ring never lands on chalk. */
 .toggle {
   display: inline-flex;
-  border: 1px solid var(--border-hairline);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
+  gap: 6px;
 }
 
 .button {
   min-width: var(--target-min);
   min-height: var(--target-min);
   padding: 0 var(--space-3);
-  border: none;
+  border: 1.5px solid var(--border-hairline);
+  border-radius: var(--radius-md);
   background: transparent;
-  color: var(--text-meta);
-  font: var(--weight-medium) var(--size-label) / var(--leading-tight) var(--font-ui);
+  color: var(--text-primary);
+  font: var(--weight-bold) var(--type-secondary) / var(--leading-tight) var(--font-ui);
   cursor: pointer;
   transition:
     background var(--dur-state) var(--ease-standard),
@@ -26,29 +24,16 @@
   transform: translateY(var(--press-offset));
 }
 
-/* The active segment fills gold with --clay-900 text; the inactive one
-   stays bare felt. */
-.button[aria-pressed="true"] {
-  background: var(--accent);
-  color: var(--clay-900);
-  font-weight: var(--weight-bold);
+/* The Hangul half is set in Gothic A1 at 15px. */
+.button:last-child {
+  font-family: "Gothic A1", var(--font-ui);
+  font-size: var(--type-hud);
 }
 
-/* :focus-visible, never onFocus/onBlur (R2): a ring must not appear on
-   click-focus. The inset bezel means the UA's own outset outline has to be
-   suppressed explicitly rather than relied on to lose — .button:focus-visible
-   ties at (0,2,0), clearly above the global rule's (0,1,0) in global.css, so
-   this wins on specificity alone and does not need the source-order rescue
-   Tile.module.css needed. Checked in the browser, not assumed: see
-   https://github.com/cgm-16/ndle/blob/3ccd37b/docs/tasks/T41-language-toggle.md for the measured reading.
-
-   --ring-focus composes cleanly here because neither segment carries a
-   resting box-shadow of its own to be replaced (R1) — the active segment's
-   gold fill is a background, not an edge, so there is nothing under the
-   ring to lose. --clay-900 is what clears the active segment (5.68:1, same
-   line that carries the ceramic tile face); --focus-ring is what clears the
-   inactive segment's bare felt. */
-.button:focus-visible {
-  box-shadow: var(--ring-focus);
-  outline: none;
+/* The active half fills with chalk and slate text; the inactive one stays
+   bare field. */
+.button[aria-pressed="true"] {
+  background: var(--surface-tile);
+  border-color: var(--surface-tile);
+  color: var(--text-on-tile);
 }

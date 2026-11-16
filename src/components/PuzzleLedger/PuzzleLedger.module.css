@@ -44,12 +44,12 @@
 }
 
 .number {
-  font: var(--weight-medium) var(--size-label) / var(--leading-tight) var(--font-ui);
+  font: var(--weight-regular) var(--size-label) / var(--leading-tight) var(--font-ui);
   color: var(--text-meta);
 }
 
 .equation {
-  font: var(--weight-semibold) var(--size-title) / var(--leading-tight) var(--font-numeral);
+  font: var(--weight-bold) var(--size-title) / var(--leading-tight) var(--font-ui);
   color: var(--text-body);
 }
 
@@ -61,7 +61,7 @@
 
 .mark {
   justify-self: end;
-  font: var(--weight-semibold) var(--size-title) / var(--leading-tight) var(--font-ui);
+  font: var(--weight-bold) var(--size-title) / var(--leading-tight) var(--font-ui);
   color: var(--text-meta);
 }
 
@@ -71,12 +71,12 @@
 
 /* You are here. A rim rather than a fill, drawn inset as the socket's rim is,
    so it takes no layout; the larger equation is the second cue, so the row
-   does not rely on the gold alone (§1.12). EquationBoard sets its size from
+   does not rely on the accent alone (§1.12). EquationBoard sets its size from
    --size-equation, scaled here to the display size. */
 .current .visual {
   --size-equation: var(--size-display);
 
   padding-block: var(--space-1);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   box-shadow: inset 0 0 0 1px var(--border-accent);
 }
