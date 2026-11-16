@@ -61,6 +61,7 @@
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   gap: 6px;
+  padding: 0;
   list-style: none;
 }
 

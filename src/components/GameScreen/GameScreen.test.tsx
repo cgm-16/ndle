@@ -342,6 +342,17 @@ describe("GameScreen phase composition", () => {
     expect(filledStatus()).toHaveTextContent("Correct · Received 8 1 6");
   });
 
+  // Row 8 pays 2 0 2 and the discard then drops the 0 from the hand; the
+  // verdict still lists the whole pay.
+  it("lists every received digit after a discard drops one of them", () => {
+    const ids = sequentialIds();
+    const state = playRow(parLineAt(8, ids), PUZZLE_SAMPLE_PAR_LINE[7]!, ids);
+    expect(state.lastResult?.discarded).toBe(true);
+    renderScreen(state);
+
+    expect(filledStatus()).toHaveTextContent("Correct · Received 2 0 2");
+  });
+
   it("keeps the answer row mounted in feedback, and Next Round replaces Clear and Submit", () => {
     renderScreen(makeFeedbackState());
 

@@ -253,6 +253,24 @@ for (const language of LANGUAGES) {
   });
 }
 
+for (const language of LANGUAGES) {
+  for (const id of ["game-over-daily-par", "game-over-daily-short", "game-over-practice"]) {
+    test(`the row marks span the content box like the cards above them, in ${id} at 393 x ${HEIGHT} in ${language}`, async ({ page }) => {
+      await openState(page, id, language, 393, HEIGHT);
+      const edges = await page.evaluate(() => {
+        // The list's own box includes its padding; the marks are what shows.
+        const items = document.querySelectorAll("main ol > li");
+        const first = items[0]!.getBoundingClientRect();
+        const last = items[items.length - 1]!.getBoundingClientRect();
+        const cards = document.querySelector<HTMLElement>("main dl")!.getBoundingClientRect();
+        return { marks: [first.left, last.right], cards: [cards.left, cards.right] };
+      });
+      expect(edges.marks[0], "marks' left edge").toBeCloseTo(edges.cards[0]!, 0);
+      expect(edges.marks[1], "marks' right edge").toBeCloseTo(edges.cards[1]!, 0);
+    });
+  }
+}
+
 /* After a discard the verdict line keeps to the left of the band's rail cell,
    which still draws the leaving tile. Its widest form lists three digits
    received. The line is a centred `nowrap` flex row, so a line too wide for

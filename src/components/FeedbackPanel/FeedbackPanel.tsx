@@ -1,4 +1,4 @@
-import type { Equation, RoundResult, Tile as TileModel } from "../../game/types";
+import type { Digit, Equation, RoundResult } from "../../game/types";
 import { useI18n } from "../../i18n/I18nContext";
 import { Mark } from "../Mark/Mark";
 import styles from "./FeedbackPanel.module.css";
@@ -10,17 +10,17 @@ export interface FeedbackPanelProps {
   result: RoundResult | null;
   /** The row the result judged; a miss prints it with its product. */
   equation: Equation;
-  rewardTiles: readonly TileModel[];
+  rewardDigits: readonly Digit[];
 }
 
 /** Renders the announced verdict line: the mark, the word, and one detail. */
-export function FeedbackPanel({ result, equation, rewardTiles }: FeedbackPanelProps) {
+export function FeedbackPanel({ result, equation, rewardDigits }: FeedbackPanelProps) {
   const { t } = useI18n();
   if (result === null) return <div className={styles.idle} role="status" aria-live="polite" />;
   const isCorrect = result.kind === "correct";
   const detail = isCorrect
-    ? rewardTiles.length > 0
-      ? t("result.rewards", { digits: rewardTiles.map((tile) => tile.digit).join(" ") })
+    ? rewardDigits.length > 0
+      ? t("result.rewards", { digits: rewardDigits.join(" ") })
       : null
     : `${equation.left} × ${equation.right} = ${equation.product}`;
 

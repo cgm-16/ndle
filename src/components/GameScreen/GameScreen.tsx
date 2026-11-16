@@ -57,12 +57,10 @@ export function GameScreen({ state, dispatch, onSubmit, onNextRound }: GameScree
   if (state.equation === null || state.table === null) return null;
 
   const { lastResult } = state;
-  // In the row's printed order, which rewardTileIds keeps and the sorted hand
-  // does not; a paid tile already discarded is no longer held, so it drops out.
-  const rewardTiles =
-    lastResult === null
-      ? []
-      : lastResult.rewardTileIds.flatMap((id) => state.inventory.filter((tile) => tile.id === id));
+  // The pay is the row's printed digits; the hand is sorted and may have
+  // dropped a paid tile, so neither is the source.
+  const rewardDigits =
+    lastResult?.kind === "correct" ? (state.table.rows[state.round - 1]?.pay ?? []) : [];
 
   return (
     <main className={styles.screen}>
@@ -108,7 +106,7 @@ export function GameScreen({ state, dispatch, onSubmit, onNextRound }: GameScree
         <FeedbackPanel
           result={state.phase === "overflow" ? null : lastResult}
           equation={state.equation}
-          rewardTiles={rewardTiles}
+          rewardDigits={rewardDigits}
         />
 
         {state.phase === "answering" && (

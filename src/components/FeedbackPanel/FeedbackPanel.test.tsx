@@ -29,17 +29,17 @@ const incorrect: RoundResult = {
   rewardTileIds: [],
 };
 
-const rewards = [tile(8, "r1"), tile(1, "r2"), tile(6, "r3")];
+const rewards: Digit[] = [8, 1, 6];
 
 /** Renders a feedback result in the requested locale for focused assertions. */
 function renderPanel(
   result: RoundResult,
-  rewardTiles: readonly TileModel[] = [],
+  rewardDigits: readonly Digit[] = [],
   language: Language = "en",
 ) {
   return render(
     <I18nProvider initialLanguage={language}>
-      <FeedbackPanel result={result} equation={equation} rewardTiles={rewardTiles} />
+      <FeedbackPanel result={result} equation={equation} rewardDigits={rewardDigits} />
     </I18nProvider>,
   );
 }
