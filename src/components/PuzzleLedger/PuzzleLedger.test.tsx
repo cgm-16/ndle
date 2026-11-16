@@ -34,15 +34,15 @@ describe("PuzzleLedger", () => {
   // Row 2 of the sample is 7 × 2, paying 8, 1 and 6. Right after a submit the
   // round has not advanced, so the row is played and current at once.
   it.each([
-    ["correct", "answered", "✓"],
-    ["incorrect", "missed", "✗"],
-  ] as const)("keeps the row just submitted current and shows its mark, not its pay: %s", (kind, word, mark) => {
+    ["correct", "answered", "check"],
+    ["incorrect", "missed", "cross"],
+  ] as const)("keeps the row just submitted current and shows its mark, not its pay: %s", (kind, word, shape) => {
     renderLedger(2, ["incorrect", kind]);
     const row = screen.getAllByRole("listitem")[1]!;
     expect(row).toHaveAttribute("aria-current", "step");
     expect(within(row).getByText(`Row 2, 7 × 2, pays 8, 1, and 6, ${word}`)).toBeInTheDocument();
-    expect(within(row).getByText("7 × 2 =")).toBeInTheDocument();
-    expect(within(row).getByText(mark)).toBeInTheDocument();
+    expect(within(row).getByText("7 × 2")).toBeInTheDocument();
+    expect(row.querySelector("svg")).toHaveAttribute("data-shape", shape);
     for (const digit of ["8", "1", "6"]) {
       expect(within(row).queryByText(digit)).not.toBeInTheDocument();
     }
@@ -55,7 +55,34 @@ describe("PuzzleLedger", () => {
     expect(isInaccessible(within(later!).getByText("3 × 3"))).toBe(true);
     expect(isInaccessible(within(later!).getByText("2"))).toBe(true);
     expect(isInaccessible(within(later!).getByText("7"))).toBe(true);
-    expect(isInaccessible(within(current!).getByText("3 × 5 ="))).toBe(true);
+    expect(isInaccessible(within(current!).getByText("3 × 5"))).toBe(true);
+  });
+
+  it("labels the current row Now and pays, visibly", () => {
+    renderLedger(1, []);
+    const current = screen.getAllByRole("listitem")[0]!;
+    expect(within(current).getByText("Now")).toBeInTheDocument();
+    expect(within(current).getByText("pays")).toBeInTheDocument();
+    expect(within(screen.getAllByRole("listitem")[2]!).queryByText("Now")).not.toBeInTheDocument();
+  });
+
+  it("draws the answered row's mark and word: a check in English, a circle in Korean", () => {
+    const { unmount } = renderLedger(2, ["correct"]);
+    let row = screen.getAllByRole("listitem")[0]!;
+    expect(row.querySelector("svg")).toHaveAttribute("data-shape", "check");
+    expect(within(row).getByText("answered")).toBeInTheDocument();
+    unmount();
+    renderLedger(2, ["correct"], "ko");
+    row = screen.getAllByRole("listitem")[0]!;
+    expect(row.querySelector("svg")).toHaveAttribute("data-shape", "circle");
+    expect(within(row).getByText("정답")).toBeInTheDocument();
+  });
+
+  it("draws a missed row with a cross and its word", () => {
+    renderLedger(2, ["incorrect"]);
+    const row = screen.getAllByRole("listitem")[0]!;
+    expect(row.querySelector("svg")).toHaveAttribute("data-shape", "cross");
+    expect(within(row).getByText("missed")).toBeInTheDocument();
   });
 
   it("reads the pay as a Korean list in Korean", () => {

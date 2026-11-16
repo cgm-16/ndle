@@ -36,7 +36,7 @@ const en = {
     overflow:
       "If a pay would push your hand past five tiles, choose one tile to discard before play continues.",
     progress:
-      "Round shows which row of the table is current, score counts correct answers, and streak counts consecutive correct answers. The table ends after row 8, or sooner once you hold fewer tiles than the next answer needs.",
+      "Row shows which row of the table is current, score counts correct answers, and streak counts consecutive correct answers. The table ends after row 8, or sooner once you hold fewer tiles than the next answer needs.",
     keyboard:
       "Press a digit key to select a matching tile or, during a discard, to mark it and complete the discard, Backspace to return the most recently selected tile, Escape to clear your selection, Enter to submit or continue, and R to deal a new table after a Practice run ends.",
   },
@@ -52,7 +52,7 @@ const en = {
   hud: {
     score: "Score",
     streak: "Streak",
-    round: "Round",
+    round: "Row",
     par: "Par",
   },
   // Puzzle's table. Each row is one accessible string; the pay is joined by
@@ -62,6 +62,8 @@ const en = {
     row: "Row {row}, {left} × {right}, pays {pay}",
     answered: "answered",
     missed: "missed",
+    now: "Now",
+    pays: "pays",
   },
   result: {
     correct: "Correct",
@@ -133,7 +135,7 @@ const ko = {
     incorrect: "오답이면 사용한 타일이 보상 없이 사라집니다.",
     overflow: "받은 타일로 손이 다섯 개를 넘으면, 계속하기 전에 버릴 타일 1개를 선택해야 합니다.",
     progress:
-      "라운드는 지금 풀고 있는 판의 줄을, 점수는 정답 횟수를, 연속 정답은 이어지는 정답 횟수를 나타냅니다. 판은 8번째 줄을 풀면 끝나고, 다음 답에 필요한 타일보다 보유한 타일이 적어지면 더 일찍 끝납니다.",
+      "줄은 지금 풀고 있는 판의 줄을, 점수는 정답 횟수를, 연속 정답은 이어지는 정답 횟수를 나타냅니다. 판은 8번째 줄을 풀면 끝나고, 다음 답에 필요한 타일보다 보유한 타일이 적어지면 더 일찍 끝납니다.",
     keyboard:
       "숫자 키를 누르면 일치하는 타일을 선택하거나, 버리기 중에는 타일을 표시해 바로 버리기를 완료하며, Backspace 키로 가장 최근에 선택한 타일을 되돌리고, Escape 키로 선택을 지우며, Enter 키로 제출하거나 다음으로 진행하고, 연습 게임이 끝나면 R 키로 새 판을 시작합니다.",
   },
@@ -149,7 +151,7 @@ const ko = {
   hud: {
     score: "점수",
     streak: "연속 정답",
-    round: "라운드",
+    round: "줄",
     par: "목표",
   },
   ledger: {
@@ -157,6 +159,8 @@ const ko = {
     row: "{row}번째 줄, {left} × {right}, 보상 {pay}",
     answered: "정답",
     missed: "오답",
+    now: "지금",
+    pays: "보상",
   },
   result: {
     correct: "정답",

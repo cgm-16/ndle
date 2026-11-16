@@ -275,6 +275,23 @@ describe("GameScreen phase composition", () => {
     expect(submit.compareDocumentPosition(inventoryTile) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  it("puts the prompt in the answer row, not the ledger", () => {
+    renderScreen(makeAnsweringState());
+
+    const ledger = screen.getByRole("list", { name: "Table" });
+    const prompt = screen.getByText("3 × 5 =");
+    expect(ledger.contains(prompt)).toBe(false);
+    expect(within(ledger).getAllByText("3 × 5")).toHaveLength(1);
+  });
+
+  it("tabs from Clear to Submit, as drawn", async () => {
+    renderScreen(FULL_ANSWER());
+
+    const clear = screen.getByRole("button", { name: "Clear" });
+    const submit = screen.getByRole("button", { name: "Submit" });
+    expect(clear.compareDocumentPosition(submit) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it("renders interactive answer slots and a select-mode inventory in answering, without feedback", () => {
     renderScreen(makeAnsweringState());
 

@@ -16,14 +16,15 @@ satisfy.
   `e2e/` assert it, and `fit.spec.ts` sweeps every gallery state with the top
   bar counted, in Chromium and in Playwright's WebKit.
 - Use one centered vertical arena on desktop and mobile.
-- Preserve order across breakpoints: Back (in the app's top bar) → HUD → ledger → equation/slots → phase action → rail (while a tile is past capacity, and until a dropping tile lands) → rack. The rail sits directly above the rack, because a perched tile drops from it into a socket.
+- Preserve order across breakpoints: Back (in the app's top bar) → HUD → ledger → answer row → phase action → rail (while a tile is past capacity, and until a dropping tile lands) → rack. The rail sits directly above the rack, because a perched tile drops from it into a socket.
 - Mobile changes spacing, wrapping, and control size, not information architecture.
 - **Back** (`action.back`, `Back` / `뒤로`) sits at the left edge of the app's top bar, with the wordmark and the label (`#12` or `Practice`) in the centre and the language toggle at the right, ahead of the toggle in tab order and outside the screen's `<main>`, on the game screen and the game-over screen, for Daily and Practice alike, so it is the first focusable element on the page. It is at least `44 px` tall and carries an `aria-hidden` inline-SVG arrow. It has no key binding, because `Escape` already clears the selection. It dispatches `RETURN_TO_TITLE`, with no confirmation. Back is not a move: a Daily keeps its record and resumes from the title, and a Practice run is dropped.
-- **The ledger** lists the table's 8 rows. Each row shows its equation and the tiles it pays, and a mark once answered: correct or missed, in text or shape as well as colour. The current row is marked by more than colour. Each row is one accessible string (`ledger.row`).
+- **The ledger** lists the table's 8 rows across the arena's full content width. The current row is `52 px` tall, with a raised fill, a `2 px` blue border, the `ledger.now` label, the equation without its `=`, and `ledger.pays` before the pay tiles. Every other row is `30 px`: an answered or missed row shows the `Mark` and `ledger.answered` or `ledger.missed` (missed in pink) under a hairline, and a future row shows its pays as outlined boxes. Each row is one accessible string (`ledger.row`); what it draws is `aria-hidden`.
+- **The answer row and the band.** The prompt (`3 × 5 =`) and the answer slots sit in a `60 px` row below the ledger, inside a band that is at least `150 px` tall in every phase, so the rack does not move. Answering fills `120 px` of it: the answer row, a `12 px` gap and the actions, Clear (`flex: 1`) before Submit (`flex: 2`), `48 px` tall.
 - **The rack** is five fixed sockets in a single row at every breakpoint (`PUZZLE_CAPACITY`). The grid never resizes; an empty socket is a tile spent, and a socket whose tile is lifted is on loan: it stays held for that tile, visibly distinct from an empty one, and the rack does not re-sort until the round resolves.
 - **The rail.** The tile past capacity (the newest arrival, `product.md` §1.7) perches on a band one tile high above the rack with a `1px` `--border-accent` top rule, right-aligned and drawn at the rack's tile size (where the rack's tracks shrink below it, a dropping tile narrows by a few pixels as it lands). The rail exists while a tile is past capacity, and until the tile it held has landed in a freed socket (`8a·2`). It never adds a row to the rack.
 - **Discard scroll.** When a discard starts, the rack scrolls into view once, with `scrollIntoView({ block: "nearest", behavior: "instant" })`. If the rack is already in view, it does nothing. It is a jump, not a motion moment, so it has nothing for reduced motion to neutralise.
-- Answer slots are `64 × 80` at the arena's widest tier.
+- Answer slots are `52 × 56` at every width.
 - Rack sizing has three tiers: below `408px`, tiles are `52 × 64` with an `8px` gap; from `408px`, `66 × 64` with a `12px` gap; from `48rem`, `64 × 80` with a `12px` gap. A tier's rack width — five tiles plus four gaps — must leave room for the arena's horizontal padding at that tier's lower bound. The arena spends `24px` of that width on its own padding below `40rem`, so the narrow tier needs `292px` of `296px` and the middle tier needs `378px` of the `384px` a `408px` viewport leaves.
 - **A tier's figures are the tile's maximum size, not a fixed size.** The rack is sized from its container rather than from the viewport, and scales down toward the `44 × 44` target minimum when the container is narrower than the tier's natural width. At every width where the tier already fits, the rendered size is exactly the figure above.
 - **The target minimum is a floor, and it outranks the layout.** A tile is a control, so below the content width where five tiles at `44` plus their gaps no longer fit — about `276px` once the arena's padding is counted — the rack stops shrinking and the page scrolls instead. The `320px` rule below is silent under `320px`, while the target minimum has no lower bound, so that is the order they resolve in.
@@ -135,12 +136,14 @@ Every string lives in `src/i18n/messages.ts`, in both languages. This is the cop
 | `language.groupLabel` | `Language` | `언어` |
 | `hud.score` | `Score` | `점수` |
 | `hud.streak` | `Streak` | `연속 정답` |
-| `hud.round` | `Round` | `라운드` |
+| `hud.round` | `Row` | `줄` |
 | `hud.par` | `Par` | `목표` |
 | `ledger.label` | `Table` | `판` |
 | `ledger.row` | `Row {row}, {left} × {right}, pays {pay}` | `{row}번째 줄, {left} × {right}, 보상 {pay}` |
 | `ledger.answered` | `answered` | `정답` |
 | `ledger.missed` | `missed` | `오답` |
+| `ledger.now` | `Now` | `지금` |
+| `ledger.pays` | `pays` | `보상` |
 | `result.correct` | `Correct` | `정답` |
 | `result.incorrect` | `Incorrect` | `오답` |
 | `result.submitted` | `Your answer: {value}` | `제출한 답: {value}` |

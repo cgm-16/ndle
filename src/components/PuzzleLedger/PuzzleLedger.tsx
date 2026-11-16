@@ -1,7 +1,6 @@
 import type { PuzzleTable, RoundResult } from "../../game/types";
 import { useI18n } from "../../i18n/I18nContext";
-import { EquationBoard } from "../EquationBoard/EquationBoard";
-import { Tile } from "../Tile/Tile";
+import { Mark } from "../Mark/Mark";
 import styles from "./PuzzleLedger.module.css";
 
 export interface PuzzleLedgerProps {
@@ -17,8 +16,7 @@ export interface PuzzleLedgerProps {
  * assistive tech, so the equation and pay digits are not announced twice.
  *
  * The current row and a played row are independent: in feedback the row just
- * submitted is both, so it keeps its frame and its EquationBoard while it shows
- * its mark.
+ * submitted is both, so it keeps its frame while it shows its mark.
  */
 export function PuzzleLedger({ table, round, rowResults }: PuzzleLedgerProps) {
   const { t, language } = useI18n();
@@ -40,7 +38,12 @@ export function PuzzleLedger({ table, round, rowResults }: PuzzleLedgerProps) {
           right: equation.right,
           pay: payList.format(pay.map(String)),
         });
-        const className = [styles.row, current && styles.current, result && styles.played]
+        const className = [
+          styles.row,
+          current && styles.current,
+          result && styles.played,
+          result === "incorrect" && styles.missed,
+        ]
           .filter(Boolean)
           .join(" ");
 
@@ -52,24 +55,24 @@ export function PuzzleLedger({ table, round, rowResults }: PuzzleLedgerProps) {
                 : `${label}, ${t(result === "correct" ? "ledger.answered" : "ledger.missed")}`}
             </span>
             <div className={styles.visual} aria-hidden="true">
-              <span className={styles.number}>{index + 1}</span>
-              {/* EquationBoard mounts with the row that becomes current, so its
-                  10b rise plays as the row arrives. */}
-              {current ? (
-                <EquationBoard equation={equation} />
-              ) : (
-                <span className={styles.equation}>{`${equation.left} × ${equation.right}`}</span>
-              )}
-              {/* Ink, not jade or vermilion: a played row is history, and
-                  semantic colour belongs to the moment of the event (§1.12). */}
-              {result === undefined ? (
-                <span className={styles.pay}>
-                  {pay.map((digit, payIndex) => (
-                    <Tile key={payIndex} value={{ digit }} size="sm" />
-                  ))}
+              <span className={current ? styles.now : styles.number}>
+                {current ? t("ledger.now") : index + 1}
+              </span>
+              <span className={styles.equation}>{`${equation.left} × ${equation.right}`}</span>
+              {result !== undefined ? (
+                <span className={styles.outcome}>
+                  <Mark result={result} />
+                  {t(result === "correct" ? "ledger.answered" : "ledger.missed")}
                 </span>
               ) : (
-                <span className={styles.mark}>{result === "correct" ? "✓" : "✗"}</span>
+                <span className={styles.pay}>
+                  {current && <span className={styles.paysLabel}>{t("ledger.pays")}</span>}
+                  {pay.map((digit, payIndex) => (
+                    <span key={payIndex} className={styles.payTile}>
+                      {digit}
+                    </span>
+                  ))}
+                </span>
               )}
             </div>
           </li>

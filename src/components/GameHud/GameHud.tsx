@@ -6,11 +6,12 @@ export interface GameHudProps {
   score: number;
   currentStreak: number;
   round: number;
+  totalRounds: number;
   /** The best score the table allows. */
   par: number;
 }
 
-export function GameHud({ score, currentStreak, round, par }: GameHudProps) {
+export function GameHud({ score, currentStreak, round, totalRounds, par }: GameHudProps) {
   const { t } = useI18n();
 
   // 10e needs a number that is no longer in state: the count that falls is the
@@ -30,19 +31,15 @@ export function GameHud({ score, currentStreak, round, par }: GameHudProps) {
     <dl className={styles.hud}>
       <div className={styles.entry}>
         <dt>{t("hud.round")}</dt>
-        <dd className={styles.primary}>{round}</dd>
+        <dd>{`${round}/${totalRounds}`}</dd>
       </div>
       <div className={styles.entry}>
         <dt>{t("hud.score")}</dt>
-        <dd>{score}</dd>
+        <dd className={styles.score}>{score}</dd>
       </div>
       <div className={styles.entry}>
         <dt>{t("hud.streak")}</dt>
-        <dd
-          className={
-            currentStreak > 0 ? `${styles.streak} ${styles.streakActive}` : styles.streak
-          }
-        >
+        <dd className={styles.streak}>
           {brokenFrom === null ? (
             currentStreak
           ) : (

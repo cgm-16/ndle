@@ -222,7 +222,7 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "Practice" }));
 
     expect(screen.getByText("3 × 5 =")).toBeInTheDocument();
-    expect(hudField("Round")).toBe("1");
+    expect(hudField("Row")).toBe("1/8");
     expect(hudField("Score")).toBe("0");
     for (const digit of [1, 4, 5, 7, 9]) {
       expect(screen.getByRole("button", { name: `Digit ${digit}` })).toBeInTheDocument();
@@ -230,39 +230,19 @@ describe("App", () => {
     expect(screen.getByRole("button", { name: "Submit" })).toBeInTheDocument();
   });
 
-  it("orders the HUD Round, Score, Streak so the score reads as the headline stat", async () => {
+  it("orders the HUD Row, Score, Streak so the score reads as the headline stat", async () => {
     const user = userEvent.setup();
     renderApp({ initialLanguage: "en" });
 
     await user.click(screen.getByRole("button", { name: "Practice" }));
 
-    const round = screen.getByText("Round");
+    const round = screen.getByText("Row");
     const score = screen.getByText("Score");
     const streak = screen.getByText("Streak");
 
     // DOCUMENT_POSITION_FOLLOWING (4) means the argument node comes after `this` node.
     expect(round.compareDocumentPosition(score) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(score.compareDocumentPosition(streak) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  });
-
-  // Regression guard for the `.primary` emphasis class actually winning the
-  // cascade: `.entry dd` and `.primary` alone are NOT equal specificity
-  // (0,1,1 vs 0,1,0), so `.entry dd` silently wins regardless of source
-  // order and the emphasis never renders. Reading getComputedStyle catches
-  // that class of bug; comparing className strings would not.
-  it("renders Round's value at a larger computed font size than Score's", async () => {
-    const user = userEvent.setup();
-    renderApp({ initialLanguage: "en" });
-
-    await user.click(screen.getByRole("button", { name: "Practice" }));
-
-    const roundValue = screen.getByText("Round").nextElementSibling as HTMLElement;
-    const scoreValue = screen.getByText("Score").nextElementSibling as HTMLElement;
-
-    const roundFontSize = parseFloat(getComputedStyle(roundValue).fontSize);
-    const scoreFontSize = parseFloat(getComputedStyle(scoreValue).fontSize);
-
-    expect(roundFontSize).toBeGreaterThan(scoreFontSize);
   });
 
   it("resolves a correct answer through the row's pay, overflow, and an exact discard that advances the round on its own", async () => {
@@ -296,7 +276,7 @@ describe("App", () => {
     finishDeparture();
 
     expect(screen.getByText("4 × 1 =")).toBeInTheDocument();
-    expect(hudField("Round")).toBe("5");
+    expect(hudField("Row")).toBe("5/8");
     expect(screen.getAllByRole("button", { name: /^Digit \d$/ })).toHaveLength(5);
 
     // §1.16 / AGENTS.md: no game field ever enters storage, even after a full round.
@@ -320,12 +300,12 @@ describe("App", () => {
     expect(screen.getByText("Correct answer: 9")).toBeInTheDocument();
     expect(hudField("Score")).toBe("1"); // unchanged: no reward for an incorrect answer
     expect(hudField("Streak")).toBe("0"); // reset
-    expect(hudField("Round")).toBe("3"); // feedback: round === totalRounds
+    expect(hudField("Row")).toBe("3/8"); // feedback: round === totalRounds
 
     await user.click(screen.getByRole("button", { name: "Next Round" }));
 
     expect(screen.getByText("1 × 7 =")).toBeInTheDocument();
-    expect(hudField("Round")).toBe("4");
+    expect(hudField("Row")).toBe("4/8");
   });
 
   it("reaches game over when the next equation exceeds the surviving inventory, with no equation drawn", async () => {
@@ -352,7 +332,7 @@ describe("App", () => {
 
     expect(dependencies.dealPuzzle).toHaveBeenCalledTimes(2);
     expect(screen.getByText("3 × 5 =")).toBeInTheDocument();
-    expect(hudField("Round")).toBe("1");
+    expect(hudField("Row")).toBe("1/8");
     expect(hudField("Score")).toBe("0");
     expect(hudField("Streak")).toBe("0");
     expect(screen.getAllByRole("button", { name: /^Digit \d$/ })).toHaveLength(5);
@@ -374,7 +354,7 @@ describe("App", () => {
 
     expect(dependencies.dealPuzzle).toHaveBeenCalledTimes(2);
     expect(screen.getByText("3 × 5 =")).toBeInTheDocument();
-    expect(hudField("Round")).toBe("1");
+    expect(hudField("Row")).toBe("1/8");
     expect(shareDependencies.writeClipboard).not.toHaveBeenCalled();
   });
 
@@ -389,7 +369,7 @@ describe("App", () => {
     fireEvent.keyDown(window, { key: "ㄱ", code: "KeyR" });
 
     expect(screen.getByText("3 × 5 =")).toBeInTheDocument();
-    expect(hudField("Round")).toBe("1");
+    expect(hudField("Row")).toBe("1/8");
   });
 
   it("does not restart on Enter on the game over screen; a focused button keeps its own behavior", async () => {
@@ -449,7 +429,7 @@ describe("App", () => {
 
     // Copy switches live; the run itself (equation, HUD, selection) is untouched.
     expect(screen.getByText("3 × 5 =")).toBeInTheDocument();
-    expect(hudField("라운드")).toBe("1");
+    expect(hudField("줄")).toBe("1/8");
     const submitButtonKo = screen.getByRole("button", { name: "제출" });
     expect(submitButtonKo).toBe(submitButtonEn); // same node: not remounted
     expect(submitButtonKo).toBeEnabled(); // selection survived: still ready to submit
@@ -546,7 +526,7 @@ async function openDaily(user: ReturnType<typeof userEvent.setup>, label = "Dail
 // Row 2 of the par line, after row 1's sacrifice left 1 4 9.
 function expectRowTwo() {
   expect(screen.getByText("7 × 2 =")).toBeInTheDocument();
-  expect(hudField("Round")).toBe("2");
+  expect(hudField("Row")).toBe("2/8");
   expect(screen.getAllByRole("button", { name: /^Digit \d$/ }).map((tile) => tile.textContent)).toEqual(["1", "4", "9"]);
 }
 
@@ -556,7 +536,7 @@ describe("Daily", () => {
     const { storage } = renderDaily();
     await openDaily(user);
     expect(screen.getByText("3 × 5 =")).toBeInTheDocument();
-    expect(hudField("Round")).toBe("1");
+    expect(hudField("Row")).toBe("1/8");
     expect(storedDaily(storage)).toEqual(dailyRecordOf([]));
   });
 
@@ -617,7 +597,7 @@ describe("Daily", () => {
     renderDaily({ storage: first.storage });
     await openDaily(user);
     expect(screen.getByText("Choose a tile to discard.")).toBeInTheDocument();
-    expect(hudField("Round")).toBe("4");
+    expect(hudField("Row")).toBe("4/8");
     await user.click(screen.getByRole("button", { name: "Digit 6" }));
     finishDeparture();
     expect(screen.getByText("4 × 1 =")).toBeInTheDocument();
@@ -702,7 +682,7 @@ describe("Daily", () => {
     renderDaily({ storage, dailyTables: [PUZZLE_SAMPLE, PUZZLE_SAMPLE], now: dayAfterLaunch(1) });
     await openDaily(user, "Daily #2");
     expect(screen.getByText("3 × 5 =")).toBeInTheDocument();
-    expect(hudField("Round")).toBe("1");
+    expect(hudField("Row")).toBe("1/8");
     expect(storedDaily(storage)).toEqual({ ...dailyRecordOf([]), number: 2 });
   });
 
@@ -783,7 +763,7 @@ describe("Daily", () => {
     await user.click(screen.getByRole("button", { name: "Back" }));
     await openDaily(user);
     expect(screen.getByText("3 × 3 =")).toBeInTheDocument();
-    expect(hudField("Round")).toBe("3");
+    expect(hudField("Row")).toBe("3/8");
     expect(screen.getAllByRole("button", { name: /^Digit \d$/ }).map((tile) => tile.textContent)).toEqual(["1", "6", "8", "9"]);
   });
 

@@ -1,40 +1,27 @@
+/* The slots are 52 × 56 at every width. The rack's tile size is overridden here
+   for what sits inside the group, so the filled tile and the empty slot share
+   one box. */
 .slots {
+  --tile-w: 52px;
+  --tile-h: 56px;
+  --size-tile: var(--type-tile);
+
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: 10px;
   justify-content: center;
 }
 
-/* The empty slot is the one chalk-adjacent case the Tile primitive does not
-   collapse: it is a socket on the field — --surface-socket, a rim and a
-   dashed border — with no tile face to draw. It stays a disabled
-   button because role and accessible name are load-bearing here
-   (AnswerSlots.test.tsx, GameScreen.test.tsx), not because it is a control. */
+/* The empty slot is the one case the Tile primitive does not cover: a dashed
+   outline with no face to draw. It stays a disabled button because role and
+   accessible name are load-bearing here (AnswerSlots.test.tsx,
+   GameScreen.test.tsx), not because it is a control. */
 .slot {
-  /* The same socket the rack draws (TileInventory.module.css .socket): same
-     four declarations, same composition order. Not literally shared — these
-     are two different elements, a bare <div> there and a disabled <button>
-     here, and CSS Modules `composes` cannot cross that. So the two rules are
-     duplicated on purpose and have to be kept in step by hand; a review
-     already caught them drifting once, when the rack's copy was missing this
-     background and an empty socket borrowed the page behind it instead. */
   width: var(--tile-w);
   height: var(--tile-h);
+  padding: 0;
+  border: 2px dashed var(--text-meta);
   border-radius: var(--radius-sm);
-  background: var(--surface-socket);
-  box-shadow: var(--rim-socket);
-
-  /* A dashed, heavier border keeps slots visually distinct from the solid
-     1px inventory tiles at every fill state (§1.12). --border-slot-empty is
-     the system's own awaiting-input rim: --socket on --surface-socket measures
-     4.29:1 -- clear of the >=3:1 floor. An empty slot sits on --surface-socket
-     with no fill contrast of its own, so the border is the only cue defining
-     its shape and has to clear that floor. */
-  border: 2px dashed var(--border-slot-empty);
-
-  /* No opacity dimming: the empty state is already signaled by the absence
-     of a digit plus the dashed border, and dimming would push the border
-     back below the contrast floor established above. */
+  background: transparent;
   cursor: default;
 }
 

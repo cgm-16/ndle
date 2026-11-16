@@ -13,7 +13,7 @@ function hudTree(props: GameHudProps) {
 }
 
 function renderHud(overrides: Partial<GameHudProps> = {}) {
-  const props: GameHudProps = { score: 0, currentStreak: 0, round: 1, par: 7, ...overrides };
+  const props: GameHudProps = { score: 0, currentStreak: 0, round: 1, totalRounds: 8, par: 7, ...overrides };
   const view = render(hudTree(props));
   return {
     ...view,
@@ -31,13 +31,18 @@ describe("GameHud", () => {
   it("states the par after the three figures", () => {
     renderHud({ par: 6 });
     const terms = screen.getAllByRole("term").map((term) => term.textContent);
-    expect(terms).toEqual(["Round", "Score", "Streak", "Par"]);
+    expect(terms).toEqual(["Row", "Score", "Streak", "Par"]);
     expect(screen.getByText("Par").nextElementSibling).toHaveTextContent("6");
+  });
+
+  it("reads the row as round over total", () => {
+    renderHud();
+    expect(screen.getByText("Row").nextElementSibling).toHaveTextContent("1/8");
   });
 
   it("labels round, score and streak with their values", () => {
     renderHud({ score: 12, currentStreak: 3, round: 4 });
-    expect(screen.getByText("Round").nextElementSibling).toHaveTextContent("4");
+    expect(screen.getByText("Row").nextElementSibling).toHaveTextContent("4/8");
     expect(screen.getByText("Score").nextElementSibling).toHaveTextContent("12");
     expect(streakValue()).toHaveTextContent("3");
   });

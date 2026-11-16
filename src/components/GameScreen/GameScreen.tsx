@@ -10,6 +10,7 @@ import { AnswerSlots } from "../AnswerSlots/AnswerSlots";
 import { FeedbackPanel } from "../FeedbackPanel/FeedbackPanel";
 import { GameHud } from "../GameHud/GameHud";
 import { OverflowControls } from "../OverflowControls/OverflowControls";
+import { EquationBoard } from "../EquationBoard/EquationBoard";
 import { PuzzleLedger } from "../PuzzleLedger/PuzzleLedger";
 import { TileInventory } from "../TileInventory/TileInventory";
 import styles from "./GameScreen.module.css";
@@ -63,88 +64,102 @@ export function GameScreen({ state, dispatch, onSubmit, onNextRound }: GameScree
         score={state.score}
         currentStreak={state.currentStreak}
         round={state.round}
+        totalRounds={state.table.rows.length}
         par={state.table.par}
       />
-      {/* The table is face up: the ledger draws every row, the current one
-          through EquationBoard, so the slots still sit below it (§1.12). */}
-      <PuzzleLedger table={state.table} round={state.round} rowResults={state.rowResults} />
+      <div className={styles.ledger}>
+        <PuzzleLedger table={state.table} round={state.round} rowResults={state.rowResults} />
+      </div>
 
-      {state.phase === "answering" && (
-        <AnswerSlots
-          slotCount={getAnswerLength(state.equation)}
-          selectedTiles={state.selectedTiles}
-          onReturn={(tileId) => dispatch({ type: "RETURN_TILE", tileId })}
-          disabled={false}
-        />
-      )}
+      {/* One band holds the answer row and the phase's action in every phase,
+          so the rack never moves. */}
+      <div className={styles.band}>
+        <div className={styles.answerRow}>
+          <EquationBoard equation={state.equation} />
 
-      {/* Feedback keeps the slots mounted so the verdict lands on the tiles the
-          player submitted. The reducer clears selectedTiles on submit and hands
-          the same array to lastResult.submittedTiles, so that is where they are.
-          No onReturn: read-only slots carry no button role, and the phase offers
-          no control to take a tile back. */}
-      {state.phase === "feedback" && lastResult !== null && (
-        <AnswerSlots
-          slotCount={getAnswerLength(state.equation)}
-          selectedTiles={lastResult.submittedTiles}
-          verdict={lastResult.kind}
-          streak={state.currentStreak}
-          disabled={false}
-          onSettled={() => setSlotsSettled(state.totalRounds)}
-        />
-      )}
+          {state.phase === "answering" && (
+            <AnswerSlots
+              slotCount={getAnswerLength(state.equation)}
+              selectedTiles={state.selectedTiles}
+              onReturn={(tileId) => dispatch({ type: "RETURN_TILE", tileId })}
+              disabled={false}
+            />
+          )}
 
-      <FeedbackPanel result={lastResult} rewardTiles={rewardTiles} />
-
-      {state.phase === "answering" && (
-        <div className={styles.actions}>
-          <ActionButton onClick={onSubmit} disabled={!isSubmissionReady(state)}>
-            {t("action.submit")}
-          </ActionButton>
-
-          <ActionButton
-            variant="secondary"
-            onClick={() => dispatch({ type: "CLEAR_SELECTION" })}
-            disabled={state.selectedTiles.length === 0}
-          >
-            {t("action.clear")}
-          </ActionButton>
+          {/* Feedback keeps the slots mounted so the verdict lands on the tiles
+              the player submitted. The reducer clears selectedTiles on submit
+              and hands the same array to lastResult.submittedTiles, so that is
+              where they are. No onReturn: read-only slots carry no button role,
+              and the phase offers no control to take a tile back. */}
+          {state.phase === "feedback" && lastResult !== null && (
+            <AnswerSlots
+              slotCount={getAnswerLength(state.equation)}
+              selectedTiles={lastResult.submittedTiles}
+              verdict={lastResult.kind}
+              streak={state.currentStreak}
+              disabled={false}
+              onSettled={() => setSlotsSettled(state.totalRounds)}
+            />
+          )}
         </div>
-      )}
 
-      {/* After a discard the round advances on its own once the rack has
-          settled (§1.7), so there is nothing to press. */}
-      {state.phase === "feedback" && !lastResult?.discarded && (
-        <ActionButton onClick={onNextRound}>{t("action.next")}</ActionButton>
-      )}
+        <FeedbackPanel result={lastResult} rewardTiles={rewardTiles} />
 
-      {state.phase === "overflow" && (
-        <OverflowControls />
-      )}
+        {state.phase === "answering" && (
+          <div className={styles.actions}>
+            <ActionButton
+              className={styles.clear}
+              variant="secondary"
+              onClick={() => dispatch({ type: "CLEAR_SELECTION" })}
+              disabled={state.selectedTiles.length === 0}
+            >
+              {t("action.clear")}
+            </ActionButton>
 
-      <TileInventory
-        // Only answering re-sorts, to keep lifted tiles in their sockets; every
-        // other phase draws the reducer's order, which perches the newest
-        // arrivals past capacity (§1.5 step 7).
-        tiles={
-          state.phase === "answering"
-            ? sortTiles([...state.inventory, ...state.selectedTiles])
-            : state.inventory
-        }
-        liftedIds={state.selectedTiles.map((tile) => tile.id)}
-        capacity={PUZZLE_CAPACITY}
-        mode={state.phase === "answering" ? "select" : state.phase === "overflow" ? "discard" : "readOnly"}
-        pendingDiscards={state.pendingDiscards}
-        onSettled={() => {
-          if (advancesAlone) setRackSettled(state.totalRounds);
-        }}
-        onTile={(tileId) => {
-          if (state.phase === "answering") dispatch({ type: "SELECT_TILE", tileId });
-          // The mark that reaches the required count completes the discard in the
-          // reducer, so rendering an already-marked state still requires user action.
-          if (state.phase === "overflow") dispatch({ type: "TOGGLE_DISCARD", tileId });
-        }}
-      />
+            <ActionButton
+              className={styles.submit}
+              onClick={onSubmit}
+              disabled={!isSubmissionReady(state)}
+            >
+              {t("action.submit")}
+            </ActionButton>
+          </div>
+        )}
+
+        {/* After a discard the round advances on its own once the rack has
+            settled (§1.7), so there is nothing to press. */}
+        {state.phase === "feedback" && !lastResult?.discarded && (
+          <ActionButton onClick={onNextRound}>{t("action.next")}</ActionButton>
+        )}
+
+        {state.phase === "overflow" && <OverflowControls />}
+      </div>
+
+      <div className={styles.rack}>
+        <TileInventory
+          // Only answering re-sorts, to keep lifted tiles in their sockets; every
+          // other phase draws the reducer's order, which perches the newest
+          // arrivals past capacity (§1.5 step 7).
+          tiles={
+            state.phase === "answering"
+              ? sortTiles([...state.inventory, ...state.selectedTiles])
+              : state.inventory
+          }
+          liftedIds={state.selectedTiles.map((tile) => tile.id)}
+          capacity={PUZZLE_CAPACITY}
+          mode={state.phase === "answering" ? "select" : state.phase === "overflow" ? "discard" : "readOnly"}
+          pendingDiscards={state.pendingDiscards}
+          onSettled={() => {
+            if (advancesAlone) setRackSettled(state.totalRounds);
+          }}
+          onTile={(tileId) => {
+            if (state.phase === "answering") dispatch({ type: "SELECT_TILE", tileId });
+            // The mark that reaches the required count completes the discard in the
+            // reducer, so rendering an already-marked state still requires user action.
+            if (state.phase === "overflow") dispatch({ type: "TOGGLE_DISCARD", tileId });
+          }}
+        />
+      </div>
     </main>
   );
 }
