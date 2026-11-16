@@ -29,8 +29,9 @@ export function GameScreen({ state, dispatch, onSubmit, onNextRound }: GameScree
   // After a discard the round advances on its own (§1.7), once both halves of
   // the moment have played: the rack's exit and the verdict's celebration on
   // the answer slots. The celebration mounts with feedback, when the discard
-  // completes, so a streak-8 burst (720ms) outlasts a 420ms exit, and
-  // advancing on the exit alone unmounted it midway. Each half reports the
+  // completes, so the 320ms streak-8 fan can still be playing when the 200ms
+  // exit and the perch drop after it end, and advancing on the exit alone
+  // would unmount it midway. Each half reports the
   // submission it settled, so a report from one round never counts for the
   // next.
   const [rackSettled, setRackSettled] = useState<number | null>(null);

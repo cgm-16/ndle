@@ -552,9 +552,10 @@ describe("TileInventory", () => {
     endAnimation(seated);
     expect(onSettled).toHaveBeenCalledTimes(1);
     expect(animationOn(cells(container)[4])).not.toBe("nd-perch-drop");
-    // Still new until the round changes, the landed tile must not fire 9i:
-    // nd-fire starts from nothing and would blink it out of the seat.
-    expect(animationOn(cells(container)[4])).not.toBe("nd-fire");
+    // Still new until the round changes, the landed tile keeps its "+" badge
+    // but must not fire 9i again: the badge would fade in a second time.
+    expect(badgeOf(cells(container)[4])).not.toBeNull();
+    expect(animationOn(badgeOf(cells(container)[4]))).not.toBe("nd-fire");
   });
 
   it("settles when the rail tile itself is the one discarded", () => {
@@ -586,7 +587,7 @@ describe("TileInventory", () => {
     const { rerender, onSettled } = renderInventory({ tiles: before, mode: "discard" });
     rerender({ tiles: before.slice(0, 5), mode: "readOnly" });
 
-    fireEvent(railCells()[0], cancelEvent("nd-fire"));
+    fireEvent(railCells()[0], cancelEvent("nd-rim-reject"));
     expect(onSettled).not.toHaveBeenCalled();
   });
 

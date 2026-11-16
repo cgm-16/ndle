@@ -13,8 +13,9 @@ const RING_STREAKS = [3, 5, 8];
 
 const BURST_AT = 8;
 
-/* 2d — the locked six: chalk flecks that fan out 12px over the upper half
-   circle, each carrying the offset nd-fan interpolates to. */
+/* 2d — the locked six: chalk flecks that start above the tiles' top edge and
+   fan out 12px over the upper half circle, so they travel over the field and
+   never over a face. Each carries the offset nd-fan interpolates to. */
 const CHIPS = [
   { dx: "-11.8px", dy: "-2.1px" },
   { dx: "-8.9px", dy: "-8px" },
@@ -109,7 +110,7 @@ export function AnswerSlots({
         const tile = selectedTiles[index];
         const position = index + 1;
 
-        // An empty slot is a socket, not a tile: no ceramic anywhere. It keeps
+        // An empty slot is a socket, not a tile: no tile face. It keeps
         // its own rule in this component's stylesheet.
         if (tile === undefined) {
           // Read-only, the socket is not a control, and a roleless element has
@@ -151,7 +152,6 @@ export function AnswerSlots({
           // reused and 9b, the most frequent motion in the app, would never
           // play again after the first selection.
           <span key={tile.id} className={styles.filled}>
-            {verdict === "incorrect" && <span className={styles.dust} aria-hidden="true" data-moment="" />}
             {/* The ladder is decoration on a moment the tile already carries:
                 nothing here is reachable, and nothing here is named. */}
             {rings.map((at, ringIndex) => (
@@ -174,6 +174,7 @@ export function AnswerSlots({
                 onClick={onReturn && (() => onReturn(tile.id))}
               />
             </span>
+            {verdict === "incorrect" && <span className={styles.dust} aria-hidden="true" data-moment="" />}
             {verdict === "incorrect" && <span className={styles.stroke} aria-hidden="true" data-moment="" />}
             {burst &&
               CHIPS.map((chip) => (

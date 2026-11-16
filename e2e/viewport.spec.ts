@@ -495,3 +495,75 @@ test("a rack tile's discard drops the rail tile from where it perched", async ({
   expect(Math.abs(first.left - perched.left), "drop start, left").toBeLessThanOrEqual(1);
   expect(Math.abs(first.top - perched.top), "drop start, top").toBeLessThanOrEqual(1);
 });
+
+/* Decoration drawn on a verdict has to be seen: the answer tile's chalk face is
+   opaque, and the tile paints as a positioned box, so anything earlier in the
+   markup sits under it. Both readings pause the animations partway.
+   The dust specks are background gradients with pointer-events off, so the
+   page lets the dust take pointer events here; elementFromPoint at a speck's
+   centre then names whichever box paints topmost there. The specks' centres
+   are the percentages in AnswerSlots.module.css's .dust. */
+const DUST_SPECKS = [
+  [0.2, 0.3],
+  [0.5, 0.55],
+  [0.8, 0.25],
+] as const;
+
+async function openFeedbackState(page: Page, label: RegExp) {
+  await page.addInitScript(() => window.localStorage.setItem("ndle.language", "en"));
+  await page.goto("/gallery.html");
+  await page.setViewportSize({ width: 393, height: 900 });
+  await page.evaluate(() => document.fonts.ready);
+  await page.locator("nav ul button[aria-pressed]", { hasText: label }).click();
+  await expect(page.locator('[class*="slots"] [class*="filled"]').first()).toBeVisible();
+}
+
+test("a wrong answer's dust specks paint above the answer tile", async ({ page }) => {
+  await openFeedbackState(page, /^Feedback — incorrect/);
+  await page.addStyleTag({ content: '[class*="dust"] { pointer-events: auto !important; }' });
+  const misses = await page.evaluate((specks) => {
+    const dusts = [...document.querySelectorAll<HTMLElement>('[class*="slots"] [class*="dust"]')];
+    for (const animation of document.getAnimations()) {
+      animation.pause();
+      animation.currentTime = 140;
+    }
+    const missed: string[] = [];
+    for (const dust of dusts) {
+      dust.scrollIntoView({ block: "center" });
+      const { left, top, width, height } = dust.getBoundingClientRect();
+      for (const [px, py] of specks) {
+        const hit = document.elementFromPoint(left + width * px, top + height * py);
+        if (hit !== dust) missed.push(`${px},${py} hit ${hit?.className}`);
+      }
+    }
+    return { dusts: dusts.length, missed };
+  }, DUST_SPECKS);
+  expect(misses.dusts, "dust nodes on the miss").toBeGreaterThan(0);
+  expect(misses.missed, "specks covered by something else").toEqual([]);
+});
+
+test("the top tier's flecks fan out over the field, clear of every answer tile", async ({ page }) => {
+  await openFeedbackState(page, /^Feedback — correct at streak 8/);
+  const reading = await page.evaluate(() => {
+    const tiles = [...document.querySelectorAll('[class*="slots"] [class*="tile"]')].map((el) => el.getBoundingClientRect());
+    const chips = [...document.querySelectorAll('[class*="slots"] [class*="chip"]')];
+    const inside: string[] = [];
+    for (const time of [0, 80, 160, 240, 319]) {
+      for (const animation of document.getAnimations()) {
+        animation.pause();
+        animation.currentTime = time;
+      }
+      chips.forEach((chip, index) => {
+        const c = chip.getBoundingClientRect();
+        for (const t of tiles) {
+          const overlaps = c.left < t.right && c.right > t.left && c.top < t.bottom && c.bottom > t.top;
+          if (overlaps) inside.push(`chip ${index} at ${time}ms`);
+        }
+      });
+    }
+    return { tiles: tiles.length, chips: chips.length, inside };
+  });
+  expect(reading.tiles, "answer tiles").toBeGreaterThan(0);
+  expect(reading.chips, "flecks").toBe(12);
+  expect(reading.inside, "flecks over a tile's face").toEqual([]);
+});
