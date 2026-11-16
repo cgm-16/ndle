@@ -281,6 +281,9 @@ describe("GameScreen phase composition", () => {
     const ledger = screen.getByRole("list", { name: "Table" });
     const prompt = screen.getByText("3 × 5 =");
     expect(ledger.contains(prompt)).toBe(false);
+    // The prompt shares its container with the answer slots.
+    const slot = screen.getByRole("button", { name: "Answer slot 1: empty" });
+    expect(prompt.parentElement).toBe(slot.closest("div")!.parentElement);
     expect(within(ledger).getAllByText("3 × 5")).toHaveLength(1);
   });
 
