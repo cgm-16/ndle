@@ -1,27 +1,33 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { PUZZLE_CAPACITY } from "../../game/balance";
 import type { Digit, Tile } from "../../game/types";
 import { I18nProvider } from "../../i18n/I18nContext";
-import tileStyles from "../Tile/Tile.module.css";
 import { TileInventory, type TileInventoryProps } from "./TileInventory";
 import rackStyles from "./TileInventory.module.css";
 
 const tile = (digit: Digit, id: string, isNew = false): Tile => ({ id, digit, isNew });
 
+// The rail renders into a host the screen owns (the overflow band's right
+// cell), so a rack under test is given one.
+let railHost: HTMLElement;
+afterEach(() => railHost?.remove());
+
 /** Renders the rack with stable callbacks and exposes a same-tree rerender helper. */
-function renderInventory(overrides: Partial<TileInventoryProps> = {}) {
+function renderInventory(overrides: Partial<TileInventoryProps> = {}, initialLanguage: "en" | "ko" = "en") {
   const onTile = vi.fn();
   const onSettled = vi.fn();
+  railHost = document.body.appendChild(document.createElement("div"));
   const inventory = (props: Partial<TileInventoryProps>) => (
-    <I18nProvider initialLanguage="en">
+    <I18nProvider initialLanguage={initialLanguage}>
       <TileInventory
         tiles={[]}
         mode="select"
         pendingDiscards={[]}
         liftedIds={[]}
         capacity={PUZZLE_CAPACITY}
+        railHost={railHost}
         onTile={onTile}
         onSettled={onSettled}
         {...props}
@@ -52,9 +58,9 @@ function cells(container: HTMLElement): HTMLElement[] {
   return Array.from(container.querySelector(`.${rackStyles.inventory}`)?.children ?? []) as HTMLElement[];
 }
 
-// The rail band above the grid, where tiles past capacity perch (§1.12).
-function railCells(container: HTMLElement): HTMLElement[] {
-  return Array.from(container.querySelector(`.${rackStyles.rail}`)?.children ?? []) as HTMLElement[];
+// The rail, where tiles past capacity perch (§1.12).
+function railCells(): HTMLElement[] {
+  return Array.from(railHost.querySelector(`.${rackStyles.rail}`)?.querySelectorAll("[data-rail]") ?? []) as HTMLElement[];
 }
 
 // The one motion fact jsdom can settle: which element the cascade puts an
@@ -117,10 +123,58 @@ describe("TileInventory", () => {
     renderInventory({
       tiles: [tile(7, "a", true)],
     });
-    expect(screen.getByRole("button", { name: "Digit 7, New tile" })).toBeInTheDocument();
-    // The badge span is gone (#84); the reward state is what now makes a new
-    // tile visibly distinct, so that is what the test has to hold on to.
-    expect(screen.getByRole("button", { name: "Digit 7, New tile" })).toHaveClass(tileStyles.reward);
+    expect(screen.getByRole("button", { name: "Digit 7, new tile" })).toBeInTheDocument();
+    // The "+" badge is the visible mark; the name carries it for everyone else.
+    expect(screen.getByText("+")).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("badges only the tile that arrived this row", () => {
+    renderInventory({ tiles: [tile(7, "a", true), tile(3, "b")] });
+    expect(screen.getAllByText("+")).toHaveLength(1);
+  });
+
+  it("reads the hand as the seated tiles of five, in English and Korean", () => {
+    const four = [tile(1, "a"), tile(2, "b"), tile(3, "c"), tile(4, "d")];
+    renderInventory({ tiles: four });
+    expect(screen.getByText("Hand · 4 of 5")).toBeInTheDocument();
+    cleanup();
+    renderInventory({ tiles: four }, "ko");
+    expect(screen.getByText("손 · 5칸 중 4개")).toBeInTheDocument();
+  });
+
+  it("counts at most five seated tiles when a sixth is on the rail", () => {
+    renderInventory({ tiles: railedRack() });
+    expect(screen.getByText("Hand · 5 of 5")).toBeInTheDocument();
+  });
+
+  it("shows a held socket's digit and marks it data-state held, and an empty socket neither", () => {
+    const { container } = renderInventory({ tiles: [tile(4, "a"), tile(5, "b")], liftedIds: ["a"] });
+    const [held, resting, empty] = cells(container);
+    expect(held).toHaveAttribute("data-state", "held");
+    expect(held).toHaveTextContent("4");
+    expect(resting).not.toHaveAttribute("data-state");
+    expect(empty).not.toHaveAttribute("data-state", "held");
+    expect(empty).toHaveTextContent("");
+  });
+
+  it("keeps the given order while a tile is held", () => {
+    const tiles = [tile(3, "a"), tile(1, "b"), tile(2, "c")];
+    const { container, rerender } = renderInventory({ tiles, liftedIds: ["b"] });
+    expect(cells(container).slice(0, 3).map((cell) => cell.textContent)).toEqual(["3", "1", "2"]);
+    rerender({ tiles, liftedIds: ["b", "c"] });
+    expect(cells(container).slice(0, 3).map((cell) => cell.textContent)).toEqual(["3", "1", "2"]);
+  });
+
+  it("names each discard choice, and the arrival with its new tag, in English and Korean", () => {
+    renderInventory({ mode: "discard", tiles: railedRack() });
+    expect(screen.getByRole("button", { name: "Discard 3" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Discard 7, new tile" })).toBeInTheDocument();
+    expect(screen.getByText("Arriving")).toBeInTheDocument();
+    cleanup();
+    renderInventory({ mode: "discard", tiles: railedRack() }, "ko");
+    expect(screen.getByRole("button", { name: "3 버리기" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "7 버리기, 새 타일" })).toBeInTheDocument();
+    expect(screen.getByText("들어오는 타일")).toBeInTheDocument();
   });
 
   it("marks a pending discard with a textual label and pressed state", () => {
@@ -129,7 +183,7 @@ describe("TileInventory", () => {
       tiles: [tile(3, "a")],
       pendingDiscards: ["a"],
     });
-    const button = screen.getByRole("button", { name: "Digit 3, Marked for discard" });
+    const button = screen.getByRole("button", { name: "Discard 3, Marked for discard" });
     expect(button).toHaveAttribute("aria-pressed", "true");
   });
 
@@ -143,7 +197,7 @@ describe("TileInventory", () => {
       tiles: [tile(3, "a"), tile(4, "b")],
       pendingDiscards: ["a"],
     });
-    expect(screen.getByRole("button", { name: "Digit 4" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "Discard 4" })).toHaveAttribute("aria-pressed", "false");
   });
 
   // Whether the rack ends up on screen is layout, which only a browser can
@@ -211,12 +265,12 @@ describe("TileInventory", () => {
     const six = Array.from({ length: 6 }, (_, index) => tile(0, `t${index}`));
     const { container } = renderInventory({ tiles: six });
     expect(cellCount(container)).toBe(5);
-    expect(railCells(container)).toHaveLength(1);
+    expect(railCells()).toHaveLength(1);
   });
 
   it("draws no rail while nothing is past capacity", () => {
-    const { container } = renderInventory({ tiles: [tile(1, "a")] });
-    expect(container.querySelector(`.${rackStyles.rail}`)).toBeNull();
+    renderInventory({ tiles: [tile(1, "a")] });
+    expect(railHost.querySelector(`.${rackStyles.rail}`)).toBeNull();
   });
 
   it("keeps the cell count and every other tile's cell unchanged when a tile becomes lifted", () => {
@@ -231,7 +285,7 @@ describe("TileInventory", () => {
     expect(textsAfter).toHaveLength(textsBefore.length);
     expect(textsAfter[0]).toBe(textsBefore[0]); // tile "a" untouched
     expect(textsAfter[2]).toBe(textsBefore[2]); // tile "c" untouched
-    expect(textsAfter[1]).toBe(""); // tile "b"'s cell is now an empty-looking socket
+    expect(textsAfter[1]).toBe("2"); // tile "b"'s cell is now a held socket, still showing its digit
   });
 
   it("gives a lifted cell no Digit accessible name", () => {
@@ -264,7 +318,7 @@ describe("TileInventory", () => {
   it("rim-rejects the perched tile and none of the five sockets", () => {
     const six = Array.from({ length: 6 }, (_, index) => tile(0, `t${index}`));
     const { container } = renderInventory({ tiles: six });
-    expect(animationOn(railCells(container)[0])).toBe("oz-rim-reject");
+    expect(animationOn(railCells()[0])).toBe("oz-rim-reject");
     expect(cells(container).slice(0, PUZZLE_CAPACITY).map(animationOn)).toEqual(
       Array.from({ length: PUZZLE_CAPACITY }, () => "none"),
     );
@@ -275,8 +329,8 @@ describe("TileInventory", () => {
   // the arrival that did not land, so it rim-rejects.
   it("rim-rejects a sixth cell that holds a reward tile rather than firing it", () => {
     const six = Array.from({ length: 6 }, (_, index) => tile(0, `t${index}`, index === 5));
-    const { container } = renderInventory({ tiles: six });
-    expect(animationOn(railCells(container)[0])).toBe("oz-rim-reject");
+    renderInventory({ tiles: six });
+    expect(animationOn(railCells()[0])).toBe("oz-rim-reject");
   });
 
   it("holds a confirmed discard in its own cell and retires it on animationend", () => {
@@ -381,23 +435,12 @@ describe("TileInventory", () => {
     const twenty = Array.from({ length: 20 }, (_, index) => tile((index % 10) as Digit, `t${index}`));
     const { container } = renderInventory({ tiles: twenty, capacity: 19 });
     expect(cellCount(container)).toBe(19);
-    expect(railCells(container).map(animationOn)).toEqual(["oz-rim-reject"]);
+    expect(railCells().map(animationOn)).toEqual(["oz-rim-reject"]);
     expect(animationOn(cells(container)[10])).toBe("none");
     cleanup();
 
     const { container: sparse } = renderInventory({ tiles: [tile(1, "a")], capacity: 19 });
     expect(cellCount(sparse)).toBe(19);
-  });
-
-  // The grid is five columns wide, so five sockets fill one row and
-  // six need the second.
-  it("draws one row for five sockets and keeps two rows for six", () => {
-    const { container: five } = renderInventory({ capacity: 5 });
-    expect(five.querySelector(`.${rackStyles.rack}`)).toHaveAttribute("data-size", "row");
-    cleanup();
-
-    const { container: six } = renderInventory({ capacity: 6 });
-    expect(six.querySelector(`.${rackStyles.rack}`)).not.toHaveAttribute("data-size");
   });
 
   // The reducer seats a surviving rail tile in the freed socket in the same
@@ -413,11 +456,11 @@ describe("TileInventory", () => {
 
     expect(cells(container)[2].textContent).toBe("2");
     expect(cells(container)[3].textContent).toBe("3");
-    expect(railCells(container)[0].textContent).toBe("7");
+    expect(railCells()[0]).toHaveTextContent("7");
 
     endAnimation(cells(container)[2]);
     expect(cellCount(container)).toBe(5);
-    expect(railCells(container)).toHaveLength(0);
+    expect(railCells()).toHaveLength(0);
     expect(cells(container)[2].textContent).toBe("7");
     expect(cells(container)[3].textContent).toBe("3");
   });
@@ -498,14 +541,10 @@ describe("TileInventory", () => {
     expect(animationOn(seated)).toBe("oz-perch-drop");
     expect(seated.style.getPropertyValue("--dx")).toBe("80px");
     expect(seated.style.getPropertyValue("--dy")).toBe("-81px");
-    // The rail stays in flow until the tile lands: dropping it with the fall
-    // would move the seat up by the rail's height under the measured offsets.
-    expect(container.querySelector(`.${rackStyles.rail}`)).not.toBeNull();
     expect(onSettled).not.toHaveBeenCalled();
 
     endAnimation(seated);
     expect(onSettled).toHaveBeenCalledTimes(1);
-    expect(container.querySelector(`.${rackStyles.rail}`)).toBeNull();
     expect(animationOn(cells(container)[4])).not.toBe("oz-perch-drop");
     // Still new until the round changes, the landed tile must not fire 9i:
     // oz-fire starts from nothing and would blink it out of the seat.
@@ -517,7 +556,7 @@ describe("TileInventory", () => {
     const { container, rerender, onSettled } = renderInventory({ tiles: before, mode: "discard" });
     rerender({ tiles: before.slice(0, 5), mode: "readOnly" });
 
-    endAnimation(railCells(container)[0]);
+    endAnimation(railCells()[0]);
     expect(onSettled).toHaveBeenCalledTimes(1);
     expect(cellCount(container)).toBe(5);
   });
@@ -526,11 +565,11 @@ describe("TileInventory", () => {
   // end would freeze the run. A cancelled animation still ends the departure.
   it("settles on animationcancel as well as animationend", () => {
     const before = railedRack();
-    const { container, rerender, onSettled } = renderInventory({ tiles: before, mode: "discard" });
+    const { rerender, onSettled } = renderInventory({ tiles: before, mode: "discard" });
     rerender({ tiles: before.slice(0, 5), mode: "readOnly" });
 
     // React has no onAnimationCancel, so the rack listens natively.
-    fireEvent(railCells(container)[0], cancelEvent("oz-slide-off"));
+    fireEvent(railCells()[0], cancelEvent("oz-slide-off"));
     expect(onSettled).toHaveBeenCalledTimes(1);
   });
 
@@ -539,10 +578,10 @@ describe("TileInventory", () => {
   // starts. That cancel is not the exit's, and must not settle the discard.
   it("ignores the cancel of the animation a departing cell replaced", () => {
     const before = railedRack();
-    const { container, rerender, onSettled } = renderInventory({ tiles: before, mode: "discard" });
+    const { rerender, onSettled } = renderInventory({ tiles: before, mode: "discard" });
     rerender({ tiles: before.slice(0, 5), mode: "readOnly" });
 
-    fireEvent(railCells(container)[0], cancelEvent("oz-fire"));
+    fireEvent(railCells()[0], cancelEvent("oz-fire"));
     expect(onSettled).not.toHaveBeenCalled();
   });
 

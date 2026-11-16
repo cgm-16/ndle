@@ -35,6 +35,9 @@ export function GameScreen({ state, dispatch, onSubmit, onNextRound }: GameScree
   // next.
   const [rackSettled, setRackSettled] = useState<number | null>(null);
   const [slotsSettled, setSlotsSettled] = useState<number | null>(null);
+  // The overflow band's right cell, where the rack renders its rail. It stays
+  // mounted in every phase so a discarded rail tile can finish leaving.
+  const [railHost, setRailHost] = useState<HTMLElement | null>(null);
   const advancesAlone =
     state.phase === "feedback" && state.lastResult?.discarded === true;
   const readyToAdvance =
@@ -103,7 +106,9 @@ export function GameScreen({ state, dispatch, onSubmit, onNextRound }: GameScree
           )}
         </div>
 
-        <FeedbackPanel result={lastResult} rewardTiles={rewardTiles} />
+        {/* Both live regions stay mounted in every phase, and only the phase's
+            own holds content: overflow's message is OverflowControls. */}
+        <FeedbackPanel result={state.phase === "overflow" ? null : lastResult} rewardTiles={rewardTiles} />
 
         {state.phase === "answering" && (
           <div className={styles.actions}>
@@ -132,7 +137,10 @@ export function GameScreen({ state, dispatch, onSubmit, onNextRound }: GameScree
           <ActionButton onClick={onNextRound}>{t("action.next")}</ActionButton>
         )}
 
-        {state.phase === "overflow" && <OverflowControls />}
+        <div className={styles.overflow} data-active={state.phase === "overflow" ? "" : undefined}>
+          <OverflowControls active={state.phase === "overflow"} />
+          <div ref={setRailHost} className={styles.railCell} />
+        </div>
       </div>
 
       <div className={styles.rack}>
@@ -147,6 +155,7 @@ export function GameScreen({ state, dispatch, onSubmit, onNextRound }: GameScree
           }
           liftedIds={state.selectedTiles.map((tile) => tile.id)}
           capacity={PUZZLE_CAPACITY}
+          railHost={railHost}
           mode={state.phase === "answering" ? "select" : state.phase === "overflow" ? "discard" : "readOnly"}
           pendingDiscards={state.pendingDiscards}
           onSettled={() => {

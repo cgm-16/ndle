@@ -6,7 +6,9 @@ import styles from "./Tile.module.css";
 
 export type TileSize = "lg" | "sm";
 
-export type TileState = "resting" | "lifted" | "reward" | "marked" | "disabled";
+/** `discard` is a choice in the overflow phase, `marked` the one chosen, and
+ * `inert` the resting look on a tile that cannot be pressed. */
+export type TileState = "resting" | "lifted" | "reward" | "marked" | "discard" | "inert" | "disabled";
 
 export interface TileProps {
   value: Pick<TileModel, "digit">;
@@ -58,7 +60,7 @@ export function Tile({ value, size = "lg", state = "resting", onClick, label, pr
       style={style}
       aria-label={label ?? tileLabel(value, t)}
       aria-pressed={pressed}
-      disabled={state === "disabled"}
+      disabled={state === "disabled" || state === "inert"}
       onClick={onClick}
     >
       {glyph}

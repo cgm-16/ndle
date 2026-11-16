@@ -16,48 +16,28 @@ import { START_LABEL } from "./labels.js";
 
 /* 320 is §8.5's bar. 305 is what a 320px window actually gives the page once a
    layout-taking scrollbar takes its 15px of layout width — the condition #85 names,
-   and the reason a sweep at 320 alone is not enough. 407 is the last width
-   below `spacing.css`'s `min-width: 408px`, so it pins the narrow rack tier's
-   upper edge; a regression that only appears one pixel under the breakpoint has
-   somewhere to be caught. 408 is the first width above it, and the middle
-   tier's tightest: overhang is largest where content is smallest within a tier,
-   and until #130 no sweep had ever run on that side of the boundary at all.
-
-   Layout cannot tell why it has a given content width, only what it is — but a
-   MEDIA QUERY can, and that is where the equivalence breaks. `spacing.css`
-   matches the scrollbar-INCLUSIVE viewport while every reading below is taken
-   against the content box, so which tier answers a given content width depends
-   on whether the platform draws a scrollbar that takes layout width. The tier
-   is therefore derived from the outer box and asserted, never assumed: a sweep
-   that comes back clean having measured the wrong tier is the exact shape of
-   the three #85 attempts that reported `clean` and counted for nothing. */
-const CONTENT_WIDTHS = [305, 320, 407, 408] as const;
+   and the reason a sweep at 320 alone is not enough. 393 is the frame's own
+   width, and 408 the first width past it, where the arena stops growing and the
+   screen is centred. */
+const CONTENT_WIDTHS = [305, 320, 393, 408] as const;
 const LOCALES = ["en", "ko"] as const;
 const STATE_COUNT = 24;
 
-/* `spacing.css` — the narrow tier's tile, the middle tier's, and the boundary
-   between them. The 48rem tier is out of range for every width swept here. */
+/* The widths the arena is read at: one that shrinks the rack's columns, and
+   one past the frame, where they stop growing. */
 const ARENA_WIDTHS = [305, 408] as const;
-const NARROW_TILE_W = 52;
-const MIDDLE_TILE_W = 66;
-const MIDDLE_TIER_MIN = 408;
 
-/** The tile width the rack should be at, given the outer box the media query
-    actually sees. */
-function expectedTileWidth(outerWidth: number): number {
-  return outerWidth >= MIDDLE_TIER_MIN ? MIDDLE_TILE_W : NARROW_TILE_W;
-}
+/* The frame is 393px wide with a 16px gutter on each side, and the rack is five
+   equal columns 8px apart over the arena's content. */
+const FRAME_WIDTH = 393;
+const GUTTER = 16;
+const RACK_GAP = 8;
+const RACK_TILE_H = 56;
 
-/** The tier token `spacing.css` resolved to, in px. Read off the custom
-    property rather than off a rendered cell: the tracks are
-    `minmax(0, --tile-w)` and shrink inside a narrow container, so a rendered
-    width identifies the tier only while the tier already fits. */
-async function tierTileWidth(page: Page): Promise<number> {
-  return page.evaluate(() =>
-    parseFloat(
-      getComputedStyle(document.documentElement).getPropertyValue("--tile-w"),
-    ),
-  );
+/** The rack's column width at a content-box viewport width, before the 44px floor. */
+function expectedTileWidth(viewport: number): number {
+  const content = Math.min(viewport, FRAME_WIDTH) - 2 * GUTTER;
+  return (content - 4 * RACK_GAP) / 5;
 }
 
 interface StateReading {
@@ -141,7 +121,7 @@ for (const width of CONTENT_WIDTHS) {
         locale,
       );
       await page.goto("/gallery.html");
-      const gutter = await setContentWidth(page, width);
+      await setContentWidth(page, width);
       // Fonts change metrics, so a reading taken before they resolve is a
       // reading of the fallback face.
       await page.evaluate(() => document.fonts.ready);
@@ -155,16 +135,6 @@ for (const width of CONTENT_WIDTHS) {
       expect(viewport, "content width the harness actually produced").toBe(
         width,
       );
-      // The tier the media query answered with, against the tier the outer box
-      // asks for. Equal to `width` wherever the platform draws no scrollbar,
-      // and deliberately not assumed to be: a reading in the wrong tier is
-      // still a clean reading, which is how three of #85's four attempts
-      // passed while measuring nothing.
-      expect(
-        await tierTileWidth(page),
-        `rack tier at content ${width}, gutter ${gutter}`,
-      ).toBe(expectedTileWidth(width + gutter));
-
       const readings = await sweep(page);
 
       // A locale that silently failed to load renders as the other one, and
@@ -223,18 +193,16 @@ for (const width of CONTENT_WIDTHS) {
  * Why it overflows: `.app` is a column flex container, so `main` is a flex
  * item whose cross axis is horizontal, and `.screen`'s `margin: 0 auto`
  * suppresses the stretch that would size it to its container. That leaves it
- * `fit-content`, which is floored by min-content — the rack's fixed tracks
- * plus the arena's padding — and no `min-width` can lower a fit-content floor.
+ * `fit-content`, which is floored by min-content — the rack's 44px track
+ * floors plus the arena's padding — and no `min-width` can lower a fit-content
+ * floor.
  *
  * 305 is the content width a 320px window gives the page once a
- * layout-taking scrollbar takes its 15px, and the narrow tier still fires there, so this
- * reproduces the condition without depending on the platform to draw a
- * scrollbar at all.
+ * layout-taking scrollbar takes its 15px, so this reproduces the condition
+ * without depending on the platform to draw a scrollbar at all.
  *
- * 408 is the same reading on the other side of `spacing.css`'s boundary, where
- * the rack's tracks jump from 292px to 378px against an arena that gained only
- * one pixel. #130 raised that band as never measured, and it was: the sweep
- * above stopped at 407.
+ * 408 is a reading past the 393px frame, where the arena stops growing and the
+ * rack's columns with it.
  */
 for (const locale of LOCALES) {
   for (const width of ARENA_WIDTHS) {
@@ -265,18 +233,19 @@ for (const locale of LOCALES) {
         const de = document.documentElement;
         const main = document.querySelector("main")!;
         const rack = document.querySelector('[class*="inventory"]')!;
-        const cell = document.querySelector(
-          '[class*="cell"], [class*="socket"]',
-        )!;
+        const cells = [...rack.children].map((cell) => cell.getBoundingClientRect());
+        const style = getComputedStyle(rack);
         return {
           viewport: de.clientWidth,
           scrollWidth: de.scrollWidth,
+          mainLeft: main.getBoundingClientRect().left,
           mainWidth: main.getBoundingClientRect().width,
           rackWidth: rack.getBoundingClientRect().width,
-          renderedTileW: cell.getBoundingClientRect().width,
-          tierTileW: parseFloat(
-            getComputedStyle(de).getPropertyValue("--tile-w"),
-          ),
+          columns: style.gridTemplateColumns.split(" ").map(parseFloat),
+          columnGap: parseFloat(style.columnGap),
+          cellWidths: cells.map((box) => box.width),
+          cellHeights: cells.map((box) => box.height),
+          renderedTileW: cells[0]!.width,
           targetMin: parseFloat(
             getComputedStyle(de).getPropertyValue("--target-min"),
           ),
@@ -284,14 +253,32 @@ for (const locale of LOCALES) {
       });
 
       // Guards on the conditions, before the result: a reading taken at the
-      // wrong width, in the wrong tier, or with the rack absent, proves nothing.
+      // wrong width or with the rack absent, proves nothing.
       expect(reading.viewport, "content width the harness produced").toBe(
         width,
       );
-      expect(reading.tierTileW, `rack tier at ${width}`).toBe(
-        expectedTileWidth(width),
-      );
       expect(reading.rackWidth, "rack rendered").toBeGreaterThan(0);
+
+      // One size at every width: five equal columns that fill the arena's
+      // content, 8px apart and 56px tall, the arena at most the frame wide and
+      // centred in the viewport.
+      expect(reading.mainWidth, "arena width").toBeCloseTo(Math.min(width, FRAME_WIDTH), 0);
+      expect(reading.mainLeft, "arena centred").toBeCloseTo((width - reading.mainWidth) / 2, 0);
+      expect(reading.rackWidth, "rack fills the arena's content").toBeCloseTo(
+        Math.min(width, FRAME_WIDTH) - 2 * GUTTER,
+        0,
+      );
+      expect(reading.columns, "five columns").toHaveLength(5);
+      for (const column of reading.columns) {
+        expect(column, "equal columns").toBeCloseTo(expectedTileWidth(width), 0);
+      }
+      expect(reading.columnGap, "column gap").toBe(RACK_GAP);
+      for (const cellWidth of reading.cellWidths) {
+        expect(cellWidth, "every cell fills its column").toBeCloseTo(expectedTileWidth(width), 0);
+      }
+      for (const cellHeight of reading.cellHeights) {
+        expect(cellHeight, "every cell is a tile tall").toBe(RACK_TILE_H);
+      }
 
       expect(
         reading.mainWidth,
@@ -301,10 +288,9 @@ for (const locale of LOCALES) {
         reading.viewport,
       );
 
-      // §1.12 makes the tier figure a maximum and --target-min the floor. Both
-      // halves are load-bearing: a rack that fits by shrinking past the target
-      // minimum has traded a WCAG failure for a layout one, and the assertion
-      // above alone would not notice.
+      // §1.12 makes --target-min the floor of the rack's columns. A rack that
+      // fits by shrinking past the target minimum has traded a WCAG failure for
+      // a layout one, and the assertions above would not notice.
       expect(
         reading.renderedTileW,
         "rendered tile width against the target minimum",
@@ -313,8 +299,8 @@ for (const locale of LOCALES) {
   }
 }
 
-/* Below a 276px content box the target minimum starts to bind — five tiles at
-   44 plus four gaps at 8 is 252, and the arena spends 24 more on padding. The
+/* Below a 284px viewport the target minimum starts to bind — five tiles at 44
+   plus four gaps at 8 is 252, and the arena spends 32 more on its gutters. The
    rack stops shrinking there and the page scrolls instead.
  *
  * That trade is the point of the floor, so it gets its own reading. §8.5 asks
@@ -322,8 +308,8 @@ for (const locale of LOCALES) {
  * has no lower bound. Browser zoom is how a real reader arrives here, and a
  * reader at 400% is precisely the one who needs 44px kept.
  *
- * One locale: the rack's tracks are fixed lengths and the Hangul face changes
- * no figure in this reading. The 305px sweep above covers both.
+ * One locale: the rack's tracks are sized by the arena, not by text, so the
+ * Hangul face changes no figure in this reading. The 305px sweep above covers both.
  */
 test("the rack holds the target minimum below the 320px gate", async ({
   page,
@@ -336,7 +322,7 @@ test("the rack holds the target minimum below the 320px gate", async ({
 
   const reading = await page.evaluate(() => {
     const de = document.documentElement;
-    const cell = document.querySelector('[class*="cell"], [class*="socket"]')!;
+    const cell = document.querySelector('[class*="inventory"]')!.children[0]!;
     return {
       viewport: de.clientWidth,
       renderedTileW: cell.getBoundingClientRect().width,
@@ -350,7 +336,7 @@ test("the rack holds the target minimum below the 320px gate", async ({
   expect(
     reading.viewport,
     "below the width where the floor binds",
-  ).toBeLessThan(276);
+  ).toBeLessThan(284);
 
   // The only assertion this width gets. Horizontal scroll here is the
   // deliberate consequence of keeping the control legal, so asserting its
@@ -365,10 +351,10 @@ test("the rack holds the target minimum below the 320px gate", async ({
    of the sample's par line answered: six tiles in five sockets, so the newest
    arrival perches on the rail. A live deal is random and its first rows need
    not overflow, so the fixed table is read from the gallery, whose overflow
-   entry runs the real reducer and so plays the discard. The rail is
-   right-aligned and 8a pivots the perched tile on its lower-left edge, so its
-   rest pose reaches right of its own cell; 8c then tips a discarded tile
-   further right still. Both are read here: the perch after its frame has
+   entry runs the real reducer and so plays the discard. The rail's tile is
+   left-aligned in the band's 88px cell and 8a pivots it on its lower-left
+   edge, so its rest pose reaches right of its own cell; 8c then tips a
+   discarded tile further right still. Both are read here: the perch after its frame has
    finished, and the slide-off at every tenth of its frame, paused, because a
    reading straight after a click sees neither.
  *

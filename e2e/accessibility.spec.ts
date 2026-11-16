@@ -47,7 +47,7 @@ async function submitAnAnswer(page: Page): Promise<void> {
     await page.locator('button[aria-label^="Digit"]:not([disabled])').first().click();
   }
   await page.getByRole("button", { name: "Submit", exact: true }).click();
-  await expect(page.locator('[role="status"]')).toBeVisible();
+  await expect(page.locator('[role="status"]:not(:empty)')).toBeVisible();
 }
 
 test("every action, tile and slot is a semantic button", async ({ page }) => {

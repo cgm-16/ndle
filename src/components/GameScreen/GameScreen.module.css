@@ -17,10 +17,11 @@
   margin-top: var(--space-2);
 }
 
-/* 150px in every phase, so the rack never moves. Feedback and overflow grow it
-   until they are restyled; a fixed height would let that content overlap the
-   rack without the page ever reporting it. */
+/* 150px in every phase, so the rack never moves. Feedback grows it until it is
+   restyled; a fixed height would let that content overlap the rack without the
+   page ever reporting it. */
 .band {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
@@ -58,6 +59,29 @@
 .submit {
   flex: 2;
   font-size: var(--type-row);
+}
+
+/* Overflow's content: the message beside the rail's 88px cell. Out of overflow
+   the cell is empty and out of flow, so the band's gap does not count it, but
+   it stays mounted for a discarded rail tile to finish leaving. */
+.overflow {
+  display: contents;
+}
+
+.railCell {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+}
+
+.overflow[data-active] {
+  display: grid;
+  grid-template-columns: 1fr 88px;
+  column-gap: var(--space-3);
+}
+
+.overflow[data-active] > .railCell {
+  position: static;
 }
 
 .rack {

@@ -92,7 +92,7 @@ describe("gallery catalogue", () => {
       }
 
       render(<I18nProvider initialLanguage="en">{entry.render()}</I18nProvider>);
-      const badgedTiles = screen.getAllByRole("button", { name: /New tile$/ });
+      const badgedTiles = screen.getAllByRole("button", { name: /new tile$/ });
       expect(badgedTiles, `expected ${expectedCount} New-badged tray tiles for ${entry.id}`).toHaveLength(
         expectedCount,
       );

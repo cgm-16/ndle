@@ -71,9 +71,16 @@ const en = {
     submitted: "Your answer: {value}",
     answer: "Correct answer: {value}",
     rewards: "Received {count} tiles",
+    handFull: "hand full",
   },
   overflow: {
-    instructionOne: "Choose a tile to discard.",
+    instructionOne: "Six tiles, five sockets. Choose a tile to discard.",
+  },
+  rack: {
+    hand: "Hand · {count} of 5",
+  },
+  rail: {
+    arriving: "Arriving",
   },
   gameOver: {
     reason: "Not enough tiles left to answer.",
@@ -102,7 +109,8 @@ const en = {
   },
   tile: {
     digitLabel: "Digit {digit}",
-    newLabel: "New tile",
+    discard: "Discard {digit}",
+    newLabel: "new tile",
     discardLabel: "Marked for discard",
   },
 } as const;
@@ -168,9 +176,16 @@ const ko = {
     submitted: "제출한 답: {value}",
     answer: "정답: {value}",
     rewards: "타일 {count}개 획득",
+    handFull: "손이 가득 참",
   },
   overflow: {
-    instructionOne: "버릴 타일 1개를 선택하세요.",
+    instructionOne: "타일 여섯 개, 칸 다섯 개. 버릴 타일 1개를 선택하세요.",
+  },
+  rack: {
+    hand: "손 · 5칸 중 {count}개",
+  },
+  rail: {
+    arriving: "들어오는 타일",
   },
   gameOver: {
     reason: "답을 만들 타일이 부족합니다.",
@@ -198,6 +213,7 @@ const ko = {
   },
   tile: {
     digitLabel: "숫자 {digit}",
+    discard: "{digit} 버리기",
     newLabel: "새 타일",
     discardLabel: "버릴 타일로 표시됨",
   },

@@ -11,56 +11,9 @@
   --space-10: 40px;
   --space-14: 56px;
 
-  /* The rack is five fixed sockets in one row at every breakpoint — the empty
-     sockets are the score, so the grid never resizes as tiles are lost. What
-     changes across tiers is the socket, and only the socket.
-
-     The tokens below carry the narrowest tier; the media queries widen them.
-     Mobile-first, because the rack width — five tiles plus four gaps — has to
-     clear the arena's own padding, which is 24px below 40rem. The narrow tier
-     needs 292px of the 296px a 320px viewport leaves. The middle tier needs
-     378px, so it cannot start at 400px: that leaves 376px and overflows by 2.
-     It starts at 408px, and below 412px so that phone tier keeps the larger
-     tile.
-
-     A media query cannot see a scrollbar, and neither boundary here accounts
-     for one. `min-width` matches the scrollbar-INCLUSIVE viewport while the
-     content box excludes it, so on a classic-scrollbar platform both tiers
-     fire about 15px early: measured, viewport 320 gives clientWidth 305, and
-     a 292px rack plus 24px of arena padding was asked to fit 305. No boundary
-     fixes that — the same query answers both cases identically — so it was
-     never a number to tune.
-
-     These figures are therefore MAXIMA, not fixed sizes (§1.12). The rack's
-     tracks are `minmax(0, --tile-w)` and the grid takes its container's real
-     width, so a tier shrinks toward --target-min when the container is
-     narrower than the tier's natural width, and is pixel-identical to these
-     numbers whenever it is not. TileInventory.module.css carries the
-     mechanism and the reason. Issue #85. */
-  --tile-w: 52px;
-  --tile-h: 64px;
-  --rack-gap: 8px;
-  --tile-w-sm: 30px;
-  --tile-h-sm: 38px;
-  --rack-columns: 5;
-  --rack-rows: 2;
-
   /* 44px is both the accessible minimum target and the smallest legal tile. */
   --target-min: 44px;
 
-  --arena-max-width: 42rem;
-}
-
-@media (width >= 408px) {
-  :root {
-    --tile-w: 66px;
-    --rack-gap: 12px;
-  }
-}
-
-@media (width >= 48rem) {
-  :root {
-    --tile-w: 64px;
-    --tile-h: 80px;
-  }
+  /* The frame: at most 393px wide, with each screen's own 16px gutter inside it. */
+  --arena-max-width: 393px;
 }
