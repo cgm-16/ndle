@@ -112,23 +112,17 @@ describe("gallery catalogue", () => {
     expect(container.querySelectorAll(`.${slotStyles.dust}`)).toHaveLength(2);
   });
 
-  // The rings accumulate and the rim escalates (AnswerSlots), so streak 8
-  // draws every ring but only the brightest rim: 7b's gold rim exists at
-  // streak 5 and nowhere else, which is why the ladder needs two states
-  // rather than one at the top.
-  it("draws the gold rim at streak 5 and the bright rim, three rings and the burst at streak 8", async () => {
+  // The rings accumulate, so streak 8 draws every ring and the burst: the
+  // ladder needs two states rather than one at the top.
+  it("draws two rings at streak 5, and three rings and the burst at streak 8", async () => {
     const streakFive = await renderEntry(entryById("feedback-streak-5"));
     expect(streakFive.container.querySelectorAll(`.${slotStyles.ring}`)).toHaveLength(4);
     expect(streakFive.container.querySelectorAll(`.${slotStyles.chip}`)).toHaveLength(0);
-    expect(streakFive.container.querySelectorAll(`.${slotStyles.rim}`)).toHaveLength(2);
-    expect(streakFive.container.querySelectorAll(`.${slotStyles.rimBright}`)).toHaveLength(0);
     cleanup();
 
     const streakEight = await renderEntry(entryById("feedback-streak-8"));
     expect(streakEight.container.querySelectorAll(`.${slotStyles.ring}`)).toHaveLength(6);
     expect(streakEight.container.querySelectorAll(`.${slotStyles.chip}`)).toHaveLength(12);
-    expect(streakEight.container.querySelectorAll(`.${slotStyles.rimBright}`)).toHaveLength(2);
-    expect(streakEight.container.querySelectorAll(`.${slotStyles.rim}`)).toHaveLength(0);
   });
 
   // The status is GameOverScreen's own local state, reached only by pressing

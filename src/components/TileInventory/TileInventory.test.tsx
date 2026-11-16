@@ -69,6 +69,11 @@ function animationOn(cell: HTMLElement): string {
   return getComputedStyle(cell).animationName;
 }
 
+// 9i plays on the "+" badge, not on the tile or its cell: the tile does not move.
+function badgeOf(cell: HTMLElement): HTMLElement {
+  return cell.querySelector(`.${rackStyles.badge}`) as HTMLElement;
+}
+
 // React picks the event name onAnimationEnd listens for by feature-detecting
 // window.AnimationEvent, and jsdom implements no such constructor — so under
 // test React is bound to the webkit-prefixed name and fireEvent.animationEnd
@@ -296,7 +301,8 @@ describe("TileInventory", () => {
 
   it("fires 9i on an arriving tile and leaves the residents still", () => {
     const { container } = renderInventory({ tiles: [tile(7, "a", true), tile(3, "b")] });
-    expect(animationOn(cells(container)[0])).toBe("oz-fire");
+    expect(animationOn(badgeOf(cells(container)[0]))).toBe("nd-fire");
+    expect(animationOn(cells(container)[0])).toBe("none");
     expect(animationOn(cells(container)[1])).toBe("none");
   });
 
@@ -312,13 +318,13 @@ describe("TileInventory", () => {
     const after = cells(container)[0];
     expect(after).toBe(before);
     expect(after.className).toBe(classesBefore);
-    expect(animationOn(after)).toBe("oz-fire");
+    expect(animationOn(badgeOf(after))).toBe("nd-fire");
   });
 
   it("rim-rejects the perched tile and none of the five sockets", () => {
     const six = Array.from({ length: 6 }, (_, index) => tile(0, `t${index}`));
     const { container } = renderInventory({ tiles: six });
-    expect(animationOn(railCells()[0])).toBe("oz-rim-reject");
+    expect(animationOn(railCells()[0])).toBe("nd-rim-reject");
     expect(cells(container).slice(0, PUZZLE_CAPACITY).map(animationOn)).toEqual(
       Array.from({ length: PUZZLE_CAPACITY }, () => "none"),
     );
@@ -330,7 +336,7 @@ describe("TileInventory", () => {
   it("rim-rejects a sixth cell that holds a reward tile rather than firing it", () => {
     const six = Array.from({ length: 6 }, (_, index) => tile(0, `t${index}`, index === 5));
     renderInventory({ tiles: six });
-    expect(animationOn(railCells()[0])).toBe("oz-rim-reject");
+    expect(animationOn(railCells()[0])).toBe("nd-rim-reject");
   });
 
   it("holds a confirmed discard in its own cell and retires it on animationend", () => {
@@ -344,7 +350,7 @@ describe("TileInventory", () => {
 
     const departing = cells(container)[1];
     expect(departing.textContent).toBe("2");
-    expect(animationOn(departing)).toBe("oz-slide-off");
+    expect(animationOn(departing)).toBe("nd-slide-off");
     expect(cells(container)[2].textContent).toBe("3");
 
     endAnimation(departing);
@@ -367,7 +373,7 @@ describe("TileInventory", () => {
 
     const departing = cells(container)[1];
     expect(departing.textContent).toBe("2");
-    expect(animationOn(departing)).toBe("oz-slide-off");
+    expect(animationOn(departing)).toBe("nd-slide-off");
   });
 
   // A tile leaving the rack from the answering phase was submitted, not
@@ -399,7 +405,7 @@ describe("TileInventory", () => {
     rerender({ tiles: [tiles[1]], mode: "readOnly", pendingDiscards: [] });
 
     const departing = cells(container)[0];
-    expect(animationOn(departing)).toBe("oz-slide-off");
+    expect(animationOn(departing)).toBe("nd-slide-off");
     endAnimation(departing);
     expect(cells(container)[0].textContent).toBe("3");
   });
@@ -435,7 +441,7 @@ describe("TileInventory", () => {
     const twenty = Array.from({ length: 20 }, (_, index) => tile((index % 10) as Digit, `t${index}`));
     const { container } = renderInventory({ tiles: twenty, capacity: 19 });
     expect(cellCount(container)).toBe(19);
-    expect(railCells().map(animationOn)).toEqual(["oz-rim-reject"]);
+    expect(railCells().map(animationOn)).toEqual(["nd-rim-reject"]);
     expect(animationOn(cells(container)[10])).toBe("none");
     cleanup();
 
@@ -538,17 +544,17 @@ describe("TileInventory", () => {
     }
     const seated = cells(container)[4];
     expect(seated.textContent).toBe("7");
-    expect(animationOn(seated)).toBe("oz-perch-drop");
+    expect(animationOn(seated)).toBe("nd-perch-drop");
     expect(seated.style.getPropertyValue("--dx")).toBe("80px");
     expect(seated.style.getPropertyValue("--dy")).toBe("-81px");
     expect(onSettled).not.toHaveBeenCalled();
 
     endAnimation(seated);
     expect(onSettled).toHaveBeenCalledTimes(1);
-    expect(animationOn(cells(container)[4])).not.toBe("oz-perch-drop");
+    expect(animationOn(cells(container)[4])).not.toBe("nd-perch-drop");
     // Still new until the round changes, the landed tile must not fire 9i:
-    // oz-fire starts from nothing and would blink it out of the seat.
-    expect(animationOn(cells(container)[4])).not.toBe("oz-fire");
+    // nd-fire starts from nothing and would blink it out of the seat.
+    expect(animationOn(cells(container)[4])).not.toBe("nd-fire");
   });
 
   it("settles when the rail tile itself is the one discarded", () => {
@@ -569,19 +575,18 @@ describe("TileInventory", () => {
     rerender({ tiles: before.slice(0, 5), mode: "readOnly" });
 
     // React has no onAnimationCancel, so the rack listens natively.
-    fireEvent(railCells()[0], cancelEvent("oz-slide-off"));
+    fireEvent(railCells()[0], cancelEvent("nd-slide-off"));
     expect(onSettled).toHaveBeenCalledTimes(1);
   });
 
-  // Swapping a cell's animation-name cancels the animation it replaces: a
-  // reward tile discarded inside its 380ms 9i fire cancels oz-fire as its exit
-  // starts. That cancel is not the exit's, and must not settle the discard.
+  // Swapping a cell's animation-name cancels the animation it replaces. That
+  // cancel is not the exit's, and must not settle the discard.
   it("ignores the cancel of the animation a departing cell replaced", () => {
     const before = railedRack();
     const { rerender, onSettled } = renderInventory({ tiles: before, mode: "discard" });
     rerender({ tiles: before.slice(0, 5), mode: "readOnly" });
 
-    fireEvent(railCells()[0], cancelEvent("oz-fire"));
+    fireEvent(railCells()[0], cancelEvent("nd-fire"));
     expect(onSettled).not.toHaveBeenCalled();
   });
 

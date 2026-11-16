@@ -12,8 +12,8 @@
      from a misplaced animation. global() because keyframes.css is not a CSS
      Module and this file is: a locally scoped name matches no @keyframes and
      fails silently — no error, no warning, no motion. */
-  animation-name: global(oz-round-rise);
+  animation-name: global(nd-round-rise);
   animation-duration: var(--dur-round);
-  animation-timing-function: var(--ease-settle);
+  animation-timing-function: var(--ease-out);
   animation-fill-mode: both;
 }

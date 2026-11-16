@@ -64,8 +64,8 @@ describe("GameHud streak break", () => {
     // invisible for exactly the half of the duration that should read.
     expect(falling!.parentElement).toBe(arriving!.parentElement);
     expect(arriving!.contains(falling!)).toBe(false);
-    expect(getComputedStyle(falling!).animationName).toBe("oz-counter-fall");
-    expect(getComputedStyle(arriving!).animationName).toBe("oz-counter-zero");
+    expect(getComputedStyle(falling!).animationName).toBe("nd-counter-fall");
+    expect(getComputedStyle(arriving!).animationName).toBe("nd-counter-zero");
   });
 
   it("falls the streak it is replacing, which is no longer in state", () => {

@@ -96,19 +96,3 @@
   width: 100%;
   margin-top: var(--space-3);
 }
-
-/* 8c tips a discarded tile 46px right and turns it 18 degrees, so a tile in
-   the rack's right column or on the rail leaves the arena on its way out and
-   takes the page past a narrow viewport for the frame's 420ms. The arena
-   clips that motion at its own edge, which at a phone's width is the screen's.
-
-   Only where the arena holds the rack. Below 304px the rack keeps its 44px target minimum by overflowing, and the page scrolls to
-   it on purpose (TileInventory.module.css, #85). Clipping there would cut the
-   rack off instead, so the page keeps scrolling. `clip` rather than `hidden`
-   because only `clip` leaves the other axis visible and makes no scroll
-   container. */
-@container app (width >= 304px) {
-  .screen {
-    overflow-x: clip;
-  }
-}

@@ -52,16 +52,18 @@ dd.streak {
 .counterFall,
 .counterZero {
   grid-area: 1 / 1;
-  animation-duration: var(--dur-break);
   animation-fill-mode: both;
 }
 
 .counterFall {
-  animation-name: global(oz-counter-fall);
-  animation-timing-function: var(--ease-fall);
+  animation-name: global(nd-counter-fall);
+  animation-duration: var(--dur-break);
+  animation-timing-function: var(--ease-in);
 }
 
 .counterZero {
-  animation-name: global(oz-counter-zero);
-  animation-timing-function: var(--ease-standard);
+  animation-name: global(nd-counter-zero);
+  animation-duration: var(--dur-zero);
+  animation-delay: var(--dur-break);
+  animation-timing-function: var(--ease-out);
 }

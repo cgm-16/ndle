@@ -17,8 +17,8 @@
 
   transform: translateY(calc(var(--tile-press) - var(--tile-lift))) rotate(var(--tile-tilt));
   transition:
-    transform var(--dur-select) var(--ease-settle),
-    box-shadow var(--dur-select) var(--ease-settle);
+    transform var(--dur-select) var(--ease-out),
+    box-shadow var(--dur-select) var(--ease-out);
 }
 
 /* A tile without onClick renders as a roleless element, so the pointer cursor

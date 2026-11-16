@@ -72,26 +72,26 @@ satisfy.
 
 - Motion is budgeted by frequency: what happens every round is fastest and quietest; what happens once a run may be theatrical.
 - Permitted motion is the inventory below. Motion outside it is not permitted; extending it amends this section. There is no animation library.
-- **Provisional; the identity's keyframe list replaces it.** Each keyframe lives in `src/styles/tokens/keyframes.css`, and its timing in `src/styles/tokens/motion.css`.
+- Motion is chalk: short, with no overshoot. Each keyframe lives in `src/styles/tokens/keyframes.css`, and its timing in `src/styles/tokens/motion.css`.
 
-| Keyframe | Animates |
-|---|---|
-| `oz-bloom` | Answer tiles rise and settle on a correct answer (`2a`) |
-| `oz-ring` | The streak rings on the answer tiles, one to three by streak (`7a`–`7c`) |
-| `oz-fan` | The six-chip burst at streak tier 3 (`2d`) |
-| `oz-crack` | The crack across the answer tiles on a wrong answer (`9f`) |
-| `oz-dust` | The dust from a wrong answer's crack (`9f`) |
-| `oz-fire` | Pay tiles firing in place in the rack (`9i`) |
-| `oz-round-rise` | The next equation rising into place (`10b`) |
-| `oz-counter-fall` | The streak counter falling when the streak breaks (`10e`) |
-| `oz-counter-zero` | The `0` fading in after the streak counter falls (`10e`) |
-| `oz-rim-reject` | The tile past capacity rim-rejecting onto the rail (`8a`) |
-| `oz-slide-off` | The marked tile sliding off the table on a discard (`8c`) |
-| `oz-perch-drop` | The perched tile dropping into the freed socket (`8a·2`) |
-| `oz-slot-arrive` | A tile arriving in its answer slot (`9b`) |
-| `oz-rise-ready` | A resting offset on a disabled action; defined and unused, because a disabled action is flat at 45% opacity |
+| Keyframe | Animates | Duration | Easing |
+|---|---|---|---|
+| `nd-bloom` | Answer tiles lift 4px and settle on a correct answer (`2a`) | 200 ms | ease-out |
+| `nd-ring` | One to three chalk rings round the answer tiles by streak tier, drawn like a hand-drawn circle and 60 ms apart (`7a`–`7c`) | 240 ms each | ease-out |
+| `nd-fan` | At the top tier, six chalk flecks fan out 12px and fade (`2d`) | 320 ms | ease-out |
+| `nd-crack` | A pink chalk stroke drawn across the answer tiles on a wrong answer (`9f`) | 200 ms | ease-in |
+| `nd-dust` | Dust-coloured specks fall 8px from the stroke and fade (`9f`) | 280 ms | ease-out |
+| `nd-fire` | A paid tile's `+` badge fades in from 6px above; the tile does not move (`9i`) | 180 ms | ease-out |
+| `nd-round-rise` | The next prompt rises 6px into place as it fades in (`10b`) | 180 ms | ease-out |
+| `nd-counter-fall` | The streak counter drops 8px and fades when the streak breaks (`10e`) | 200 ms | ease-in |
+| `nd-counter-zero` | The `0` fades in after the counter falls (`10e`) | 160 ms | ease-out |
+| `nd-rim-reject` | The tile past capacity fades in on the rail from 6px above, with no tilt (`8a`) | 180 ms | ease-out |
+| `nd-slide-off` | The discarded tile slides 24px down and fades (`8c`) | 200 ms | ease-in |
+| `nd-perch-drop` | The perched tile drops into the freed socket from its measured offset (`8a·2`) | 200 ms | ease-out |
+| `nd-slot-arrive` | A tile settles into its answer slot from 4px above (`9b`) | 120 ms | ease-out |
 
-- Respect `prefers-reduced-motion` by removing nonessential motion wholesale, including press offsets.
+- A button's press moves it `1px` down as a `transform` over 80 ms ease-out, and its background changes over 120 ms ease-out.
+- Respect `prefers-reduced-motion` by removing nonessential motion wholesale, including press offsets. Every animation still runs, clamped to 0.01 ms, because the round waits on `animationend` after a discard; no rule sets `animation: none`.
 - No audio.
 
 ### 1.13 Language behavior

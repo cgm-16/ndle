@@ -43,8 +43,8 @@
   text-align: left;
   cursor: pointer;
   transition:
-    border-color var(--dur-state) var(--ease-standard),
-    transform var(--dur-press) var(--ease-standard);
+    border-color var(--dur-state) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
 }
 
 .entryButton:active {

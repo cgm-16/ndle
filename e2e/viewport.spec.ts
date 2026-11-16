@@ -454,3 +454,44 @@ for (const own of [false, true]) {
     }
   });
 }
+
+/* The perch drop is measured by walking offsets (TileInventory's
+   layoutPosition), which jsdom cannot exercise. Its first frame must put the
+   dropping tile where the rail tile last stood: a drop that starts elsewhere
+   jumps on its first frame. The animation is paused at its start in the frame
+   that mounts the cell, and the rail tile's rect is read before the discard. */
+test("a rack tile's discard drops the rail tile from where it perched", async ({ page }) => {
+  await page.addInitScript(() => window.localStorage.setItem("ndle.language", "en"));
+  await page.goto("/gallery.html");
+  await page.setViewportSize({ width: 393, height: 900 });
+  await page.evaluate(() => document.fonts.ready);
+  await page.locator("nav ul button[aria-pressed]", { hasText: /^Overflow — required 1$/ }).click();
+  await expect(page.locator("[data-rail]")).toBeVisible();
+  await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished)));
+
+  const { perched, first } = await page.evaluate(() => {
+    const at = (el: Element) => {
+      const { left, top } = el.getBoundingClientRect();
+      return { left, top };
+    };
+    const perched = at(document.querySelector("[data-rail]")!);
+    return new Promise<{ perched: typeof perched; first: typeof perched }>((resolve, reject) => {
+      const observer = new MutationObserver(() => {
+        const seating = document.querySelector("[data-seating]");
+        if (!seating) return;
+        observer.disconnect();
+        const [drop] = seating.getAnimations();
+        if (!drop) return reject(new Error("the dropping tile plays no animation"));
+        drop.pause();
+        drop.currentTime = 0;
+        resolve({ perched, first: at(seating) });
+      });
+      observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+      setTimeout(() => reject(new Error("the perch drop never mounted")), 2000);
+      document.querySelector<HTMLElement>("[data-cell] button")!.click();
+    });
+  });
+
+  expect(Math.abs(first.left - perched.left), "drop start, left").toBeLessThanOrEqual(1);
+  expect(Math.abs(first.top - perched.top), "drop start, top").toBeLessThanOrEqual(1);
+});

@@ -26,9 +26,7 @@
 }
 
 /* The rail renders into the overflow band's right cell (GameScreen), a column
-   88px wide. The perched tile is left-aligned in it: 8a leaves it turned 11
-   degrees on its lower-left edge, so its top-right corner reaches about 14px
-   past the tile, into the 22px the cell has spare. */
+   88px wide. The perched tile is left-aligned in it. */
 .rail {
   display: flex;
   flex-direction: column;
@@ -104,70 +102,58 @@
   pointer-events: none;
 }
 
-/* The three rack moments, all mounted on the cell rather than on the Tile
-   inside it.
+/* The rack moments: three on the cell rather than on the Tile inside it, and
+   the paid badge's fade-in on the badge.
 
    Two shapes below are not stylistic and must survive a tidy-up:
 
    - `global()`. CSS Modules scopes an animation name exactly as it scopes a
-     class, so a bare `animation-name: oz-fire` here ships as `_oz-fire_1a2b3`,
+     class, so a bare `animation-name: nd-fire` here ships as `_nd-fire_1a2b3`,
      matches no keyframe, and does nothing — with no error (global.css:3-5).
    - longhands rather than the `animation` shorthand. Only the longhands are
      legible to getComputedStyle under jsdom, and which element carries which
      moment is the one motion fact the suite can hold. */
 
-/* 9i — a new tile fires where it sits: it is already in its sorted
-   position and never travels. The class depends on nothing but the tile's own
-   isNew, so it survives a discard toggle and the phase change into feedback
-   unchanged, and an animation-name that does not change starts no second
-   animation. That, plus the tile id as the cell's key, is what makes 9i play
-   once on arrival rather than on every render that follows it. */
-.cellNew {
-  animation-name: global(oz-fire);
+/* 9i — a new tile's "+" badge fades in from above; the tile is already in its
+   sorted position and does not move. The class depends on nothing but the
+   tile's own isNew, so it survives a discard toggle and the phase change into
+   feedback unchanged, and an animation-name that does not change starts no
+   second animation. That, plus the tile id as the cell's key, is what makes 9i
+   play once on arrival rather than on every render that follows it. */
+.cellNew .badge {
+  animation-name: global(nd-fire);
   animation-duration: var(--dur-reward);
-  animation-timing-function: var(--ease-snap);
+  animation-timing-function: var(--ease-out);
+  animation-fill-mode: both;
 }
 
-/* 8a — a tile past capacity, which exists only while the rack overflows: the
-   tile is refused entry, drops onto the rail and stays perched there. The
-   frame's last keyframe is that perch, not a rest, so without a fill mode the
-   tile snaps back into the grid the instant it lands.
-
-   transform-origin carries the shape's pivot, which lives on the element in
-   the storyboard rather than in the frame: the rotation reads as a tile
-   catching on its lower-left edge, and around the default centre it reads as
-   a swivel instead. */
+/* 8a — a tile past capacity, which exists only while the rack overflows: it
+   fades in on the rail and stays there. forwards keeps its last frame, so the
+   tile does not vanish the instant it lands. */
 .cellRimReject {
-  animation-name: global(oz-rim-reject);
-  animation-duration: var(--dur-select);
+  animation-name: global(nd-rim-reject);
+  animation-duration: var(--dur-reject);
+  animation-timing-function: var(--ease-out);
   animation-fill-mode: forwards;
-  transform-origin: 0 100%;
 }
 
-/* 8c — a confirmed discard tips off the end of the rack. forwards for the
+/* 8c — a confirmed discard slides the tile down and out. forwards for the
    mirror of 8a's reason: the frame ends at opacity 0 and the element outlives
    it by however long React takes to commit the removal, so without it the tile
    flashes back into its cell for a frame on the way out. */
 .cellDeparting {
-  /* 8c: the tile tips off its edge and gravity takes it (oz-slide-off). The
-     frame is distance-agnostic; the discard's own distances are these. */
-  --dx: 46px;
-  --drop: 88px;
-  --rot: 18deg;
-
-  animation-name: global(oz-slide-off);
+  animation-name: global(nd-slide-off);
   animation-duration: var(--dur-discard);
-  animation-timing-function: var(--ease-fall);
+  animation-timing-function: var(--ease-in);
   animation-fill-mode: forwards;
 }
 
 /* 8a·2 — the perched tile takes the seat a discard freed. Mounted in the seat,
-   it falls from the rail: --dx / --dy are the rail position less the seat's,
+   it drops from the rail: --dx / --dy are the rail position less the seat's,
    measured by TileInventory, and the frame starts exactly where 8a's perch
-   left it, pivoting on the same lower-left edge. */
+   left it. */
 .cellPerchDrop {
-  animation-name: global(oz-perch-drop);
+  animation-name: global(nd-perch-drop);
   animation-duration: var(--dur-perch);
-  animation-timing-function: var(--ease-fall);
-  transform-origin: 0 100%;
+  animation-timing-function: var(--ease-out);
 }

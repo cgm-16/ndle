@@ -116,7 +116,7 @@ describe("AnswerSlots motion", () => {
 
   it("arrives a tile that has been put in a slot", () => {
     renderSlots({ slotCount: 2, selectedTiles: [tile(5, "a")] });
-    expect(momentOn("5")).toBe("oz-slot-arrive");
+    expect(momentOn("5")).toBe("nd-slot-arrive");
   });
 
   it("blooms the submitted tiles once the round is judged correct", () => {
@@ -126,20 +126,23 @@ describe("AnswerSlots motion", () => {
       onReturn: undefined,
       verdict: "correct",
     });
-    expect(momentOn("5")).toBe("oz-bloom");
+    expect(momentOn("5")).toBe("nd-bloom");
   });
 
-  it("cracks the submitted tiles once the round is judged incorrect", () => {
-    renderSlots({
+  it("draws the stroke across the submitted tiles once the round is judged incorrect, and leaves the tile still", () => {
+    const { container } = renderSlots({
       slotCount: 1,
       selectedTiles: [tile(5, "a")],
       onReturn: undefined,
       verdict: "incorrect",
     });
-    expect(momentOn("5")).toBe("oz-crack");
+    const stroke = container.querySelector(`.${styles.stroke}`);
+    expect(stroke).not.toBeNull();
+    expect(getComputedStyle(stroke!).animationName).toBe("nd-crack");
+    expect(momentOn("5")).toBe("none");
   });
 
-  it("dusts a cracked tile from a node of its own, so the two run apart", () => {
+  it("dusts from a node of its own, so the stroke and the specks run apart", () => {
     const { container } = renderSlots({
       slotCount: 1,
       selectedTiles: [tile(5, "a")],
@@ -148,13 +151,13 @@ describe("AnswerSlots motion", () => {
     });
     const dust = container.querySelector(`.${styles.dust}`);
     expect(dust).not.toBeNull();
-    expect(dust).not.toBe(screen.getByText("5").parentElement);
-    expect(getComputedStyle(dust!).animationName).toBe("oz-dust");
+    expect(dust).not.toBe(container.querySelector(`.${styles.stroke}`));
+    expect(getComputedStyle(dust!).animationName).toBe("nd-dust");
   });
 
-  it("neither blooms nor cracks while the player is still answering", () => {
+  it("neither blooms nor strokes while the player is still answering", () => {
     const { container } = renderSlots({ slotCount: 1, selectedTiles: [tile(5, "a")] });
-    expect(momentOn("5")).toBe("oz-slot-arrive");
+    expect(momentOn("5")).toBe("nd-slot-arrive");
     expect(container.querySelector(`.${styles.dust}`)).toBeNull();
   });
 
@@ -189,7 +192,7 @@ describe("AnswerSlots settling", () => {
     fireEvent(element, new Event("webkitAnimationEnd", { bubbles: true }));
   };
 
-  it("settles an incorrect verdict once each tile's crack and dust have ended, and only once", () => {
+  it("settles an incorrect verdict once each tile's stroke and dust have ended, and only once", () => {
     const onSettled = vi.fn();
     const { container } = renderSlots({
       selectedTiles: [tile(8, "a"), tile(7, "b")],
@@ -282,13 +285,13 @@ describe("AnswerSlots streak ladder", () => {
     expect(chipCount(container)).toBe(0);
   });
 
-  it("carries oz-ring on every ring and oz-fan on every chip", () => {
+  it("carries nd-ring on every ring and nd-fan on every chip", () => {
     const { container } = renderLadder({ streak: 8 });
     for (const ring of container.querySelectorAll(`.${styles.ring}`)) {
-      expect(getComputedStyle(ring).animationName).toBe("oz-ring");
+      expect(getComputedStyle(ring).animationName).toBe("nd-ring");
     }
     for (const chip of container.querySelectorAll(`.${styles.chip}`)) {
-      expect(getComputedStyle(chip).animationName).toBe("oz-fan");
+      expect(getComputedStyle(chip).animationName).toBe("nd-fan");
     }
   });
 
@@ -303,31 +306,20 @@ describe("AnswerSlots streak ladder", () => {
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
+  it("starts each ring 60ms after the one before it", () => {
+    const { container } = renderLadder({ streak: 8 });
+    const orders = [...container.querySelectorAll<HTMLElement>(`.${styles.ring}`)].map((ring) =>
+      ring.style.getPropertyValue("--ring-order"),
+    );
+    expect(orders).toEqual(["0", "1", "2"]);
+    const delay = [...document.styleSheets]
+      .flatMap((sheet) => [...sheet.cssRules])
+      .find((rule): rule is CSSStyleRule => rule instanceof CSSStyleRule && rule.selectorText === `.${styles.ring}`);
+    expect(delay?.style.animationDelay).toBe("calc(var(--ring-order) * 60ms)");
+  });
+
   it("leaves the bloom on the tile's own moment element", () => {
     renderLadder({ streak: 8 });
-    expect(getComputedStyle(screen.getByText("5").parentElement!).animationName).toBe("oz-bloom");
-  });
-
-  /* The rim is the one rung that cannot accumulate: an element carries one
-     outline, so the tiers replace each other. Asserted by class rather than by
-     the colour it resolves to — the gate is what is testable here. */
-  const rimOn = () => screen.getByText("5").parentElement!.classList;
-
-  it("leaves the tiles unrimmed at the first rung", () => {
-    renderLadder({ streak: 3 });
-    expect(rimOn().contains(styles.rim)).toBe(false);
-    expect(rimOn().contains(styles.rimBright)).toBe(false);
-  });
-
-  it("rims the tiles in gold at streak 5", () => {
-    renderLadder({ streak: 5 });
-    expect(rimOn().contains(styles.rim)).toBe(true);
-    expect(rimOn().contains(styles.rimBright)).toBe(false);
-  });
-
-  it("replaces the gold rim with the brightest at streak 8", () => {
-    renderLadder({ streak: 8 });
-    expect(rimOn().contains(styles.rimBright)).toBe(true);
-    expect(rimOn().contains(styles.rim)).toBe(false);
+    expect(getComputedStyle(screen.getByText("5").parentElement!).animationName).toBe("nd-bloom");
   });
 });

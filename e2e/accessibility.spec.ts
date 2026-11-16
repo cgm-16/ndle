@@ -364,3 +364,47 @@ test("reduced motion removes motion wholesale, press offsets included", async ({
   expect(reduced.moving, "elements still carrying motion under reduced motion").toBe(0);
   expect(reduced.pressOffset, "press offset under reduced motion").toBe("0px");
 });
+
+/* The round waits on the discard's animationend, so a reduced-motion rule that
+   removed the animation would fire none and stall it. The exit and the perch
+   drop must each still carry a named animation, clamped to 1ms or less. Both
+   nodes vanish with their animationend, so they are read in the frame that
+   mounts them: the exit as the click mounts it, the drop when the exit's end
+   mounts it, both from a mutation observer. */
+test("reduced motion keeps the discard's animations, at 1ms or less", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.addInitScript(() => window.localStorage.setItem("ndle.language", "en"));
+  await page.setViewportSize({ ...VIEWPORT });
+  await page.goto("/gallery.html");
+  await page.evaluate(() => document.fonts.ready);
+  await page.locator("nav ul button[aria-pressed]", { hasText: /^Overflow — required 1$/ }).click();
+  await expect(page.locator("[data-rail]")).toBeVisible();
+  await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished)));
+
+  const reading = await page.evaluate(() => {
+    const read = (el: Element) => {
+      const style = getComputedStyle(el);
+      return { name: style.animationName, seconds: Math.max(...style.animationDuration.split(",").map(parseFloat)) };
+    };
+    return new Promise<{ exit: ReturnType<typeof read>; drop: ReturnType<typeof read> }>((resolve, reject) => {
+      let exit: ReturnType<typeof read> | undefined;
+      const observer = new MutationObserver(() => {
+        const departing = document.querySelector("[data-departing]");
+        if (departing && !exit) exit = read(departing);
+        const seating = document.querySelector("[data-seating]");
+        if (exit && seating) {
+          observer.disconnect();
+          resolve({ exit, drop: read(seating) });
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+      setTimeout(() => reject(new Error("the exit or the perch drop never mounted")), 2000);
+      document.querySelector<HTMLElement>("[data-cell] button")!.click();
+    });
+  });
+
+  for (const [moment, animation] of Object.entries(reading)) {
+    expect(animation.name, `${moment} animation name`).not.toBe("none");
+    expect(animation.seconds, `${moment} duration in seconds`).toBeLessThanOrEqual(0.001);
+  }
+});
