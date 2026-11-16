@@ -379,7 +379,7 @@ describe("GameScreen phase composition", () => {
 
   // Some screen readers do not announce what a live region already holds when
   // it is inserted, so the region has to exist, empty, before the verdict
-  // arrives in it (#31).
+  // arrives in it.
   it("keeps the feedback status region mounted, empty, from answering into feedback", () => {
     const screenFor = (state: GameState) => (
       <I18nProvider initialLanguage="en">
@@ -397,7 +397,7 @@ describe("GameScreen phase composition", () => {
   });
 
   // Both live regions exist, empty, in every phase, and only the phase's own
-  // holds content (#31). The feedback region comes first in the band.
+  // holds content. The feedback region comes first in the band.
   it("keeps the overflow message's status region mounted from answering into overflow", () => {
     const screenFor = (state: GameState) => (
       <I18nProvider initialLanguage="en">

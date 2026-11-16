@@ -28,7 +28,6 @@ satisfy.
 - **Rack sizing is one size.** Five equal columns of the arena's content, `8 px` apart, `56 px` tall, never narrower than `44 px`. The arena is at most `393 px` wide with a `16 px` gutter on each side, so its content is at most `361 px` and the columns at most `65.8 px`; a wider viewport shows the phone layout, centred.
 - **The target minimum is a floor, and it outranks the layout.** A tile is a control, so below the viewport width where five tiles at `44` plus their gaps and the gutters no longer fit — `284 px` — the rack stops shrinking and the page scrolls instead. The `320px` rule below is silent under `320px`, while the target minimum has no lower bound, so that is the order they resolve in.
 - **The columns are sized from the arena, not from a media query.** A `min-width` query matches the scrollbar-*inclusive* viewport while the content box excludes it, so wherever scrollbars take layout width a boundary fires about `15px` early; the `320px` no-horizontal-scroll rule is carried by the columns shrinking with their container, bounded by the target minimum.
-- **Known misses:** none. `KNOWN_MISSES` in `e2e/fit.spec.ts` is empty.
 
 **Phases**
 

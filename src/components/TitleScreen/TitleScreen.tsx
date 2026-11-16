@@ -14,7 +14,11 @@ export interface TitleScreenProps {
   onPractice(): void;
 }
 
-/** The topics the three steps do not state. Keyboard controls come last: no amount of playing reveals them, so they sit where a player who opened More will read on. */
+/**
+ * The topics the three steps do not state. Keyboard controls come last: no
+ * amount of playing reveals them, so they sit where a player who opened More
+ * will read on.
+ */
 const MORE_TOPICS = ["selecting", "slots", "incorrect", "overflow", "progress", "keyboard"] as const;
 
 const STEPS = ["how1", "how2", "how3"] as const;

@@ -1,12 +1,13 @@
 import { test, expect, type Page } from "@playwright/test";
 import { START_LABEL } from "./labels.js";
+import { STATE_COUNT } from "./gallery.js";
 
 /* §8.5 — "No horizontal scroll at 320px" — walked across every gallery state in
    both locales.
  *
  * This exists because jsdom performs no layout, so the 341 unit tests cannot
- * see an overflow at all: that is how #84 survived a measurement pass. It also
- * exists because #85 took four manual attempts to measure, and three of them
+ * see an overflow at all: that is how an overflow survived a measurement pass. It also
+ * exists because a layout overflow took four manual attempts to measure, and three of them
  * came back clean while measuring the wrong thing. Those three are the reason
  * for the guards below — every one of them would have failed a guard, and none
  * of them would have failed on "did anything overflow".
@@ -15,13 +16,12 @@ import { START_LABEL } from "./labels.js";
  */
 
 /* 320 is §8.5's bar. 305 is what a 320px window actually gives the page once a
-   layout-taking scrollbar takes its 15px of layout width — the condition #85 names,
+   layout-taking scrollbar takes its 15px of layout width — the condition that overflow names,
    and the reason a sweep at 320 alone is not enough. 393 is the frame's own
    width, and 408 the first width past it, where the arena stops growing and the
    screen is centred. */
 const CONTENT_WIDTHS = [305, 320, 393, 408] as const;
 const LOCALES = ["en", "ko"] as const;
-const STATE_COUNT = 24;
 
 /* The widths the arena is read at: one that shrinks the rack's columns, and
    one past the frame, where they stop growing. */
@@ -184,7 +184,7 @@ for (const width of CONTENT_WIDTHS) {
   }
 }
 
-/* The sweep above walks `gallery.html`, and #85 is invisible from there. The
+/* The sweep above walks `gallery.html`, and that overflow is invisible from there. The
    gallery renders each state inside `.board`, a mirror of `.screen` that sits
    in `.stage` — a different element, with its own padding and its own
    `min-width: 0`. The app's own `main.screen` is never in that tree, and

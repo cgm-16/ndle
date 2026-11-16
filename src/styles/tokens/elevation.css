@@ -4,15 +4,4 @@
   --shadow-tile: 0 3px 0 var(--dust);
   --shadow-tile-sm: none;   /* pay tiles have no edge */
   --shadow-tile-lifted: 0 6px 0 var(--dust);
-
-  /* A socket is a rim on the field. */
-  --rim-socket: inset 0 0 0 1px var(--hairline);
-
-  /* A socket whose tile is out in the answer slots — owed back, not lost. It
-     wears --rim-socket like any socket, plus a dashed blue rule drawn as an
-     inset outline: dashed already means "something belongs here and does not
-     yet" on the empty answer slot, so the lifted socket says it in the same
-     words. */
-  --outline-socket-lifted: 1px dashed var(--blue);
-  --outline-socket-lifted-offset: -3px;
 }

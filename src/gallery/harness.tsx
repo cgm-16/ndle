@@ -40,7 +40,7 @@ export function CopyPressedOnMount({ children }: { children: ReactNode }) {
     }
   }, [t]);
 
-  return <div ref={stage}>{children}</div>;
+  return <div ref={stage} style={{ display: "contents" }}>{children}</div>;
 }
 
 // The slide-off (8c) exists only once a discard completes, and only the

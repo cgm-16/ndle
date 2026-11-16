@@ -4,7 +4,7 @@ import styles from "./OverflowControls.module.css";
 
 export interface OverflowControlsProps {
   /** False outside overflow: the live region stays mounted, empty, so the
-   * message arrives in a region that already exists (#31). */
+   * message arrives in a region that already exists. */
   active: boolean;
 }
 

@@ -39,7 +39,7 @@ describe("gallery catalogue", () => {
   // A state that renders its sibling cannot be assessed against a visual bar,
   // and the gallery has carried that defect once already: two game-over
   // entries passed byte-identical arguments and differed in name alone
-  // (#105). Compared as markup rather than eyeballed, because the defect
+  // Compared as markup rather than eyeballed, because the defect
   // recurs and the eye is what missed it.
   it("renders no two entries with the same markup", async () => {
     const seen = new Map<string, string>();
@@ -66,7 +66,7 @@ describe("gallery catalogue", () => {
 
   // The rack empties as a run goes on and §1.12 makes the empty sockets the
   // score, so a nearly-spent rack is a state in its own right — and it is the
-  // one no fixture reached, which is how #84 survived a measurement pass.
+  // one no fixture reached, which is how an overflow survived a measurement pass.
   it("renders a rack holding fewer tiles than it has sockets", () => {
     render(
       <I18nProvider initialLanguage="en">{entryById("answering-depleted").render()}</I18nProvider>,

@@ -40,8 +40,8 @@ button.tile:not(:disabled):active {
 .lg {
   --tile-edge-size: var(--shadow-tile);
 
-  width: 52px;
-  height: 56px;
+  width: var(--tile-width);
+  height: var(--tile-height);
   border-radius: var(--radius-sm);
   font: var(--weight-bold) var(--type-tile) / var(--leading-tight) var(--font-ui);
 }

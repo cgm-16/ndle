@@ -6,7 +6,7 @@ import styles from "./FeedbackPanel.module.css";
 export interface FeedbackPanelProps {
   /** Null while answering: the live region renders empty, so the verdict
    * arrives in a region that already exists. Some screen readers do not
-   * announce what a region holds when it is inserted (#31). */
+   * announce what a region holds when it is inserted. */
   result: RoundResult | null;
   /** The row the result judged; a miss prints it with its product. */
   equation: Equation;

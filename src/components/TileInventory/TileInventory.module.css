@@ -20,7 +20,7 @@
 .inventory {
   display: grid;
   grid-template-columns: repeat(5, minmax(var(--target-min), 1fr));
-  grid-auto-rows: 56px;
+  grid-auto-rows: var(--tile-height);
   gap: var(--space-2);
   width: 100%;
 }
@@ -47,7 +47,7 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: 56px;
+  height: var(--tile-height);
   border: 1.5px dashed var(--border-slot-empty);
   border-radius: var(--radius-sm);
 }
@@ -67,7 +67,7 @@
 .cell {
   position: relative;
   width: 100%;
-  height: 56px;
+  height: var(--tile-height);
 }
 
 /* The Tile inside the cell fills it, so a shrunken track reaches the chalk

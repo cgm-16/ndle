@@ -11,7 +11,7 @@ import { START_LABEL, type Locale } from "./labels.js";
  * ad-hoc evaluate calls to produce readings no suite could reproduce.
  *
  * Every assertion below carries the count it swept. A sweep rooted at the wrong
- * node reports clean, which is the failure mode that let #85 survive three
+ * node reports clean, which is the failure mode that let a layout overflow survive three
  * measurement passes (https://github.com/cgm-16/ndle/blob/3ccd37b/docs/journal/journal-2026-09-15.md).
  */
 
@@ -101,7 +101,7 @@ test("focus order follows the visual hierarchy", async ({ page }) => {
     };
   });
 
-  expect(reading.count, "focusable controls swept").toBeGreaterThanOrEqual(5);
+  expect(reading.count, "focusable controls swept").toBe(9);
   expect(reading.positiveTabindex, "controls with a positive tabindex").toBe(0);
   expect(reading.inversions, "tab steps that move up or left").toEqual([]);
 });
@@ -183,21 +183,6 @@ test("English loads Atkinson Hyperlegible 400 and 700, and the title loads Gaegu
   expect(await loadedFaces(page, "NoSuchFace"), "an undeclared face").toEqual([]);
 });
 
-test("Korean loads Gothic A1 400 and 700", async ({ page }) => {
-  await page.addInitScript(() => window.localStorage.setItem("ndle.language", "ko"));
-  await page.setViewportSize({ ...VIEWPORT });
-  await page.goto("/");
-  await page.waitForFunction(
-    () =>
-      ["400", "700"].every((weight) =>
-        [...document.fonts].some(
-          (face) => face.family.replace(/"/g, "") === "Gothic A1" && face.weight === weight && face.status === "loaded",
-        ),
-      ),
-  );
-  expect(await loadedFaces(page, "Gothic A1")).toEqual(expect.arrayContaining(["400", "700"]));
-});
-
 /** Reaches a miss on every run: the slots are filled with hand digits read off
     the screen, rotated until the number they spell is not the equation's product. */
 async function submitAMiss(page: Page): Promise<void> {
@@ -267,7 +252,7 @@ test("every interactive target is at least 44px", async ({ page }) => {
 
   const reading = await sweepTargets(page);
 
-  expect(reading.count, "targets swept").toBeGreaterThanOrEqual(5);
+  expect(reading.count, "targets swept").toBe(11);
   expect(reading.undersized, "targets under 44px").toEqual([]);
   expect(reading.minWidth, "narrowest target").toBeGreaterThanOrEqual(MIN_TARGET);
   expect(reading.minHeight, "shortest target").toBeGreaterThanOrEqual(MIN_TARGET);
@@ -281,7 +266,7 @@ test("every interactive target on the title is at least 44px, More included", as
   const reading = await sweepTargets(page);
 
   // Daily, Practice, the language toggle's two halves and the More summary.
-  expect(reading.count, "targets swept").toBeGreaterThanOrEqual(5);
+  expect(reading.count, "targets swept").toBe(5);
   expect(reading.undersized, "targets under 44px").toEqual([]);
 });
 
@@ -302,7 +287,11 @@ test("Korean copy renders in a Hangul face and does not clip", async ({ page }) 
      Gothic A1 installed even when the bundle ships none. That is a false
      pass on any machine that has Gothic A1 installed. */
   await page.waitForFunction(() =>
-    [...document.fonts].some((face) => /Gothic A1/.test(face.family) && face.status === "loaded"),
+    ["400", "700"].every((weight) =>
+      [...document.fonts].some(
+        (face) => /Gothic A1/.test(face.family) && face.weight === weight && face.status === "loaded",
+      ),
+    ),
   );
 
   const reading = await page.evaluate(() => {
@@ -324,7 +313,9 @@ test("Korean copy renders in a Hangul face and does not clip", async ({ page }) 
   });
 
   expect(reading.lang, "document language").toBe("ko");
-  expect(reading.hangulFaces, "the bundle's own Hangul faces, loaded").not.toEqual([]);
+  expect(reading.hangulFaces, "the bundle's own Hangul faces, loaded").toEqual(
+    expect.arrayContaining(["Gothic A1 400", "Gothic A1 700"]),
+  );
   expect(reading.interfaceStack, "the face setting Korean interface text").toContain("Gothic A1");
   expect(reading.elements, "elements swept").toBeGreaterThan(20);
   expect(reading.text, "Korean copy rendered").toMatch(/[가-힣]/);

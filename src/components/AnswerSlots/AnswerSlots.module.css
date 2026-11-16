@@ -2,8 +2,8 @@
    filled tile and the empty slot share one box. The empty slot and the streak
    ring read these two. */
 .slots {
-  --tile-w: 52px;
-  --tile-h: 56px;
+  --tile-w: var(--tile-width);
+  --tile-h: var(--tile-height);
 
   display: flex;
   gap: 10px;

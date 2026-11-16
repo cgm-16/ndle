@@ -7,12 +7,12 @@
   --space-6: 24px;
   --space-8: 32px;
 
-  /* The larger steps. */
-  --space-10: 40px;
-  --space-14: 56px;
-
   /* 44px is both the accessible minimum target and the smallest legal tile. */
   --target-min: 44px;
+
+  /* The tile primitive's box, read by the rack's cells, sockets and slots so they share it. */
+  --tile-width: 52px;
+  --tile-height: 56px;
 
   /* The frame: at most 393px wide, with each screen's own 16px gutter inside it. */
   --arena-max-width: 393px;
