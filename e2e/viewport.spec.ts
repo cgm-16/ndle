@@ -413,3 +413,44 @@ for (const width of OVERFLOW_WIDTHS) {
     expect(slideOff.widest, "document scroll width during the slide-off").toBeLessThanOrEqual(slideOff.viewport);
   });
 }
+
+/* The mark that completes a discard also ends the overflow phase. The rail's
+   cell, and the rail label in it, must not move in that render: the tile still
+   leaving is drawn there, and the perch drop is measured from it. Read in the
+   first frame after the mark, for a rack tile (the rail tile then drops into
+   its socket) and for the rail tile's own discard. */
+for (const own of [false, true]) {
+  test(`the rail cell does not move when ${own ? "the rail tile" : "a rack tile"} is discarded`, async ({ page }) => {
+    await page.addInitScript(() => window.localStorage.setItem("ndle.language", "en"));
+    await page.goto("/gallery.html");
+    await page.setViewportSize({ width: 393, height: 900 });
+    await page.evaluate(() => document.fonts.ready);
+    await page.locator("nav ul button[aria-pressed]", { hasText: /^Overflow — required 1$/ }).click();
+    await expect(page.locator("[data-rail]")).toBeVisible();
+    await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished)));
+
+    const read = () =>
+      page.evaluate(() => {
+        const box = (el: Element) => {
+          const { left, top, width, height } = el.getBoundingClientRect();
+          return { left, top, width, height };
+        };
+        return {
+          cell: box(document.querySelector('[class*="railCell"]')!),
+          label: box(document.querySelector('[class*="railLabel"]')!),
+        };
+      });
+    const before = await read();
+    expect(before.cell.width, "the rail cell in overflow").toBe(88);
+
+    await (own ? page.locator("[data-rail] button") : page.locator("[data-cell] button").first()).click();
+    await expect(page.locator("[data-departing]")).toHaveCount(1);
+    const after = await read();
+
+    for (const part of ["cell", "label"] as const) {
+      for (const edge of ["left", "top", "width", "height"] as const) {
+        expect(Math.abs(after[part][edge] - before[part][edge]), `${part} ${edge} moved`).toBeLessThanOrEqual(1);
+      }
+    }
+  });
+}

@@ -29,11 +29,11 @@ export interface TileProps {
 }
 
 /**
- * The single fired-ceramic tile. Every ceramic face in the game
- * is one of these: the rack tile, the filled answer slot, and the reward tile.
+ * The single chalk tile. Every tile face in the game is one of these: the rack
+ * tile, the filled answer slot, and the pay tile.
  *
- * The empty answer slot is not one — it is a socket cut into the felt, and its
- * rule stays in AnswerSlots.module.css.
+ * The empty answer slot is not one — it is a dashed socket with no face, and
+ * its rule stays in AnswerSlots.module.css.
  */
 export function Tile({ value, size = "lg", state = "resting", onClick, label, pressed, style }: TileProps) {
   const { t } = useI18n();

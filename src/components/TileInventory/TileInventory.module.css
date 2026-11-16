@@ -28,7 +28,7 @@
 /* The rail renders into the overflow band's right cell (GameScreen), a column
    88px wide. The perched tile is left-aligned in it: 8a leaves it turned 11
    degrees on its lower-left edge, so its top-right corner reaches about 14px
-   past its cell, into the 22px the cell has spare. */
+   past the tile, into the 22px the cell has spare. */
 .rail {
   display: flex;
   flex-direction: column;

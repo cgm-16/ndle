@@ -1,5 +1,6 @@
 /* The slots are 52 × 56 at every width, the size of the Tile primitive, so the
-   filled tile and the empty slot share one box. The ring reads these two. */
+   filled tile and the empty slot share one box. The empty slot and the streak
+   ring read these two. */
 .slots {
   --tile-w: 52px;
   --tile-h: 56px;

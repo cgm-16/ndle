@@ -30,6 +30,11 @@
   margin-top: var(--space-3);
 }
 
+/* Overflow's content sits 8px below the answer row. */
+.band[data-overflow] {
+  gap: var(--space-2);
+}
+
 .answerRow {
   display: flex;
   align-items: center;
@@ -61,27 +66,25 @@
   font-size: var(--type-row);
 }
 
-/* Overflow's content: the message beside the rail's 88px cell. Out of overflow
-   the cell is empty and out of flow, so the band's gap does not count it, but
-   it stays mounted for a discarded rail tile to finish leaving. */
+/* Overflow's content: the message beside the rail's 88px cell. The cell is
+   placed by the band, not by the phase: it sits 8px below the 60px answer row
+   at the band's right edge in every phase, so the box a leaving rail tile is
+   drawn in, and its perch drop measured from, does not move when the mark that
+   ends overflow also ends the phase. The message leaves its column free. */
 .overflow {
   display: contents;
 }
 
+.overflow[data-active] {
+  display: block;
+  padding-right: calc(88px + var(--space-3));
+}
+
 .railCell {
   position: absolute;
+  top: calc(60px + var(--space-2));
   right: 0;
-  bottom: 0;
-}
-
-.overflow[data-active] {
-  display: grid;
-  grid-template-columns: 1fr 88px;
-  column-gap: var(--space-3);
-}
-
-.overflow[data-active] > .railCell {
-  position: static;
+  width: 88px;
 }
 
 .rack {

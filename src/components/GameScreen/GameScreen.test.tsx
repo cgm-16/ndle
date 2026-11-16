@@ -351,7 +351,7 @@ describe("GameScreen phase composition", () => {
   it("renders a discard-mode inventory, one message with the verdict and the instruction, and no Confirm in overflow", () => {
     renderScreen(makeOverflowState());
 
-    // One status region, and no second panel: the message is that region.
+    // The message is the region holding content; the feedback region is empty.
     const status = filledStatus();
     expect(status).toHaveTextContent("Correct · hand full");
     const instruction = screen.getByText("Six tiles, five sockets. Choose a tile to discard.");

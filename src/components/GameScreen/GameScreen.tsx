@@ -76,7 +76,7 @@ export function GameScreen({ state, dispatch, onSubmit, onNextRound }: GameScree
 
       {/* One band holds the answer row and the phase's action in every phase,
           so the rack never moves. */}
-      <div className={styles.band}>
+      <div className={styles.band} data-overflow={state.phase === "overflow" ? "" : undefined}>
         <div className={styles.answerRow}>
           <EquationBoard equation={state.equation} />
 
