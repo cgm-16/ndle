@@ -49,11 +49,19 @@ for (const reducedMotion of [false, true]) {
     await expect(page.locator("[data-active]"), `seed ${SEED}: row 1 overflows (pick another seed)`).toBeAttached();
     await expect(page.locator("[data-rail]"), `seed ${SEED}: the rail tile shows (pick another seed)`).toBeVisible();
 
+    /* A record, not a retrying count: a Next Round that flashed up and went
+       again would still satisfy `toHaveCount(0)` once it had gone. */
+    await page.evaluate(() => {
+      const w = window as unknown as { nextRoundSeen: boolean };
+      w.nextRoundSeen = false;
+      const look = () => {
+        if ([...document.querySelectorAll("button")].some((b) => b.textContent?.trim() === "Next Round")) w.nextRoundSeen = true;
+      };
+      new MutationObserver(look).observe(document.body, { childList: true, subtree: true, characterData: true });
+    });
     await page.locator("[data-cell] button:enabled").first().click();
-    const next = page.getByRole("button", { name: "Next Round" });
-    await expect(next, "no Next Round right after the discard").toHaveCount(0);
     await expect(page.locator("dt", { hasText: /^Row$/ }).locator("xpath=following-sibling::dd[1]")).toHaveText("2/8");
-    await expect(next, "no Next Round at row 2").toHaveCount(0);
+    expect(await page.evaluate(() => (window as unknown as { nextRoundSeen: boolean }).nextRoundSeen), "Next Round never appeared").toBe(false);
     await expect(page.getByRole("button", { name: "Submit", exact: true })).toBeVisible();
   });
 }
