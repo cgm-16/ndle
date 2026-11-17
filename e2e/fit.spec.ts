@@ -273,9 +273,9 @@ for (const language of LANGUAGES) {
 
 /* After a discard the verdict line keeps to the left of the band's rail cell,
    which still draws the leaving tile. Its widest form lists three digits
-   received. The line is a centred `nowrap` flex row, so a line too wide for
-   its box spills past both edges, and `scrollWidth` counts only the right
-   one. A flex item can also shrink below what it draws, so the line is read
+   received. The line is a centred flex row whose detail wraps whole, so a
+   line too wide for its box even so spills past both edges, and `scrollWidth`
+   counts only the right one. A flex item can also shrink below what it draws, so the line is read
    as the Mark's box and the words' own text, against the panel's content box. */
 async function verdictLine(page: Page) {
   return page.evaluate(() => {

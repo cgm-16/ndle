@@ -40,7 +40,6 @@
 
 /* The detail moves whole to a second line where the first has no room. */
 .detail {
-  display: inline-block;
   white-space: nowrap;
   font: var(--weight-regular) var(--type-body) / 1.2 var(--font-ui);
   color: var(--text-meta);
