@@ -545,7 +545,8 @@ test("a wrong answer's dust specks paint above the answer tile", async ({ page }
 test("the top tier's flecks fan out over the field, clear of every answer tile", async ({ page }) => {
   await openFeedbackState(page, /^Feedback — correct at streak 8/);
   const reading = await page.evaluate(() => {
-    const tiles = [...document.querySelectorAll('[class*="slots"] [class*="tile"]')].map((el) => el.getBoundingClientRect());
+    // The tiles bloom, so their rects are read at each seeked time with the flecks'.
+    const tiles = [...document.querySelectorAll('[class*="slots"] [class*="tile"]')];
     const chips = [...document.querySelectorAll('[class*="slots"] [class*="chip"]')];
     const inside: string[] = [];
     for (const time of [0, 80, 160, 240, 319]) {
@@ -555,7 +556,8 @@ test("the top tier's flecks fan out over the field, clear of every answer tile",
       }
       chips.forEach((chip, index) => {
         const c = chip.getBoundingClientRect();
-        for (const t of tiles) {
+        for (const tile of tiles) {
+          const t = tile.getBoundingClientRect();
           const overlaps = c.left < t.right && c.right > t.left && c.top < t.bottom && c.bottom > t.top;
           if (overlaps) inside.push(`chip ${index} at ${time}ms`);
         }
