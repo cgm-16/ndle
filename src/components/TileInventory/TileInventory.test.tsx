@@ -147,6 +147,15 @@ describe("TileInventory", () => {
     expect(screen.getByText("손 · 5칸 중 4개")).toBeInTheDocument();
   });
 
+  it("counts a lifted tile's held socket in the hand", () => {
+    const two = [tile(1, "a"), tile(2, "b")];
+    renderInventory({ tiles: two, liftedIds: ["a"] });
+    expect(screen.getByText("Hand · 2 of 5")).toBeInTheDocument();
+    cleanup();
+    renderInventory({ tiles: two, liftedIds: ["a"] }, "ko");
+    expect(screen.getByText("손 · 5칸 중 2개")).toBeInTheDocument();
+  });
+
   it("counts at most five seated tiles when a sixth is on the rail", () => {
     renderInventory({ tiles: railedRack() });
     expect(screen.getByText("Hand · 5 of 5")).toBeInTheDocument();
