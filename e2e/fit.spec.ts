@@ -295,15 +295,25 @@ async function verdictLine(page: Page) {
       contentRight: box.right - parseFloat(style.paddingRight),
       lineLeft: Math.min(markBox.left, text.left),
       lineRight: Math.max(markBox.right, text.right),
-      wordsHeight: words!.getBoundingClientRect().height,
-      panelHeight: box.height,
       railLeft: document.querySelector('[class*="railCell"]')!.getBoundingClientRect().left,
     };
   });
 }
 
-function verdictInnerText(page: Page): Promise<string> {
-  return page.evaluate(() => document.querySelector<HTMLElement>('[role="status"][class*="beforeRail"]')!.innerText);
+/* The word, the space after it and the detail, measured: `gap` is the distance
+   from the word's text to the detail's "·" (a rendered space, not ~0), and
+   `wrapped` is the detail sitting below the word's line. */
+async function verdictWords(page: Page) {
+  return page.evaluate(() => {
+    const words = document.querySelector<HTMLElement>('[role="status"][class*="beforeRail"]')!.children[1]!;
+    const word = document.createRange();
+    word.selectNodeContents(words.firstChild!);
+    const detail = words.querySelector('[class*="detail"]')!.getBoundingClientRect();
+    return {
+      gap: detail.left - word.getBoundingClientRect().right,
+      wrapped: detail.top >= word.getBoundingClientRect().bottom,
+    };
+  });
 }
 
 type VerdictLine = Awaited<ReturnType<typeof verdictLine>>;
@@ -316,12 +326,12 @@ for (const language of LANGUAGES) {
     await openState(page, "feedback-after-discard-three", language, 375, HEIGHT);
     const line = await verdictLine(page);
     expect(line.text, "the line lists three digits").toMatch(/0 7 7$/);
-    expect(await verdictInnerText(page), "a space before the dot").toMatch(/\s·/);
+    const words = await verdictWords(page);
+    expect(words.wrapped, "one line, the detail beside the word").toBe(false);
+    expect(words.gap, "the space before the dot").toBeGreaterThan(2);
     // The Mark is 1em square; a line short of room squeezes it first.
     expect(line.markWidth, "the Mark's width").toBeCloseTo(line.fontSize, 0);
     expect(lineEscapes(line), `line ${line.lineLeft}–${line.lineRight} in ${line.contentLeft}–${line.contentRight}, rail at ${line.railLeft}`).toBe(false);
-    // The words' box is one 26.4px line box; a second line would double it.
-    expect(line.wordsHeight, "one line").toBeLessThan(line.panelHeight * 1.5);
   });
 }
 
@@ -346,11 +356,11 @@ for (const language of LANGUAGES) {
           expectedGap: parseFloat(getComputedStyle(panel).columnGap),
           wordLeft: range.getBoundingClientRect().left,
           detailLeft: words!.querySelector('[class*="detail"]')!.getBoundingClientRect().left,
-          wrapped: words!.querySelector('[class*="detail"]')!.getBoundingClientRect().top >= range.getBoundingClientRect().bottom,
         };
       });
-      // A space at a line break is the break itself; innerText omits it in WebKit.
-      if (!edges.wrapped) expect(await verdictInnerText(page), "a space before the dot").toMatch(/\s·/);
+      // A space at a line break is the break itself, so only an unwrapped line has a gap.
+      const words = await verdictWords(page);
+      if (!words.wrapped) expect(words.gap, "the space before the dot").toBeGreaterThan(2);
       expect(edges.gap, "Mark to word, as on one line").toBeCloseTo(edges.expectedGap, 0);
       expect(edges.detailLeft, "the detail starts under the word").toBeCloseTo(edges.wordLeft, 0);
       expect(band, "the band's height").toBe(150);
