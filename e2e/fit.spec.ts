@@ -302,6 +302,10 @@ async function verdictLine(page: Page) {
   });
 }
 
+function verdictInnerText(page: Page): Promise<string> {
+  return page.evaluate(() => document.querySelector<HTMLElement>('[role="status"][class*="beforeRail"]')!.innerText);
+}
+
 type VerdictLine = Awaited<ReturnType<typeof verdictLine>>;
 
 const lineEscapes = (line: VerdictLine) =>
@@ -312,12 +316,54 @@ for (const language of LANGUAGES) {
     await openState(page, "feedback-after-discard-three", language, 375, HEIGHT);
     const line = await verdictLine(page);
     expect(line.text, "the line lists three digits").toMatch(/0 7 7$/);
+    expect(await verdictInnerText(page), "a space before the dot").toMatch(/\s·/);
     // The Mark is 1em square; a line short of room squeezes it first.
     expect(line.markWidth, "the Mark's width").toBeCloseTo(line.fontSize, 0);
     expect(lineEscapes(line), `line ${line.lineLeft}–${line.lineRight} in ${line.contentLeft}–${line.contentRight}, rail at ${line.railLeft}`).toBe(false);
     // The words' box is one 26.4px line box; a second line would double it.
     expect(line.wordsHeight, "one line").toBeLessThan(line.panelHeight * 1.5);
   });
+}
+
+/* Below 375 the detail wraps to a second line inside the band, keeping the Mark
+   whole and clear of the rail cell. 305 is the 320px gate less a layout-taking
+   scrollbar's 15px. */
+for (const language of LANGUAGES) {
+  for (const width of [320, 305]) {
+    test(`three digits received after a discard wrap clear of the rail cell, in the band, at ${width} x ${HEIGHT} in ${language}`, async ({ page }) => {
+      await openState(page, "feedback-after-discard-three", language, width, HEIGHT);
+      const line = await verdictLine(page);
+      const band = await page.evaluate(() => document.querySelector('[class*="band"]')!.getBoundingClientRect().height);
+      expect(line.markWidth, "the Mark's width").toBeCloseTo(line.fontSize, 0);
+      expect(lineEscapes(line), `line ${line.lineLeft}–${line.lineRight} in ${line.contentLeft}–${line.contentRight}, rail at ${line.railLeft}`).toBe(false);
+      const edges = await page.evaluate(() => {
+        const panel = document.querySelector<HTMLElement>('[role="status"][class*="beforeRail"]')!;
+        const [mark, words] = [...panel.children];
+        const range = document.createRange();
+        range.selectNodeContents(words!.firstChild!);
+        return {
+          gap: range.getBoundingClientRect().left - mark!.getBoundingClientRect().right,
+          expectedGap: parseFloat(getComputedStyle(panel).columnGap),
+          wordLeft: range.getBoundingClientRect().left,
+          detailLeft: words!.querySelector('[class*="detail"]')!.getBoundingClientRect().left,
+          wrapped: words!.querySelector('[class*="detail"]')!.getBoundingClientRect().top >= range.getBoundingClientRect().bottom,
+        };
+      });
+      // A space at a line break is the break itself; innerText omits it in WebKit.
+      if (!edges.wrapped) expect(await verdictInnerText(page), "a space before the dot").toMatch(/\s·/);
+      expect(edges.gap, "Mark to word, as on one line").toBeCloseTo(edges.expectedGap, 0);
+      expect(edges.detailLeft, "the detail starts under the word").toBeCloseTo(edges.wordLeft, 0);
+      expect(band, "the band's height").toBe(150);
+      const { scrollWidth, scrollHeight, innerWidth, innerHeight } = await page.evaluate(() => ({
+        scrollWidth: document.documentElement.scrollWidth,
+        scrollHeight: document.documentElement.scrollHeight,
+        innerWidth: window.innerWidth,
+        innerHeight: window.innerHeight,
+      }));
+      expect(scrollWidth, "sideways scroll").toBeLessThanOrEqual(innerWidth);
+      expect(scrollHeight, "page growth").toBeLessThanOrEqual(innerHeight);
+    });
+  }
 }
 
 test("the verdict line check reports a line wider than its box", async ({ page }) => {

@@ -35,7 +35,12 @@ export function FeedbackPanel({ result, equation, rewardDigits }: FeedbackPanelP
       <Mark result={result.kind} />
       <span>
         {isCorrect ? t("result.correct") : t("result.incorrect")}
-        {detail !== null && <span className={styles.detail}> · {detail}</span>}
+        {detail !== null && (
+          <>
+            {" "}
+            <span className={styles.detail}>· {detail}</span>
+          </>
+        )}
       </span>
       {/* The slots show the submitted tiles, so a miss announces them too and
           the region carries both the played and the right answer (§1.12). The
