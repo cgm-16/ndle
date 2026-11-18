@@ -87,12 +87,12 @@ describe("daily picker", () => {
     expect(new Set(filled.map((t) => JSON.stringify(t))).size).toBe(3);
   });
 
-  it("freezes nothing before launch", () => {
+  it("freezes nothing while unlaunched", () => {
     expect(frozenThroughOn(DAILY_LAUNCH_DATE, 365, false)).toBe(0);
     expect(frozenThroughOn(dateOfDaily(200), 365, false)).toBe(0);
   });
 
-  it("freezes through two days past today after launch", () => {
+  it("freezes through two days past today while launched", () => {
     expect(frozenThroughOn(DAILY_LAUNCH_DATE, 365, true)).toBe(3);
     expect(frozenThroughOn(dateOfDaily(-1), 365, true)).toBe(1);
     expect(frozenThroughOn(dateOfDaily(-2), 365, true)).toBe(0);
