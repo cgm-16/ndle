@@ -23,6 +23,9 @@ import slotStyles from "../AnswerSlots/AnswerSlots.module.css";
 import rackStyles from "../TileInventory/TileInventory.module.css";
 import { GameScreen, type GameScreenProps } from "./GameScreen";
 
+// Both live regions are always mounted; the one holding content is the phase's.
+const filledStatus = () => screen.getAllByRole("status").find((region) => region.textContent !== "")!;
+
 function renderScreen(state: GameState) {
   const dispatch = vi.fn();
   const onSubmit = vi.fn();
@@ -275,12 +278,32 @@ describe("GameScreen phase composition", () => {
     expect(submit.compareDocumentPosition(inventoryTile) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  it("puts the prompt in the answer row, not the ledger", () => {
+    renderScreen(makeAnsweringState());
+
+    const ledger = screen.getByRole("list", { name: "Table" });
+    const prompt = screen.getByText("3 × 5 =");
+    expect(ledger.contains(prompt)).toBe(false);
+    // The prompt shares its container with the answer slots.
+    const slot = screen.getByRole("button", { name: "Answer slot 1: empty" });
+    expect(prompt.parentElement).toBe(slot.closest("div")!.parentElement);
+    expect(within(ledger).getAllByText("3 × 5")).toHaveLength(1);
+  });
+
+  it("tabs from Clear to Submit, as drawn", async () => {
+    renderScreen(FULL_ANSWER());
+
+    const clear = screen.getByRole("button", { name: "Clear" });
+    const submit = screen.getByRole("button", { name: "Submit" });
+    expect(clear.compareDocumentPosition(submit) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it("renders interactive answer slots and a select-mode inventory in answering, without feedback", () => {
     renderScreen(makeAnsweringState());
 
     expect(screen.getByRole("button", { name: "Answer slot 1: empty" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Digit 1" })).toBeEnabled();
-    expect(screen.getByRole("status")).toBeEmptyDOMElement();
+    for (const region of screen.getAllByRole("status")) expect(region).toBeEmptyDOMElement();
   });
 
   it("keeps the submitted tiles on screen in feedback with no answer-slot button", () => {
@@ -310,13 +333,45 @@ describe("GameScreen phase composition", () => {
     expect(document.querySelectorAll(`.${slotStyles.ring}`)).toHaveLength(1);
   });
 
+  // The reducer sorts the pay into the hand, so the hand's order is not the
+  // row's: the verdict lists row 2's pay as the ledger prints it.
+  it("lists the received digits in the order the row prints them", () => {
+    const ids = sequentialIds();
+    renderScreen(playRow(parLineAt(2, ids), PUZZLE_SAMPLE_PAR_LINE[1]!, ids));
+
+    expect(filledStatus()).toHaveTextContent("Correct · Received 8 1 6");
+  });
+
+  // Row 8 pays 2 0 2 and the discard then drops the 0 from the hand; the
+  // verdict still lists the whole pay.
+  it("lists every received digit after a discard drops one of them", () => {
+    const ids = sequentialIds();
+    const state = playRow(parLineAt(8, ids), PUZZLE_SAMPLE_PAR_LINE[7]!, ids);
+    expect(state.lastResult?.discarded).toBe(true);
+    renderScreen(state);
+
+    expect(filledStatus()).toHaveTextContent("Correct · Received 2 0 2");
+  });
+
+  it("keeps the answer row mounted in feedback, and Next Round replaces Clear and Submit", () => {
+    renderScreen(makeFeedbackState());
+
+    // The sacrifice plays 5 then 7; the ledger draws digits too, so the slots are read on their own.
+    const slots = document.querySelector<HTMLElement>(`.${slotStyles.slots}`)!;
+    expect(slots).not.toBeNull();
+    expect(slots).toHaveTextContent(/5\s*7/);
+    expect(screen.getByRole("button", { name: "Next Round" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Clear" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Submit" })).not.toBeInTheDocument();
+  });
+
   it("renders a read-only inventory, feedback, and Next Round in feedback, with no answer-slot button", () => {
     renderScreen(makeFeedbackState());
 
-    const status = screen.getByRole("status");
+    const status = filledStatus();
     const nextRound = screen.getByRole("button", { name: "Next Round" });
     const inventoryTile = screen.getByRole("button", { name: "Digit 1" });
-    expect(status).toHaveTextContent("Incorrect");
+    expect(status).toHaveTextContent("Missed");
     expect(inventoryTile).toBeDisabled();
     expect(screen.queryByRole("button", { name: /Answer slot/ })).not.toBeInTheDocument();
 
@@ -325,14 +380,57 @@ describe("GameScreen phase composition", () => {
     expect(nextRound.compareDocumentPosition(inventoryTile) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it("renders a discard-mode inventory, preserved feedback, and the instruction with no Confirm in overflow", () => {
+  // Ruling 3: the played tiles stay in the slots through overflow, read-only.
+  it("keeps the played tile in the answer row in overflow, with no answer-slot button", () => {
+    renderScreen(makeOverflowState()); // row 4, 1 × 7, answered with the 7
+
+    const slots = document.querySelector<HTMLElement>(`.${slotStyles.slots}`);
+    expect(slots).not.toBeNull();
+    expect(slots).toHaveTextContent("7");
+    expect(screen.queryByRole("button", { name: /Answer slot/ })).not.toBeInTheDocument();
+  });
+
+  // A remounted slot restarts its CSS animation, so the tile the player just
+  // placed would arrive again. The same node carries it from answering through
+  // overflow, and feedback's bloom is the first moment it plays after arriving.
+  it("keeps the played tile's slot node from answering through overflow into feedback", () => {
+    const ids = sequentialIds();
+    const row4 = parLineAt(4, ids);
+    const answering = selectDigits(row4, 7);
+    const overflow = playRow(row4, { spend: [7] }, ids);
+    const feedback = gameReducer(overflow, { type: "TOGGLE_DISCARD", tileId: tileWith(overflow, 6).id });
+    const screenFor = (state: GameState) => (
+      <I18nProvider initialLanguage="en">
+        <GameScreen state={state} dispatch={vi.fn()} onSubmit={vi.fn()} onNextRound={vi.fn()} />
+      </I18nProvider>
+    );
+    const { container, rerender } = render(screenFor(answering));
+    const filled = () => container.querySelector(`.${slotStyles.filled}`);
+    const slot = filled()!;
+    const moment = slot.querySelector(`.${slotStyles.arriving}`)!;
+    expect(moment).not.toBeNull();
+
+    rerender(screenFor(overflow));
+    expect(filled()).toBe(slot);
+    expect(moment).toHaveClass(slotStyles.arriving);
+    expect(moment).not.toHaveClass(slotStyles.bloom);
+
+    rerender(screenFor(feedback));
+    expect(filled()).toBe(slot);
+    expect(moment).toHaveClass(slotStyles.bloom);
+    expect(moment).not.toHaveClass(slotStyles.arriving);
+  });
+
+  it("renders a discard-mode inventory, one message with the verdict and the instruction, and no Confirm in overflow", () => {
     renderScreen(makeOverflowState());
 
-    const status = screen.getByRole("status");
-    expect(status).toHaveTextContent("Correct");
-    const instruction = screen.getByText("Choose a tile to discard.");
+    // The message is the region holding content; the feedback region is empty.
+    const status = filledStatus();
+    expect(status).toHaveTextContent("Correct · hand full");
+    const instruction = screen.getByText("Six tiles, five sockets. Choose a tile to discard.");
+    expect(status).toContainElement(instruction);
     expect(screen.queryByRole("button", { name: "Confirm Discard" })).not.toBeInTheDocument();
-    const discardTile = screen.getByRole("button", { name: "Digit 1" });
+    const discardTile = screen.getByRole("button", { name: "Discard 1" });
     expect(discardTile).toHaveAttribute("aria-pressed", "false");
 
     // HUD -> equation/feedback context -> phase action -> inventory (§1.10).
@@ -342,7 +440,7 @@ describe("GameScreen phase composition", () => {
 
   // Some screen readers do not announce what a live region already holds when
   // it is inserted, so the region has to exist, empty, before the verdict
-  // arrives in it (#31).
+  // arrives in it.
   it("keeps the feedback status region mounted, empty, from answering into feedback", () => {
     const screenFor = (state: GameState) => (
       <I18nProvider initialLanguage="en">
@@ -350,35 +448,53 @@ describe("GameScreen phase composition", () => {
       </I18nProvider>
     );
     const { rerender } = render(screenFor(makeAnsweringState()));
-    const status = screen.getByRole("status");
+    const status = screen.getAllByRole("status")[0]!;
     expect(status).toBeEmptyDOMElement();
 
     rerender(screenFor(makeFeedbackState()));
 
-    expect(screen.getByRole("status")).toBe(status);
-    expect(status).toHaveTextContent("Incorrect");
+    expect(screen.getAllByRole("status")[0]).toBe(status);
+    expect(status).toHaveTextContent("Missed");
   });
 
-  it("keeps the feedback status region mounted across the overflow-to-feedback transition", () => {
+  // Both live regions exist, empty, in every phase, and only the phase's own
+  // holds content. The feedback region comes first in the band.
+  it("keeps the overflow message's status region mounted from answering into overflow", () => {
+    const screenFor = (state: GameState) => (
+      <I18nProvider initialLanguage="en">
+        <GameScreen state={state} dispatch={vi.fn()} onSubmit={vi.fn()} onNextRound={vi.fn()} />
+      </I18nProvider>
+    );
+    const { rerender } = render(screenFor(makeAnsweringState()));
+    const message = screen.getAllByRole("status")[1]!;
+    expect(message).toBeEmptyDOMElement();
+
+    rerender(screenFor(makeOverflowState()));
+
+    expect(screen.getAllByRole("status")[1]).toBe(message);
+    expect(message).toHaveTextContent("Correct · hand full");
+    expect(screen.getAllByRole("status")[0]).toBeEmptyDOMElement();
+  });
+
+  it("keeps both status regions mounted across the overflow-to-feedback transition, one holding content", () => {
     const overflowState = makeOverflowState();
-    const { rerender } = render(
+    const screenFor = (state: GameState) => (
       <I18nProvider initialLanguage="en">
-        <GameScreen state={overflowState} dispatch={vi.fn()} onSubmit={vi.fn()} onNextRound={vi.fn()} />
-      </I18nProvider>,
+        <GameScreen state={state} dispatch={vi.fn()} onSubmit={vi.fn()} onNextRound={vi.fn()} />
+      </I18nProvider>
     );
-    const statusBeforeConfirm = screen.getByRole("status");
+    const { rerender } = render(screenFor(overflowState));
+    const [feedback, message] = screen.getAllByRole("status");
+    expect(feedback).toBeEmptyDOMElement();
+    expect(message).toHaveTextContent("Correct · hand full");
 
-    const feedbackState = gameReducer(overflowState, {
-      type: "TOGGLE_DISCARD",
-      tileId: tileWith(overflowState, 6).id,
-    });
     rerender(
-      <I18nProvider initialLanguage="en">
-        <GameScreen state={feedbackState} dispatch={vi.fn()} onSubmit={vi.fn()} onNextRound={vi.fn()} />
-      </I18nProvider>,
+      screenFor(gameReducer(overflowState, { type: "TOGGLE_DISCARD", tileId: tileWith(overflowState, 6).id })),
     );
 
-    expect(screen.getByRole("status")).toBe(statusBeforeConfirm);
+    expect(screen.getAllByRole("status")).toEqual([feedback, message]);
+    expect(feedback).toHaveTextContent("Correct");
+    expect(message).toBeEmptyDOMElement();
   });
 
   it("does not auto-advance out of feedback without user action", () => {
@@ -402,9 +518,9 @@ describe("GameScreen overflow collapse", () => {
       </StrictMode>,
     );
 
-    // The 4s are the row's pay and both read "Digit 4, New tile", so "Digit 6"
+    // The 4s are the row's pay and both read "Discard 4, new tile", so "Discard 6"
     // is a name that resolves to a single button.
-    await user.click(screen.getByRole("button", { name: "Digit 6" }));
+    await user.click(screen.getByRole("button", { name: "Discard 6" }));
 
     // The reducer completes the discard on this mark (§1.7); the screen only
     // forwards it, once, so StrictMode's double render cannot double it.
@@ -417,7 +533,7 @@ describe("GameScreen overflow collapse", () => {
 
     expect(screen.queryByRole("button", { name: "Confirm Discard" })).not.toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole("button", { name: "Digit 6" }));
+    await userEvent.click(screen.getByRole("button", { name: "Discard 6" }));
 
     expect(dispatch).toHaveBeenCalledTimes(1);
     expect(dispatch).toHaveBeenCalledWith({ type: "TOGGLE_DISCARD", tileId: tileWith(state, 6).id });
@@ -511,7 +627,7 @@ describe("GameScreen after a discard", () => {
 
   it("waits for the verdict's celebration as well as the departure before advancing", () => {
     // A correct answer at streak 8 plays the bloom, three rings and the burst
-    // on its slot. Those mount with feedback, after the discard completes, so
+    // on its slot. Those start with feedback, after the discard completes, so
     // the 420ms exit ends before the 720ms burst does. No table reaches
     // streak 8 by row 4, so it is set on row 4's answer.
     const overflow = { ...makeOverflowState(), currentStreak: 8 };
@@ -540,9 +656,9 @@ describe("GameScreen after a discard", () => {
     // The reducer leaves the newest arrival past capacity (§1.5 step 7); a
     // re-sort here would seat this second 4 and perch the 8 instead.
     renderScreen(makeOverflowState());
-    // The rail sits above the rack, so the perched tile comes first.
-    const tiles = screen.getAllByRole("button", { name: /^Digit/ });
-    expect(tiles[0]).toHaveAccessibleName("Digit 4, New tile");
+    // The rail sits in the band above the rack, so the perched tile comes first.
+    const tiles = screen.getAllByRole("button", { name: /^Discard/ });
+    expect(tiles[0]).toHaveAccessibleName("Discard 4, new tile");
     expect(tiles.slice(1).map((tile) => tile.textContent)).toEqual(["1", "2", "4", "6", "8"]);
   });
 });
@@ -557,7 +673,6 @@ describe("GameScreen in Puzzle", () => {
   it("draws the rack as one row of exactly five sockets", () => {
     renderScreen(makeAnsweringState());
     const rack = screen.getByRole("button", { name: "Digit 1" }).closest(`.${rackStyles.rack}`);
-    expect(rack).toHaveAttribute("data-size", "row");
     expect(rack!.querySelector(`.${rackStyles.inventory}`)!.children).toHaveLength(5);
   });
 

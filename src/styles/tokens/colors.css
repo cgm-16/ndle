@@ -18,7 +18,6 @@
   --surface-surround: var(--slate);
   --surface-panel: var(--raised);
   --surface-raised: var(--raised);
-  --surface-socket: var(--slate);
   --surface-tile: var(--chalk);
 
   --text-primary: var(--chalk);
@@ -34,7 +33,6 @@
   --state-correct: var(--chalk);
   --state-incorrect: var(--pink);
   --state-discard: var(--pink);
-  --state-reward: var(--blue);
 
   --border-hairline: var(--hairline);
   --border-accent: var(--blue);

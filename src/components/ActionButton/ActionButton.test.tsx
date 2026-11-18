@@ -109,7 +109,7 @@ describe("ActionButton", () => {
     it("presses 1px down through :active, and only while enabled", () => {
       renderButton();
       const press = ownRule(`.${styles.button}:not(:disabled):active`);
-      expect(press?.style.transform).toBe("translateY(calc(var(--press-offset) / 2))");
+      expect(press?.style.transform).toBe("translateY(var(--press-offset))");
       expect(press?.style.boxShadow).toBe("");
     });
 

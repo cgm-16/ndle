@@ -6,7 +6,7 @@
   max-width: var(--arena-max-width);
   margin: 0 auto;
 
-  /* The 16px side padding stands in for the frame gutter that T114 adds. */
+  /* The 16px side padding is the gutter inside the 393px frame. */
   padding: var(--space-2) var(--space-4);
   text-align: center;
 }
@@ -61,6 +61,7 @@
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   gap: 6px;
+  padding: 0;
   list-style: none;
 }
 

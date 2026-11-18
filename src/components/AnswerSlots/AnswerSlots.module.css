@@ -1,40 +1,26 @@
+/* The slots are 52 × 56 at every width, the size of the Tile primitive, so the
+   filled tile and the empty slot share one box. The empty slot and the streak
+   ring read these two. */
 .slots {
+  --tile-w: var(--tile-width);
+  --tile-h: var(--tile-height);
+
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: 10px;
   justify-content: center;
 }
 
-/* The empty slot is the one chalk-adjacent case the Tile primitive does not
-   collapse: it is a socket on the field — --surface-socket, a rim and a
-   dashed border — with no tile face to draw. It stays a disabled
-   button because role and accessible name are load-bearing here
-   (AnswerSlots.test.tsx, GameScreen.test.tsx), not because it is a control. */
+/* The empty slot is the one case the Tile primitive does not cover: a dashed
+   outline with no face to draw. It stays a disabled button because role and
+   accessible name are load-bearing here (AnswerSlots.test.tsx,
+   GameScreen.test.tsx), not because it is a control. */
 .slot {
-  /* The same socket the rack draws (TileInventory.module.css .socket): same
-     four declarations, same composition order. Not literally shared — these
-     are two different elements, a bare <div> there and a disabled <button>
-     here, and CSS Modules `composes` cannot cross that. So the two rules are
-     duplicated on purpose and have to be kept in step by hand; a review
-     already caught them drifting once, when the rack's copy was missing this
-     background and an empty socket borrowed the page behind it instead. */
   width: var(--tile-w);
   height: var(--tile-h);
+  padding: 0;
+  border: 2px dashed var(--text-meta);
   border-radius: var(--radius-sm);
-  background: var(--surface-socket);
-  box-shadow: var(--rim-socket);
-
-  /* A dashed, heavier border keeps slots visually distinct from the solid
-     1px inventory tiles at every fill state (§1.12). --border-slot-empty is
-     the system's own awaiting-input rim: --socket on --surface-socket measures
-     4.29:1 -- clear of the >=3:1 floor. An empty slot sits on --surface-socket
-     with no fill contrast of its own, so the border is the only cue defining
-     its shape and has to clear that floor. */
-  border: 2px dashed var(--border-slot-empty);
-
-  /* No opacity dimming: the empty state is already signaled by the absence
-     of a digit plus the dashed border, and dimming would push the border
-     back below the contrast floor established above. */
+  background: transparent;
   cursor: default;
 }
 
@@ -62,8 +48,7 @@
    matches no @keyframes anywhere, and an animation naming a keyframe nothing
    defines fails silently — no error, no warning, no motion. */
 .arriving,
-.bloom,
-.crack {
+.bloom {
   animation-fill-mode: both;
 }
 
@@ -71,51 +56,62 @@
    happens on every selection, and §1.12 budgets what happens every round as
    the fastest and quietest thing in the app. */
 .arriving {
-  animation-name: global(oz-slot-arrive);
+  animation-name: global(nd-slot-arrive);
   animation-duration: var(--dur-select);
-  animation-timing-function: var(--ease-settle);
+  animation-timing-function: var(--ease-out);
 }
 
-/* 2a — correct: the tile rises and settles, once. */
+/* 2a — correct: the tiles lift and settle, once. */
 .bloom {
-  animation-name: global(oz-bloom);
+  animation-name: global(nd-bloom);
   animation-duration: var(--dur-bloom);
-  animation-timing-function: var(--ease-settle);
+  animation-timing-function: var(--ease-out);
 }
 
-/* 9f — wrong: the tile fractures where it sits and drops out of its slot. */
-.crack {
-  animation-name: global(oz-crack);
-  animation-duration: var(--dur-crack);
-  animation-timing-function: var(--ease-fall);
-}
-
-/* The dust is a second element and not a second animation on the tile, because
-   it scales and fades on its own while the tile fractures and falls: one
-   element can only run one of those shapes.
-   It is drawn before the tile, and the cracking span's transform makes that
-   span paint with the positioned boxes, so the two paint in document order and
-   the cloud stays behind the chalk — uncovered as the tile drops out of it.
-   No z-index does this job: .filled has z-index auto and is no stacking
-   context, so a negative one would sink past it and out of the slot. */
-.dust {
+/* 9f — wrong: a pink chalk stroke is drawn across the tiles, which stay where
+   they are. It is a sibling painted after the tile span, so it lies over the
+   chalk, and it stays drawn once finished. */
+.stroke {
   position: absolute;
-  inset: -14%;
-  border-radius: var(--radius-sm);
-  background: radial-gradient(circle at 50% 55%, rgb(240 231 214 / 50%), transparent 68%);
-  animation-name: global(oz-dust);
+  inset: 0;
+  background: linear-gradient(
+    to top right,
+    transparent calc(50% - 1.5px),
+    var(--state-incorrect) calc(50% - 1.5px) calc(50% + 1.5px),
+    transparent calc(50% + 1.5px)
+  );
+  animation-name: global(nd-crack);
   animation-duration: var(--dur-crack);
-  animation-timing-function: var(--ease-fall);
+  animation-timing-function: var(--ease-in);
   animation-fill-mode: both;
   pointer-events: none;
 }
 
-/* 7a/7b/7c — the streak ladder's rings. One shape, three tiers: the tier
-   classes below change only the colour and the delay, which is what makes the
-   ladder accumulate rather than swap. They are siblings of the tile's moment
-   span, not children of it, so the bloom's transform does not carry them.
+/* The dust is a second element and not a second animation on the stroke,
+   because one element can only run one of those shapes. Specks in the dust
+   colour fall from the stroke's line and fade. It follows the tile in the
+   markup: the tile paints as a positioned box, and anything earlier would sit
+   under its opaque face. */
+.dust {
+  position: absolute;
+  inset: 40% 0 -8px;
+  background:
+    radial-gradient(circle 2px at 20% 30%, var(--text-meta) 98%, transparent),
+    radial-gradient(circle 1.5px at 50% 55%, var(--text-meta) 98%, transparent),
+    radial-gradient(circle 1.5px at 80% 25%, var(--text-meta) 98%, transparent);
+  animation-name: global(nd-dust);
+  animation-duration: var(--dur-dust);
+  animation-timing-function: var(--ease-out);
+  animation-fill-mode: both;
+  pointer-events: none;
+}
+
+/* 7a–7c — the streak ladder's chalk rings. One shape, up to three rings; each
+   starts 60ms after the one before (--ring-order). They are siblings of the
+   tile's moment span, not children of it, so the bloom's transform does not
+   carry them. The open right side is the gap a hand-drawn circle leaves.
    Centred by a half-size negative margin rather than a translate, because
-   oz-ring spends the transform on its own scale. */
+   nd-ring spends the transform on its own scale and turn. */
 .ring {
   position: absolute;
   left: 50%;
@@ -125,64 +121,32 @@
   margin-left: calc(var(--tile-w) * -0.95);
   margin-top: calc(var(--tile-w) * -0.95);
   border-radius: 50%;
-  border: 2px solid;
-  animation-name: global(oz-ring);
-  animation-duration: var(--dur-bloom);
-  animation-timing-function: var(--ease-settle);
+  border: 2px solid var(--state-correct);
+  border-right-color: transparent;
+  animation-name: global(nd-ring);
+  animation-duration: var(--dur-ring);
+  animation-timing-function: var(--ease-out);
+  animation-delay: calc(var(--ring-order) * 60ms);
   animation-fill-mode: both;
   pointer-events: none;
 }
 
-/* The ladder's rungs all take the accent; the delay is what separates them. */
-.ringJade {
-  border-color: var(--state-correct);
-}
-
-.ringGold {
-  border-color: var(--accent);
-  animation-delay: 70ms;
-}
-
-.ringBright {
-  border-color: var(--accent);
-  animation-delay: 140ms;
-}
-
-/* Tier 2 and tier 3's rim: state, not motion. It sits on the moment span so it
-   travels with the bloom, and carries the tile's own radius so it traces the
-   tile rather than boxing it. One outline per element, so the two tiers
-   replace each other where the rings accumulate. */
-.rim,
-.rimBright {
-  border-radius: var(--radius-sm);
-  outline-offset: -1px;
-}
-
-.rim {
-  outline: 1px solid var(--accent);
-}
-
-.rimBright {
-  outline: 1px solid var(--accent);
-}
-
-/* 2d — the tier-3 burst. Tile-face chips, never accent: the chips are the tile
-   shedding its own material, and an accent chip would read as a reward pip
-   breaking off. Each chip supplies oz-fan the trajectory it interpolates
-   (--dx, --peak, --land, --rot) and its own delay, inline in the component,
-   because six siblings inside .filled cannot be told apart positionally — the
-   rings above them come and go with the tier. */
+/* 2d — the top tier's six flecks, in chalk. They start just above the tile's
+   top edge, so every fleck travels over the field and chalk never lands on the
+   chalk face. Each supplies nd-fan the offset it interpolates to (--dx, --dy),
+   inline in the component. */
 .chip {
   position: absolute;
   left: 50%;
-  top: 50%;
-  width: 9px;
-  height: 6px;
-  border-radius: 1.5px;
+  top: -10px;
+  width: 5px;
+  height: 5px;
+  margin-left: -2.5px;
+  border-radius: 50%;
   background: var(--surface-tile);
-  animation-name: global(oz-fan);
+  animation-name: global(nd-fan);
   animation-duration: var(--dur-burst);
-  animation-timing-function: var(--ease-fall);
+  animation-timing-function: var(--ease-out);
   animation-fill-mode: both;
   pointer-events: none;
 }

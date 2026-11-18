@@ -7,8 +7,8 @@
   cursor: pointer;
   transform: translateY(0);
   transition:
-    transform var(--dur-press) var(--ease-settle),
-    background var(--dur-state) var(--ease-standard);
+    transform var(--dur-press) var(--ease-out),
+    background var(--dur-state) var(--ease-out);
 }
 
 .primary {
@@ -35,7 +35,7 @@
   opacity: 0.45;
 }
 
-/* Half the shared press offset is 1px, and reduced motion zeroes it. */
+/* The press is the shared offset, 1px; reduced motion zeroes it. */
 .button:not(:disabled):active {
-  transform: translateY(calc(var(--press-offset) / 2));
+  transform: translateY(var(--press-offset));
 }

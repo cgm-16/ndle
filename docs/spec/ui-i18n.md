@@ -16,25 +16,24 @@ satisfy.
   `e2e/` assert it, and `fit.spec.ts` sweeps every gallery state with the top
   bar counted, in Chromium and in Playwright's WebKit.
 - Use one centered vertical arena on desktop and mobile.
-- Preserve order across breakpoints: Back (in the app's top bar) → HUD → ledger → equation/slots → phase action → rail (while a tile is past capacity, and until a dropping tile lands) → rack. The rail sits directly above the rack, because a perched tile drops from it into a socket.
+- Preserve order across breakpoints: Back (in the app's top bar) → HUD → ledger → answer row → phase action (in overflow, the message and the rail beside it) → rack.
 - Mobile changes spacing, wrapping, and control size, not information architecture.
 - **Back** (`action.back`, `Back` / `뒤로`) sits at the left edge of the app's top bar, with the wordmark and the label (`#12` or `Practice`) in the centre and the language toggle at the right, ahead of the toggle in tab order and outside the screen's `<main>`, on the game screen and the game-over screen, for Daily and Practice alike, so it is the first focusable element on the page. It is at least `44 px` tall and carries an `aria-hidden` inline-SVG arrow. It has no key binding, because `Escape` already clears the selection. It dispatches `RETURN_TO_TITLE`, with no confirmation. Back is not a move: a Daily keeps its record and resumes from the title, and a Practice run is dropped.
-- **The ledger** lists the table's 8 rows. Each row shows its equation and the tiles it pays, and a mark once answered: correct or missed, in text or shape as well as colour. The current row is marked by more than colour. Each row is one accessible string (`ledger.row`).
-- **The rack** is five fixed sockets in a single row at every breakpoint (`PUZZLE_CAPACITY`). The grid never resizes; an empty socket is a tile spent, and a socket whose tile is lifted is on loan: it stays held for that tile, visibly distinct from an empty one, and the rack does not re-sort until the round resolves.
-- **The rail.** The tile past capacity (the newest arrival, `product.md` §1.7) perches on a band one tile high above the rack with a `1px` `--border-accent` top rule, right-aligned and drawn at the rack's tile size (where the rack's tracks shrink below it, a dropping tile narrows by a few pixels as it lands). The rail exists while a tile is past capacity, and until the tile it held has landed in a freed socket (`8a·2`). It never adds a row to the rack.
+- **The ledger** lists the table's 8 rows across the arena's full content width. The current row is `52 px` tall, with a raised fill, a `2 px` blue border, the `ledger.now` label, the equation without its `=`, and `ledger.pays` before the pay tiles. Every other row is `30 px`: an answered or missed row shows the `Mark` and `ledger.answered` or `ledger.missed` (missed in pink) under a hairline, and a future row shows its pays as outlined boxes. Each row is one accessible string (`ledger.row`); what it draws is `aria-hidden`.
+- **The answer row and the band.** The prompt (`3 × 5 =`) and the answer slots sit in a `60 px` row below the ledger, inside a band that is at least `150 px` tall in every phase, so the rack does not move. Answering fills `120 px` of it: the answer row, a `12 px` gap and the actions, Clear (`flex: 1`) before Submit (`flex: 2`), `48 px` tall.
+- **The rack** is five fixed sockets in a single row at every breakpoint (`PUZZLE_CAPACITY`), under a `rack.hand` label (`14 px`, dust, `22 px` tall, `6 px` above the sockets) that counts the tiles in the sockets, a lifted tile's held socket included, and not the rail. The grid never resizes. An empty socket is a tile spent: a `1.5 px` dashed outline in the socket colour. A socket whose tile is lifted is on loan (`data-state="held"`): it keeps the dashed outline and shows the lifted digit at `16 px` in dust, which is what tells it from an empty one, and the rack does not re-sort until the round resolves. A tile that arrived this row wears an `18 px` blue "+" badge at its top right (`-8 px`), and is named with `tile.newLabel`.
+- **The rail.** The tile past capacity (the newest arrival, `product.md` §1.7) perches in the overflow band's right cell, `88 px` wide, under a `rail.arriving` label (`12 px`, dust), drawn `66 × 56` with no top rule. The cell is the screen's: mounted in every phase and placed by the band (`8 px` below the answer row, at its right edge), so it does not move when a discard ends overflow and the tile still leaving is drawn where it was. The rack renders the rail into it. The rail exists while a tile is past capacity. It never adds a row to the rack.
 - **Discard scroll.** When a discard starts, the rack scrolls into view once, with `scrollIntoView({ block: "nearest", behavior: "instant" })`. If the rack is already in view, it does nothing. It is a jump, not a motion moment, so it has nothing for reduced motion to neutralise.
-- Answer slots are `64 × 80` at the arena's widest tier.
-- Rack sizing has three tiers: below `408px`, tiles are `52 × 64` with an `8px` gap; from `408px`, `66 × 64` with a `12px` gap; from `48rem`, `64 × 80` with a `12px` gap. A tier's rack width — five tiles plus four gaps — must leave room for the arena's horizontal padding at that tier's lower bound. The arena spends `24px` of that width on its own padding below `40rem`, so the narrow tier needs `292px` of `296px` and the middle tier needs `378px` of the `384px` a `408px` viewport leaves.
-- **A tier's figures are the tile's maximum size, not a fixed size.** The rack is sized from its container rather than from the viewport, and scales down toward the `44 × 44` target minimum when the container is narrower than the tier's natural width. At every width where the tier already fits, the rendered size is exactly the figure above.
-- **The target minimum is a floor, and it outranks the layout.** A tile is a control, so below the content width where five tiles at `44` plus their gaps no longer fit — about `276px` once the arena's padding is counted — the rack stops shrinking and the page scrolls instead. The `320px` rule below is silent under `320px`, while the target minimum has no lower bound, so that is the order they resolve in.
-- **This is what the `320px` no-horizontal-scroll rule requires, because a boundary cannot carry it.** A `min-width` query matches the scrollbar-*inclusive* viewport while the content box excludes it, so wherever scrollbars take layout width every tier fires about `15px` early. Scaling within the tier fixes it, and the target minimum bounds how far.
-- **Known misses, owned by M17 (T114, T115):** the feedback and overflow states overflow `660` with the bar counted, and `overflow-required-1` fails the focus-ring reach. `KNOWN_MISSES` in `e2e/fit.spec.ts` lists them, and each layout task removes its keys. Until then these states are the only exceptions to the first rule of this list.
+- Answer slots are `52 × 56` at every width.
+- **Rack sizing is one size.** Five equal columns of the arena's content, `8 px` apart, `56 px` tall, never narrower than `44 px`. The arena is at most `393 px` wide with a `16 px` gutter on each side, so its content is at most `361 px` and the columns at most `65.8 px`; a wider viewport shows the phone layout, centred.
+- **The target minimum is a floor, and it outranks the layout.** A tile is a control, so below the viewport width where five tiles at `44` plus their gaps and the gutters no longer fit — `284 px` — the rack stops shrinking and the page scrolls instead. The `320px` rule below is silent under `320px`, while the target minimum has no lower bound, so that is the order they resolve in.
+- **The columns are sized from the arena, not from a media query.** A `min-width` query matches the scrollbar-*inclusive* viewport while the content box excludes it, so wherever scrollbars take layout width a boundary fires about `15px` early; the `320px` no-horizontal-scroll rule is carried by the columns shrinking with their container, bounded by the target minimum.
 
 **Phases**
 
 - **Answering.** Selecting a tile moves it into the leftmost empty slot; a filled slot returns its tile. Submit is enabled only when every slot is filled (`product.md` §1.4). The remaining rows stay visible in the ledger.
-- **Feedback.** The verdict reads **Correct** or **Incorrect** in text. A correct answer shows the tiles received (`result.rewards`); an incorrect answer shows the submitted and the correct answer (`result.submitted`, `result.answer`). **Next Round** advances; `Enter` does the same.
-- **Overflow.** A correct answer at a full hand leaves one tile on the rail, and the prompt reads `overflow.instructionOne`. Any owned tile can be marked, by click or by digit key. The mark completes the discard, and no confirmation control is rendered. The marked tile leaves the rack, the rail tile takes the freed socket, and the round advances on its own once the discard and the verdict's celebration have both visibly finished.
+- **Feedback.** The verdict takes the actions' place in the band, below the answer row, which stays mounted with the submitted tiles in its slots. One `26 px` line in the existing `role="status"` region (the detail wraps to a second line inside the band where the line has no room, today below `375 px` wide, and the `Mark` never shrinks): a `Mark` and the word at `22 px` bold (`result.correct` in chalk, `result.incorrect` in pink), then ` · ` and a detail at `16 px` in dust. A correct answer's detail lists the digits received (`result.rewards`), in the order the row prints them; a miss's is the row's equation and product, `3 × 5 = 15`. A miss also announces, in visually hidden text after a `. `, the answer played (`result.played`) as a second sentence, so the region carries both the submitted and the correct answer. **Next Round** (`48 px`, `17 px`) follows, and `Enter` does the same; after a discard the round advances on its own, and the line keeps clear of the rail cell.
+- **Overflow.** A correct answer at a full hand leaves one tile on the rail. The answer row stays above the band's content, with the played tiles in its slots, read-only and still: the verdict's celebration on them waits for the discard. Below it the left cell holds one `role="status"` message: the `Mark` (correct), `result.correct`, ` · ` and `result.handFull` at `20 px` bold, then `overflow.instructionOne` at `16 px` in dust. The rail is the right cell. Both status regions, this message's and the feedback panel's, stay mounted in every phase and are empty outside their own phase, so a verdict or message arrives in a region that already exists. Every tile is a discard choice, with a `2 px` dashed pink border and no bottom edge, named `tile.discard` (and `tile.newLabel` for the arrival). Any owned tile can be marked, by click or by digit key. The mark completes the discard, and no confirmation control is rendered. The marked tile leaves the rack, the rail tile takes the freed socket, and the round advances on its own once the discard and the verdict's celebration have both visibly finished.
 - **Game over.** One `h1` holds the verdict, **Made par** (`gameOver.parTitle`) or `{short} short of par` (`gameOver.shortTitle`), in text; a Daily's `gameOver.dailyNumber` is the first line inside it, so heading navigation reads "Table #12, Made par". Top to bottom:
   1. the heading, then the reason: `gameOver.tableReason` after row 8, else `gameOver.reason`. The equation the run stopped on is not drawn; after an early end, `gameOver.reason` says why and the row marks show where the run stopped;
   2. the score as `7 / 8`, then Par and Longest streak (within the table) as two cards;
@@ -72,26 +71,26 @@ satisfy.
 
 - Motion is budgeted by frequency: what happens every round is fastest and quietest; what happens once a run may be theatrical.
 - Permitted motion is the inventory below. Motion outside it is not permitted; extending it amends this section. There is no animation library.
-- **Provisional; the identity's keyframe list replaces it.** Each keyframe lives in `src/styles/tokens/keyframes.css`, and its timing in `src/styles/tokens/motion.css`.
+- Motion is chalk: short, with no overshoot. Each keyframe lives in `src/styles/tokens/keyframes.css`, and its timing in `src/styles/tokens/motion.css`.
 
-| Keyframe | Animates |
-|---|---|
-| `oz-bloom` | Answer tiles rise and settle on a correct answer (`2a`) |
-| `oz-ring` | The streak rings on the answer tiles, one to three by streak (`7a`–`7c`) |
-| `oz-fan` | The six-chip burst at streak tier 3 (`2d`) |
-| `oz-crack` | The crack across the answer tiles on a wrong answer (`9f`) |
-| `oz-dust` | The dust from a wrong answer's crack (`9f`) |
-| `oz-fire` | Pay tiles firing in place in the rack (`9i`) |
-| `oz-round-rise` | The next equation rising into place (`10b`) |
-| `oz-counter-fall` | The streak counter falling when the streak breaks (`10e`) |
-| `oz-counter-zero` | The `0` fading in after the streak counter falls (`10e`) |
-| `oz-rim-reject` | The tile past capacity rim-rejecting onto the rail (`8a`) |
-| `oz-slide-off` | The marked tile sliding off the table on a discard (`8c`) |
-| `oz-perch-drop` | The perched tile dropping into the freed socket (`8a·2`) |
-| `oz-slot-arrive` | A tile arriving in its answer slot (`9b`) |
-| `oz-rise-ready` | A resting offset on a disabled action; defined and unused, because a disabled action is flat at 45% opacity |
+| Keyframe | Animates | Duration | Easing |
+|---|---|---|---|
+| `nd-bloom` | Answer tiles lift 4px and settle on a correct answer (`2a`) | 200 ms | ease-out |
+| `nd-ring` | One to three chalk rings round the answer tiles by streak tier, drawn like a hand-drawn circle and 60 ms apart (`7a`–`7c`) | 240 ms each | ease-out |
+| `nd-fan` | At the top tier, six chalk flecks fan out 12px and fade (`2d`) | 320 ms | ease-out |
+| `nd-crack` | A pink chalk stroke drawn across the answer tiles on a wrong answer (`9f`) | 200 ms | ease-in |
+| `nd-dust` | Dust-coloured specks fall 8px from the stroke and fade (`9f`) | 280 ms | ease-out |
+| `nd-fire` | A paid tile's `+` badge fades in from 6px above; the tile does not move (`9i`) | 180 ms | ease-out |
+| `nd-round-rise` | The next prompt rises 6px into place as it fades in (`10b`) | 180 ms | ease-out |
+| `nd-counter-fall` | The streak counter drops 8px and fades when the streak breaks (`10e`) | 200 ms | ease-in |
+| `nd-counter-zero` | The `0` fades in after the counter falls (`10e`) | 160 ms | ease-out |
+| `nd-rim-reject` | The tile past capacity fades in on the rail from 6px above, with no tilt (`8a`) | 180 ms | ease-out |
+| `nd-slide-off` | The discarded tile slides 24px down and fades (`8c`) | 200 ms | ease-in |
+| `nd-perch-drop` | The perched tile drops into the freed socket from its measured offset (`8a·2`) | 200 ms | ease-out |
+| `nd-slot-arrive` | A tile settles into its answer slot from 4px above (`9b`) | 120 ms | ease-out |
 
-- Respect `prefers-reduced-motion` by removing nonessential motion wholesale, including press offsets.
+- A button's press moves it `1px` down as a `transform` over 80 ms ease-out, and its background changes over 120 ms ease-out.
+- Respect `prefers-reduced-motion` by removing nonessential motion wholesale, including press offsets. Every animation still runs, clamped to 0.01 ms, because the round waits on `animationend` after a discard; no rule sets `animation: none`.
 - No audio.
 
 ### 1.13 Language behavior
@@ -135,18 +134,22 @@ Every string lives in `src/i18n/messages.ts`, in both languages. This is the cop
 | `language.groupLabel` | `Language` | `언어` |
 | `hud.score` | `Score` | `점수` |
 | `hud.streak` | `Streak` | `연속 정답` |
-| `hud.round` | `Round` | `라운드` |
+| `hud.round` | `Row` | `줄` |
 | `hud.par` | `Par` | `목표` |
 | `ledger.label` | `Table` | `판` |
 | `ledger.row` | `Row {row}, {left} × {right}, pays {pay}` | `{row}번째 줄, {left} × {right}, 보상 {pay}` |
 | `ledger.answered` | `answered` | `정답` |
 | `ledger.missed` | `missed` | `오답` |
+| `ledger.now` | `Now` | `지금` |
+| `ledger.pays` | `pays` | `보상` |
 | `result.correct` | `Correct` | `정답` |
-| `result.incorrect` | `Incorrect` | `오답` |
-| `result.submitted` | `Your answer: {value}` | `제출한 답: {value}` |
-| `result.answer` | `Correct answer: {value}` | `정답: {value}` |
-| `result.rewards` | `Received {count} tiles` | `타일 {count}개 획득` |
-| `overflow.instructionOne` | `Choose a tile to discard.` | `버릴 타일 1개를 선택하세요.` |
+| `result.incorrect` | `Missed` | `오답` |
+| `result.rewards` | `Received {digits}` | `받은 타일 {digits}` |
+| `result.played` | `You played {value}` | `제출한 답 {value}` |
+| `result.handFull` | `hand full` | `손이 가득 참` |
+| `overflow.instructionOne` | `Six tiles, five sockets. Choose a tile to discard.` | `타일 여섯 개, 칸 다섯 개. 버릴 타일 1개를 선택하세요.` |
+| `rack.hand` | `Hand · {count} of 5` | `손 · 5칸 중 {count}개` |
+| `rail.arriving` | `Arriving` | `들어오는 타일` |
 | `gameOver.reason` | `Not enough tiles left to answer.` | `답을 만들 타일이 부족합니다.` |
 | `gameOver.longestStreak` | `Longest streak` | `최장 연속 정답` |
 | `gameOver.restartHint` | `Press R to play again` | `R 키를 눌러 다시 하기` |
@@ -166,7 +169,8 @@ Every string lives in `src/i18n/messages.ts`, in both languages. This is the cop
 | `answerSlot.filled` | `Answer slot {position}: {digit}` | `정답 칸 {position}: {digit}` |
 | `answerSlot.empty` | `Answer slot {position}: empty` | `정답 칸 {position}: 비어 있음` |
 | `tile.digitLabel` | `Digit {digit}` | `숫자 {digit}` |
-| `tile.newLabel` | `New tile` | `새 타일` |
+| `tile.discard` | `Discard {digit}` | `{digit} 버리기` |
+| `tile.newLabel` | `new tile` | `새 타일` |
 | `tile.discardLabel` | `Marked for discard` | `버릴 타일로 표시됨` |
 
 The title's rule copy (`title.how1`–`3`, and under `title.more` the

@@ -16,8 +16,8 @@
   font: var(--weight-bold) var(--type-secondary) / var(--leading-tight) var(--font-ui);
   cursor: pointer;
   transition:
-    background var(--dur-state) var(--ease-standard),
-    transform var(--dur-press) var(--ease-standard);
+    background var(--dur-state) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
 }
 
 .button:active {

@@ -11,7 +11,7 @@ import { START_LABEL, type Locale } from "./labels.js";
  * ad-hoc evaluate calls to produce readings no suite could reproduce.
  *
  * Every assertion below carries the count it swept. A sweep rooted at the wrong
- * node reports clean, which is the failure mode that let #85 survive three
+ * node reports clean, which is the failure mode that let a layout overflow survive three
  * measurement passes (https://github.com/cgm-16/ndle/blob/3ccd37b/docs/journal/journal-2026-09-15.md).
  */
 
@@ -35,19 +35,12 @@ async function openArena(page: Page, locale: Locale = "en"): Promise<void> {
   await expect(page.locator('[class*="inventory"]')).toBeVisible();
 }
 
-/** Fills every answer slot and submits, to reach `feedback`. The slot count is
-    the product's digit length and the product is random, so the number of tiles
-    to spend has to be read off the screen — Submit stays disabled until the last
-    slot is filled. The verdict is whichever it is: the clause is that a verdict
-    is announced, not which one. */
-async function submitAnAnswer(page: Page): Promise<void> {
-  const slots = await page.locator('button[aria-label^="Answer slot"]').count();
-  expect(slots, "answer slots to fill").toBeGreaterThan(0);
-  for (let i = 0; i < slots; i++) {
-    await page.locator('button[aria-label^="Digit"]:not([disabled])').first().click();
-  }
-  await page.getByRole("button", { name: "Submit", exact: true }).click();
-  await expect(page.locator('[role="status"]')).toBeVisible();
+/** The answer slots a deal draws: one per digit of the equation's product, read
+    from the prompt rather than from the controls a sweep counts. */
+async function slotCount(page: Page): Promise<number> {
+  const equation = await page.locator("p", { hasText: /^\d × \d =$/ }).first().innerText();
+  const [left, right] = equation.match(/\d/g)!.map(Number);
+  return String(left * right).length;
 }
 
 test("every action, tile and slot is a semantic button", async ({ page }) => {
@@ -81,6 +74,7 @@ test("focus order follows the visual hierarchy", async ({ page }) => {
      sweeping before the click would measure a third of the screen. */
   await page.locator('button[aria-label^="Digit"]:not([disabled])').first().click();
 
+  const slots = await slotCount(page);
   const reading = await page.evaluate(() => {
     const focusable = [
       ...document.querySelectorAll<HTMLElement>(
@@ -116,7 +110,9 @@ test("focus order follows the visual hierarchy", async ({ page }) => {
     };
   });
 
-  expect(reading.count, "focusable controls swept").toBeGreaterThanOrEqual(5);
+  /* Back, the language toggle's two halves, Clear, the filled slot and four
+     digits; Submit joins them only when the one tile fills every slot. */
+  expect(reading.count, "focusable controls swept").toBe(slots === 1 ? 10 : 9);
   expect(reading.positiveTabindex, "controls with a positive tabindex").toBe(0);
   expect(reading.inversions, "tab steps that move up or left").toEqual([]);
 });
@@ -198,24 +194,29 @@ test("English loads Atkinson Hyperlegible 400 and 700, and the title loads Gaegu
   expect(await loadedFaces(page, "NoSuchFace"), "an undeclared face").toEqual([]);
 });
 
-test("Korean loads Gothic A1 400 and 700", async ({ page }) => {
-  await page.addInitScript(() => window.localStorage.setItem("ndle.language", "ko"));
-  await page.setViewportSize({ ...VIEWPORT });
-  await page.goto("/");
-  await page.waitForFunction(
-    () =>
-      ["400", "700"].every((weight) =>
-        [...document.fonts].some(
-          (face) => face.family.replace(/"/g, "") === "Gothic A1" && face.weight === weight && face.status === "loaded",
-        ),
-      ),
-  );
-  expect(await loadedFaces(page, "Gothic A1")).toEqual(expect.arrayContaining(["400", "700"]));
-});
+/** Reaches a miss on every run: the slots are filled with hand digits read off
+    the screen, rotated until the number they spell is not the equation's product. */
+async function submitAMiss(page: Page): Promise<void> {
+  const slots = await page.locator('button[aria-label^="Answer slot"]').count();
+  expect(slots, "answer slots to fill").toBeGreaterThan(0);
+  const equation = await page.locator("p", { hasText: /^\d × \d =$/ }).first().innerText();
+  const [left, right] = equation.match(/\d/g)!.map(Number);
+  const hand = (await page.locator('button[aria-label^="Digit"]:not([disabled])').evaluateAll((buttons) =>
+    buttons.map((b) => b.getAttribute("aria-label")!.replace("Digit ", "")),
+  )).slice(0, slots + 1);
+  const spell = (digits: string[]) => Number(digits.slice(0, slots).join(""));
+  const pick = hand.map((_, i) => [...hand.slice(i), ...hand.slice(0, i)]).find((d) => spell(d) !== left * right);
+  expect(pick, "a spelling that is not the product").toBeDefined();
+  for (const digit of pick!.slice(0, slots)) {
+    await page.locator(`button[aria-label="Digit ${digit}"]:not([disabled])`).first().click();
+  }
+  await page.getByRole("button", { name: "Submit", exact: true }).click();
+  await expect(page.locator('[role="status"]:not(:empty)')).toBeVisible();
+}
 
-test("the verdict is announced, and carried by words rather than colour", async ({ page }) => {
+test("a miss is announced, and carried by words rather than colour", async ({ page }) => {
   await openArena(page);
-  await submitAnAnswer(page);
+  await submitAMiss(page);
 
   const reading = await page.evaluate(() => {
     const regions = [...document.querySelectorAll('[aria-live], [role="status"], [role="alert"]')];
@@ -233,8 +234,8 @@ test("the verdict is announced, and carried by words rather than colour", async 
   /* The verdict as a word is what makes the state legible without the hue —
      §1.12's "never colour alone" clause, checked where colour actually carries
      meaning. */
-  expect(status.text, "the announced verdict").toMatch(/Correct|Incorrect/);
-  expect(status.text, "the submitted value, announced with it").toMatch(/Your answer/);
+  expect(status.text, "the announced verdict").toMatch(/Missed/);
+  expect(status.text, "the submitted value, announced with it").toMatch(/You played/);
 });
 
 /** Measures every button and disclosure summary on the page. */
@@ -260,9 +261,11 @@ async function sweepTargets(page: Page) {
 test("every interactive target is at least 44px", async ({ page }) => {
   await openArena(page);
 
+  const slots = await slotCount(page);
+  /* Back, the toggle's two halves, Clear, Submit and five digits, plus a slot a digit. */
   const reading = await sweepTargets(page);
 
-  expect(reading.count, "targets swept").toBeGreaterThanOrEqual(5);
+  expect(reading.count, "targets swept").toBe(10 + slots);
   expect(reading.undersized, "targets under 44px").toEqual([]);
   expect(reading.minWidth, "narrowest target").toBeGreaterThanOrEqual(MIN_TARGET);
   expect(reading.minHeight, "shortest target").toBeGreaterThanOrEqual(MIN_TARGET);
@@ -276,7 +279,7 @@ test("every interactive target on the title is at least 44px, More included", as
   const reading = await sweepTargets(page);
 
   // Daily, Practice, the language toggle's two halves and the More summary.
-  expect(reading.count, "targets swept").toBeGreaterThanOrEqual(5);
+  expect(reading.count, "targets swept").toBe(5);
   expect(reading.undersized, "targets under 44px").toEqual([]);
 });
 
@@ -297,7 +300,11 @@ test("Korean copy renders in a Hangul face and does not clip", async ({ page }) 
      Gothic A1 installed even when the bundle ships none. That is a false
      pass on any machine that has Gothic A1 installed. */
   await page.waitForFunction(() =>
-    [...document.fonts].some((face) => /Gothic A1/.test(face.family) && face.status === "loaded"),
+    ["400", "700"].every((weight) =>
+      [...document.fonts].some(
+        (face) => /Gothic A1/.test(face.family) && face.weight === weight && face.status === "loaded",
+      ),
+    ),
   );
 
   const reading = await page.evaluate(() => {
@@ -319,7 +326,9 @@ test("Korean copy renders in a Hangul face and does not clip", async ({ page }) 
   });
 
   expect(reading.lang, "document language").toBe("ko");
-  expect(reading.hangulFaces, "the bundle's own Hangul faces, loaded").not.toEqual([]);
+  expect(reading.hangulFaces, "the bundle's own Hangul faces, loaded").toEqual(
+    expect.arrayContaining(["Gothic A1 400", "Gothic A1 700"]),
+  );
   expect(reading.interfaceStack, "the face setting Korean interface text").toContain("Gothic A1");
   expect(reading.elements, "elements swept").toBeGreaterThan(20);
   expect(reading.text, "Korean copy rendered").toMatch(/[가-힣]/);
@@ -358,4 +367,48 @@ test("reduced motion removes motion wholesale, press offsets included", async ({
 
   expect(reduced.moving, "elements still carrying motion under reduced motion").toBe(0);
   expect(reduced.pressOffset, "press offset under reduced motion").toBe("0px");
+});
+
+/* The round waits on the discard's animationend, so a reduced-motion rule that
+   removed the animation would fire none and stall it. The exit and the perch
+   drop must each still carry a named animation, clamped to 1ms or less. Both
+   nodes vanish with their animationend, so they are read in the frame that
+   mounts them: the exit as the click mounts it, the drop when the exit's end
+   mounts it, both from a mutation observer. */
+test("reduced motion keeps the discard's animations, at 1ms or less", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.addInitScript(() => window.localStorage.setItem("ndle.language", "en"));
+  await page.setViewportSize({ ...VIEWPORT });
+  await page.goto("/gallery.html");
+  await page.evaluate(() => document.fonts.ready);
+  await page.locator("nav ul button[aria-pressed]", { hasText: /^Overflow — required 1$/ }).click();
+  await expect(page.locator("[data-rail]")).toBeVisible();
+  await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished)));
+
+  const reading = await page.evaluate(() => {
+    const read = (el: Element) => {
+      const style = getComputedStyle(el);
+      return { name: style.animationName, seconds: Math.max(...style.animationDuration.split(",").map(parseFloat)) };
+    };
+    return new Promise<{ exit: ReturnType<typeof read>; drop: ReturnType<typeof read> }>((resolve, reject) => {
+      let exit: ReturnType<typeof read> | undefined;
+      const observer = new MutationObserver(() => {
+        const departing = document.querySelector("[data-departing]");
+        if (departing && !exit) exit = read(departing);
+        const seating = document.querySelector("[data-seating]");
+        if (exit && seating) {
+          observer.disconnect();
+          resolve({ exit, drop: read(seating) });
+        }
+      });
+      observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+      setTimeout(() => reject(new Error("the exit or the perch drop never mounted")), 2000);
+      document.querySelector<HTMLElement>("[data-cell] button")!.click();
+    });
+  });
+
+  for (const [moment, animation] of Object.entries(reading)) {
+    expect(animation.name, `${moment} animation name`).not.toBe("none");
+    expect(animation.seconds, `${moment} duration in seconds`).toBeLessThanOrEqual(0.001);
+  }
 });

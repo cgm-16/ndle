@@ -1,148 +1,94 @@
-/* The keyframed moments. Anything that only interpolates between two static
-   states is a transition and stays inline on the component; the frames below
-   are the ones with a shape — a rise that settles, a fall with gravity, a
-   fracture. Names match the storyboard refs in readme.md's motion budget. */
+/* The keyframed moments, drawn in chalk: short, and none overshoots. Anything
+   that only interpolates between two static states is a transition and stays
+   inline on the component; the frames below are the ones with a shape. Each
+   moment's timing lives in motion.css. */
 
-/* 2a — correct answer: the tile rises 14px and settles, once. */
-@keyframes oz-bloom {
-  0%   { transform: translateY(0) scale(1); }
-  46%  { transform: translateY(-14px) scale(1.04); }
-  74%  { transform: translateY(2px) scale(0.995); }
-  100% { transform: translateY(0) scale(1); }
-}
-
-/* 7a — the tier-1 jade ring that accompanies the bloom. */
-@keyframes oz-ring {
-  0%   { transform: scale(0.45); opacity: 0; }
-  30%  { opacity: 0.9; }
-  100% { transform: scale(1.75); opacity: 0; }
-}
-
-/* 9f — wrong answer: the tile fractures where it sits, then dusts away, over
-   --dur-crack. Shakes on one axis only; never fades on opacity alone.
-   Ends at opacity 0, not at a residue. `.crack` carries animation-fill-mode:
-   both, so the last frame is what the feedback screen rests on rather than a
-   frame in passing — and a half-translucent tile sitting in its slot reads as
-   neither present nor gone. decisions.md: the tile is a physical object, and
-   physical objects do not become translucent. The answer itself is not lost
-   with it; FeedbackPanel states the submitted value in text. */
-@keyframes oz-crack {
-  0%   { transform: translate(0, 0); filter: none; }
-  12%  { transform: translate(-2px, 0); }
-  22%  { transform: translate(2px, 0); }
-  32%  { transform: translate(-1px, 0); }
-  42%  { transform: translate(1px, 0); filter: contrast(1.15) saturate(0.7); }
-  70%  { transform: translate(0, 5px) rotate(-2deg); filter: contrast(0.9) saturate(0.35) brightness(0.82); }
-  100% { transform: translate(0, 12px) rotate(-4deg) scale(0.96); filter: saturate(0) brightness(0.6); opacity: 0; }
-}
-
-@keyframes oz-dust {
-  0%   { opacity: 0; transform: scale(0.5); }
-  55%  { opacity: 0.45; }
-  100% { opacity: 0; transform: scale(1.8); }
-}
-
-/* 9i — a reward tile fires in place, in its sorted position. It never travels. */
-@keyframes oz-fire {
-  0%   { transform: scale(0.72); opacity: 0; }
-  60%  { transform: scale(1.05); opacity: 1; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-/* 10b — the round change: the arriving equation rises into place. */
-@keyframes oz-round-rise {
-  0%   { transform: translateY(14px); opacity: 0; }
-  100% { transform: translateY(0); opacity: 1; }
-}
-
-/* 10e — streak break: the counter falls off its perch, 0 fades in beneath. */
-@keyframes oz-counter-fall {
-  0%   { transform: translateY(0) rotate(0); opacity: 1; }
-  40%  { transform: translateY(12px) rotate(-10deg); opacity: 0.7; }
-  100% { transform: translateY(38px) rotate(-22deg); opacity: 0; }
-}
-
-@keyframes oz-counter-zero {
-  0%, 45% { opacity: 0; }
-  100%    { opacity: 1; }
-}
-
-/* 2d — tier-3 (streak 8) six-chip burst: shards off the tile's own bottom edge.
-   The burst is made of the object, not added to it, so the chips carry ceramic
-   clay, never gold. Each chip supplies its own trajectory — --dx, --peak, --land,
-   --rot — and one keyframe set serves all six. Gravity is the point: launch,
-   turn over at the peak, come down. */
-@keyframes oz-fan {
-  0%   { transform: translate(0, 0) rotate(0deg); opacity: 0; }
-  10%  { opacity: 1; }
-  45%  { transform: translate(calc(var(--dx) * .55), var(--peak)) rotate(calc(var(--rot) * .45)); opacity: 1; }
-  82%  { opacity: .9; }
-  100% { transform: translate(var(--dx), var(--land)) rotate(var(--rot)); opacity: 0; }
-}
-
-/* 11d — an action that becomes available rises to meet the hand. */
-@keyframes oz-rise-ready {
-  0%   { transform: translateY(4px); }
+/* 2a — correct answer: the tiles lift 4px and settle, once. */
+@keyframes nd-bloom {
+  0%   { transform: translateY(0); }
+  50%  { transform: translateY(-4px); }
   100% { transform: translateY(0); }
 }
 
-/* 8a — overflow: the eleventh tile is refused entry, drops onto the rail and
-   perches there at a tilt. From the storyboard's `sb-rim`, renormalised: that
-   frame runs 2.6s infinite and holds from 60% on, so its percentages copied
-   verbatim would leave --dur-select idle for its last two fifths. Its useful
-   8%–60% span is stretched over the whole duration instead. The last frame is
-   a perch, not a rest — a consumer that wants the tile left on the rail has to
-   say so, with a fill mode or a state class. */
-@keyframes oz-rim-reject {
-  0%   { transform: translate(0, -30px) rotate(6deg); opacity: 0; }
-  31%  { transform: translate(0, 0) rotate(0deg); opacity: 1; }
-  62%  { transform: translate(2px, 3px) rotate(9deg); }
-  100% { transform: translate(3px, 4px) rotate(11deg); }
+/* 7a–7c — a chalk ring drawn round the answer tiles, as a hand would draw a
+   circle: it turns into place and fades. One to three by streak tier. */
+@keyframes nd-ring {
+  0%   { transform: scale(0.85) rotate(-40deg); opacity: 0; }
+  35%  { opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 0; }
 }
 
-/* 8c — a tile leaves the table: fired once for each discarded tile. A tile
-   tips off its edge and gravity takes it. (The handoff also drew the game-over
-   sweep, 10i, with it; #104 struck that moment.) Supersedes `oz-tip-off`,
-   which was this frame with the discard's distances baked in; the caller now
-   supplies --dx, --drop and --rot, as `oz-fan`'s chips already do.
-
-   A confirmed discard is deliberately NOT `oz-crack`: vermilion and fracture
-   mean a tile was taken from you. Discard is a tile you chose to spend, and it
-   leaves the way the table clears — intact, off the edge. */
-@keyframes oz-slide-off {
-  0%   { transform: translate(0, 0) rotate(0deg); opacity: 1; }
-  34%  { transform: translate(calc(var(--dx) * .34), calc(var(--drop) * .07)) rotate(calc(var(--rot) * .48)); opacity: 0.95; }
-  100% { transform: translate(var(--dx), var(--drop)) rotate(var(--rot)); opacity: 0; }
+/* 9f — wrong answer: a pink chalk stroke is drawn across the answer tiles, left
+   to right, and stays. */
+@keyframes nd-crack {
+  0%   { clip-path: inset(0 100% 0 0); }
+  100% { clip-path: inset(0 0 0 0); }
 }
 
-/* 9b — a chosen tile arrives in its answer slot. decisions.md records 9b as
-   built as a transition, which holds for the design it came from: there the
-   tile travels out of the rack. Ours does not travel — the rack is ten fixed
-   sockets and a selected tile keeps its own (TileInventory's liftedIds), so the
-   tile in the slot is a separate element that mounts, and a transition on a
-   mounting element does nothing. The moment, its --dur-select and its
-   --ease-settle are unchanged; only the mechanism is.
-   Flat is the specification. 9b is the one per-selection moment and §1.12
-   budgets what happens every round as the quietest thing in the app, so the
-   arrival is 4px from the rack below and a fade — no overshoot, no scale. */
-@keyframes oz-slot-arrive {
-  0%   { transform: translateY(4px); opacity: 0; }
+/* 9f — dust-coloured specks fall from the stroke and fade. */
+@keyframes nd-dust {
+  0%   { transform: translateY(0); opacity: 0.9; }
+  100% { transform: translateY(8px); opacity: 0; }
+}
+
+/* 9i — a paid tile's "+" badge fades in from above. The tile does not move. */
+@keyframes nd-fire {
+  0%   { transform: translateY(-6px); opacity: 0; }
   100% { transform: translateY(0); opacity: 1; }
 }
 
-/* 8a aftermath — the perched eleventh tile takes the seat a discard just
-   freed. `oz-fire` was the other candidate and was rejected: firing in place
-   is for a tile that arrives from nowhere, and this one has been visibly
-   sitting on the rail at 11 degrees. The perch was real, so the fall is too.
-   Starts from exactly where oz-rim-reject left it.
+/* 10b — the round change: the arriving equation rises into place. */
+@keyframes nd-round-rise {
+  0%   { transform: translateY(6px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
 
-   Destination-relative: the tile is mounted IN the freed socket and flies in
+/* 10e — streak break: the counter drops and fades, and the 0 fades in. */
+@keyframes nd-counter-fall {
+  0%   { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(8px); opacity: 0; }
+}
+
+@keyframes nd-counter-zero {
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+/* 2d — the top streak tier: six chalk flecks fan out and fade. Each fleck
+   supplies its own --dx and --dy, 12px from where it starts. */
+@keyframes nd-fan {
+  0%   { transform: translate(0, 0); opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)); opacity: 0; }
+}
+
+/* 8a — overflow: the tile past capacity fades in on the rail from above. The
+   last frame is where it rests, so a consumer keeps it there with a fill mode. */
+@keyframes nd-rim-reject {
+  0%   { transform: translateY(-6px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+/* 8c — a tile leaves the table: fired once for each discarded tile. It slides
+   down and fades; a consumer that wants it gone keeps the last frame with a
+   fill mode. */
+@keyframes nd-slide-off {
+  0%   { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(24px); opacity: 0; }
+}
+
+/* 9b — a chosen tile arrives in its answer slot from 4px above. The tile in
+   the slot is a separate element that mounts, and a transition on a mounting
+   element does nothing, so this is a keyframe. */
+@keyframes nd-slot-arrive {
+  0%   { transform: translateY(-4px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+/* 8a aftermath — the perched tile takes the seat a discard just freed.
+   Destination-relative: the tile is mounted IN the freed seat and drops in
    from the rail. The caller sets --dx / --dy to the rail position minus the
-   socket position. The earlier rail-relative version only fell straight down
-   by --drop, so it landed wherever was below the rail's right end — never in
-   the seat that was actually freed. */
-@keyframes oz-perch-drop {
-  0%   { transform: translate(calc(var(--dx) + 3px), calc(var(--dy) + 4px)) rotate(11deg); }
-  58%  { transform: translate(calc(var(--dx) * 0.1), calc(var(--dy) * 0.08)) rotate(3deg); }
-  100% { transform: translate(0, 0) rotate(0deg); }
+   seat position. */
+@keyframes nd-perch-drop {
+  0%   { transform: translate(var(--dx), var(--dy)); }
+  100% { transform: translate(0, 0); }
 }

@@ -2,23 +2,25 @@
   /* Durations are named by the moment they belong to, because the
      motion budget is allocated by frequency: the things that happen every
      round are the fastest. */
-  --dur-select: 130ms;    /* 9b flat slide, tile to slot */
-  --dur-press: 100ms;     /* button depress */
-  --dur-state: 150ms;     /* colour / border change */
-  --dur-round: 180ms;     /* 10b equation fall and rise */
-  --dur-reward: 380ms;    /* 9i reward fires in place */
-  --dur-bloom: 420ms;     /* 2a answer bloom + streak ring */
-  --dur-crack: 520ms;     /* 9f crack and dust */
-  --dur-break: 520ms;     /* 10e streak counter falls */
-  --dur-burst: 720ms;     /* 2d tier-3 six-chip ceramic fan, on --ease-fall */
-  --dur-discard: 420ms;   /* 8c a discarded tile slides off the table, on --ease-fall */
-  --dur-perch: 220ms;     /* 8a·2 the perched tile drops into the freed seat, on --ease-fall */
+  --dur-press: 80ms;      /* button depress */
+  --dur-state: 120ms;     /* colour / border change */
+  --dur-select: 120ms;    /* 9b tile arrives in its slot */
+  --dur-round: 180ms;     /* 10b the next prompt rises */
+  --dur-reward: 180ms;    /* 9i the "+" badge fades in */
+  --dur-reject: 180ms;    /* 8a the tile past capacity reaches the rail */
+  --dur-bloom: 200ms;     /* 2a answer tiles lift and settle */
+  --dur-crack: 200ms;     /* 9f the pink stroke */
+  --dur-break: 200ms;     /* 10e the streak counter drops */
+  --dur-discard: 200ms;   /* 8c a discarded tile slides off */
+  --dur-perch: 200ms;     /* 8a·2 the perched tile drops into the freed seat */
+  --dur-ring: 240ms;      /* 7a–7c each streak ring */
+  --dur-dust: 280ms;      /* 9f the specks under the stroke */
+  --dur-zero: 160ms;      /* 10e the 0 fades in */
+  --dur-burst: 320ms;     /* 2d the top tier's six flecks */
 
-  --ease-settle: cubic-bezier(0.2, 0.7, 0.3, 1);   /* lands and stays put */
-  --ease-snap: cubic-bezier(0.34, 1.56, 0.64, 1);  /* overshoots once */
-  --ease-fall: cubic-bezier(0.4, 0, 0.6, 1);       /* gravity, no bounce */
-  --ease-standard: ease;
+  --ease-out: ease-out;
+  --ease-in: ease-in;
 
-  --press-offset: 2px;
-  --lift-offset: 5px;   /* discard-marked tile lifts this far off the rack */
+  --press-offset: 1px;
+  --lift-offset: 5px;   /* the lifted tile state rises this far */
 }

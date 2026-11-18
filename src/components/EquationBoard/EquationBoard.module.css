@@ -1,8 +1,8 @@
 .equation {
-  /* The round's headline: the largest type in the app, matching
-     the weight Tile.module.css gives the same numerals on a tile face. */
-  font: var(--weight-bold) var(--size-equation) / var(--leading-tight) var(--font-ui);
-  text-align: center;
+  /* The answer row's prompt, in the weight Tile.module.css gives the same
+     numerals on a tile face. */
+  font: var(--weight-bold) var(--type-prompt) / var(--leading-tight) var(--font-ui);
+  white-space: nowrap;
 
   /* 10b — the arriving equation rises into place. Only the rise: the design
      records 10b as "old equation falls, next rises" and keyframes.css carries
@@ -12,8 +12,8 @@
      from a misplaced animation. global() because keyframes.css is not a CSS
      Module and this file is: a locally scoped name matches no @keyframes and
      fails silently — no error, no warning, no motion. */
-  animation-name: global(oz-round-rise);
+  animation-name: global(nd-round-rise);
   animation-duration: var(--dur-round);
-  animation-timing-function: var(--ease-settle);
+  animation-timing-function: var(--ease-out);
   animation-fill-mode: both;
 }

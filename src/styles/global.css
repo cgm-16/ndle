@@ -81,8 +81,7 @@ input {
      app is translateY(var(--press-offset)) — the tile, the action button, the
      language toggle and the gallery's own list. `*:active { transform: none }`
      would do it too, but it takes the whole transform with it, and a tile's
-     lift and tilt are how a marked tile reads as marked. Those are state, not
-     motion, and they must survive a press under this setting. */
+     lift is state, not motion, and must survive a press under this setting. */
   :root {
     --press-offset: 0px;
   }

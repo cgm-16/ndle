@@ -1,84 +1,54 @@
-/* The verdict's only color is its edge. §1.12 permits semantic color on the
-   object concerned and forbids a full-screen wash, so the panel takes a border
-   and no fill. Measured on --surface-surround: chalk 13.45:1, pink 8.08:1. */
-.panel {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-4) var(--space-6);
-  border: 1px solid;
-  border-radius: var(--radius-lg);
-  text-align: center;
-}
-
-/* The empty region is out of flow, so the arena's gap does not count it. */
+/* The verdict line: one 26px line in the band, in the place the actions take
+   while answering; the detail wraps to a second line where the first has no
+   room. The empty region is out of flow, so the band's gap does not count it. */
 .idle {
   position: absolute;
 }
 
-/* The headline text ("Correct"/"Incorrect") already carries the state without
-   color; the branch class adds color as reinforcement only (§1.12). The class
-   comes from the same `kind` the headline is rendered from, so the two cannot
-   disagree — a selector keyed off a sibling element's presence can, and does so
-   silently. Pink measures 8.08:1 on --surface-surround, which clears 4.5:1 at
-   any size. */
-.headline {
-  font: var(--weight-bold) var(--size-title) / var(--leading-tight) var(--font-display);
+.panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 26px;
+  font: var(--weight-bold) var(--type-verdict) / 1.2 var(--font-ui);
 }
 
+/* The word carries the verdict without colour; the branch class adds the hue
+   (§1.12). Chalk is correct, pink is wrong. */
 .correct {
-  border-color: var(--state-correct);
-}
-
-.correct .headline {
   color: var(--state-correct);
 }
 
 .incorrect {
-  border-color: var(--state-incorrect);
-}
-
-.incorrect .headline {
   color: var(--state-incorrect);
 }
 
-/* §1.14's result.rewards. Blue rather than the caption dust .submitted takes,
-   so the line groups with the arrivals it counts. Blue measures 9.06:1 on
-   --surface-surround, which clears 4.5:1 at body size. */
-.rewardSummary {
-  color: var(--state-reward);
+/* After a discard the band's rail cell, 88px at the right edge, still draws the
+   leaving tile for a moment: the line keeps to its left. */
+.beforeRail {
+  padding-right: calc(88px + var(--space-3));
 }
 
-.rewards {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  justify-content: center;
-  list-style: none;
-  padding: 0;
+.panel > span {
+  text-align: start;
 }
 
-/* The chalk face belongs to the Tile primitive; this list item only
-   centres it. */
-.reward {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-1);
+.panel svg {
+  flex-shrink: 0;
 }
 
-.comparison {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
+/* The detail moves whole to a second line where the first has no room. */
+.detail {
+  white-space: nowrap;
+  font: var(--weight-regular) var(--type-body) / 1.2 var(--font-ui);
   color: var(--text-meta);
 }
 
-/* The correct branch states the submitted value on its own, with nothing to
-   compare it against, so it takes the caption colour without the stacking the
-   incorrect branch's pair needs. */
-.submitted {
-  color: var(--text-meta);
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
 }

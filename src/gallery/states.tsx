@@ -92,11 +92,10 @@ function rowJudged(row: number): GameState {
 const FEEDBACK_CORRECT_STATE = rowJudged(2);
 
 // 7b and 7c, the ladder above streak 3. The rings accumulate, so the streak 8
-// state draws jade, gold and bright together — but one element carries one
-// outline, so the rim escalates instead: at 8 the rim is the bright one, and
-// the gold rim of the 5 tier is on screen at 5 and nowhere else
-// (AnswerSlots). That exclusivity is why the ladder needs two states and not
-// one at the top.
+// state draws all three chalk rings and the top tier's fan of flecks, while
+// streak 5 draws two rings and no fan. The fan is on screen at the top tier
+// and nowhere else (AnswerSlots). That exclusivity is why the ladder needs two
+// states and not one at the top.
 //
 // Two-digit products, because a ring's peak extent is 213x213 around a 64x80
 // tile, and two adjacent rings overlapping is the case §8.5 has never been
@@ -130,8 +129,16 @@ const FEEDBACK_AFTER_DISCARD_STATE = gameReducer(OVERFLOW_REQUIRED_1_STATE, {
   tileId: tileWith(OVERFLOW_REQUIRED_1_STATE, 6).id,
 });
 
-// The sample's par line played to its end with par made, so the heading is
-// gold and no equation is shown.
+// The widest verdict line after a discard: row 6 pays 0 7 7, and discarding the
+// old 1 rather than the par line's 0 keeps all three, so "Received" lists three
+// digits beside the rail cell.
+const FEEDBACK_AFTER_DISCARD_THREE_STATE = (() => {
+  const ids = sequentialIds();
+  return playRow(parLineAt(6, ids), { spend: [2, 4], discard: 1 }, ids);
+})();
+
+// The sample's par line played to its end with par made, so the heading
+// says par was made and no equation is shown.
 const GAME_OVER_STATE = makeGameOverState();
 
 // A table that ends early: three misses drain the hand to none, and row 4, 1 x 7,
@@ -232,8 +239,13 @@ export const GALLERY_STATES: Record<GamePhase | "interaction", GalleryEntry[]> =
       render: () => renderGameScreen(FEEDBACK_AFTER_DISCARD_STATE),
     },
     {
+      id: "feedback-after-discard-three",
+      label: "Feedback — after a discard, three digits received",
+      render: () => renderGameScreen(FEEDBACK_AFTER_DISCARD_THREE_STATE),
+    },
+    {
       id: "feedback-streak-5",
-      label: "Feedback — correct at streak 5 (second ring, gold rim)",
+      label: "Feedback — correct at streak 5 (second ring)",
       render: () => renderGameScreen(FEEDBACK_STREAK_5_STATE),
     },
     {

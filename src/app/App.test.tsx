@@ -1,5 +1,5 @@
 import { StrictMode } from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { I18nProvider } from "../i18n/I18nContext";
@@ -71,7 +71,7 @@ function renderApp(
 // only one of those screens is ever mounted at a time, so the label text is
 // unambiguous. Digit tiles show plain digit text, never these labels.
 // Plays out a discard: the 8c exits, then the 8a·2 drops of any rail tile the
-// discard spared, and the verdict's moments on the answer slots, which mount
+// discard spared, and the verdict's moments on the answer slots, which start
 // with the feedback the discard completes. jsdom runs no animations, so each
 // is ended by hand, on both event names React may bind (see
 // TileInventory.test's endAnimation).
@@ -97,6 +97,10 @@ const LOSS_ROWS: PuzzleMove[] = [
   { spend: [4] }, //    "4"  != 9
 ];
 
+// Both of the game screen's live regions are always mounted; the one holding
+// content is the phase's.
+const filledStatus = () => screen.getAllByRole("status").find((region) => region.textContent !== "")!;
+
 // Plays rows by pointer. A row without a discard is advanced by Next Round; a
 // discard advances on its own once its departure has played.
 async function playRows(user: ReturnType<typeof userEvent.setup>, moves: PuzzleMove[]) {
@@ -105,8 +109,8 @@ async function playRows(user: ReturnType<typeof userEvent.setup>, moves: PuzzleM
     if (discard === undefined) {
       await user.click(screen.getByRole("button", { name: "Next Round" }));
     } else {
-      // A reward tile is named "Digit 0, New tile", so the digit is matched as a prefix.
-      await user.click(screen.getAllByRole("button", { name: new RegExp(`^Digit ${discard}\\b`) })[0]!);
+      // A new tile is named "Discard 0, new tile", so the digit is matched as a prefix.
+      await user.click(screen.getAllByRole("button", { name: new RegExp(`^Discard ${discard}\\b`) })[0]!);
       finishDeparture();
     }
   }
@@ -179,7 +183,7 @@ describe("App", () => {
 
   it("shows the bar on the title with the toggle and no Back", () => {
     renderApp();
-    expect(screen.getByRole("group", { name: "Language" })).toBeInTheDocument();
+    expect(within(screen.getByRole("banner")).getByRole("group", { name: "Language" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Back" })).not.toBeInTheDocument();
   });
 
@@ -222,7 +226,7 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "Practice" }));
 
     expect(screen.getByText("3 × 5 =")).toBeInTheDocument();
-    expect(hudField("Round")).toBe("1");
+    expect(hudField("Row")).toBe("1/8");
     expect(hudField("Score")).toBe("0");
     for (const digit of [1, 4, 5, 7, 9]) {
       expect(screen.getByRole("button", { name: `Digit ${digit}` })).toBeInTheDocument();
@@ -230,39 +234,19 @@ describe("App", () => {
     expect(screen.getByRole("button", { name: "Submit" })).toBeInTheDocument();
   });
 
-  it("orders the HUD Round, Score, Streak so the score reads as the headline stat", async () => {
+  it("orders the HUD Row, Score, Streak so the score reads as the headline stat", async () => {
     const user = userEvent.setup();
     renderApp({ initialLanguage: "en" });
 
     await user.click(screen.getByRole("button", { name: "Practice" }));
 
-    const round = screen.getByText("Round");
+    const round = screen.getByText("Row");
     const score = screen.getByText("Score");
     const streak = screen.getByText("Streak");
 
     // DOCUMENT_POSITION_FOLLOWING (4) means the argument node comes after `this` node.
     expect(round.compareDocumentPosition(score) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(score.compareDocumentPosition(streak) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  });
-
-  // Regression guard for the `.primary` emphasis class actually winning the
-  // cascade: `.entry dd` and `.primary` alone are NOT equal specificity
-  // (0,1,1 vs 0,1,0), so `.entry dd` silently wins regardless of source
-  // order and the emphasis never renders. Reading getComputedStyle catches
-  // that class of bug; comparing className strings would not.
-  it("renders Round's value at a larger computed font size than Score's", async () => {
-    const user = userEvent.setup();
-    renderApp({ initialLanguage: "en" });
-
-    await user.click(screen.getByRole("button", { name: "Practice" }));
-
-    const roundValue = screen.getByText("Round").nextElementSibling as HTMLElement;
-    const scoreValue = screen.getByText("Score").nextElementSibling as HTMLElement;
-
-    const roundFontSize = parseFloat(getComputedStyle(roundValue).fontSize);
-    const scoreFontSize = parseFloat(getComputedStyle(scoreValue).fontSize);
-
-    expect(roundFontSize).toBeGreaterThan(scoreFontSize);
   });
 
   it("resolves a correct answer through the row's pay, overflow, and an exact discard that advances the round on its own", async () => {
@@ -275,20 +259,20 @@ describe("App", () => {
 
     expect(hudField("Score")).toBe("3");
     expect(hudField("Streak")).toBe("3");
-    expect(screen.getByRole("status")).toHaveTextContent("Correct");
-    expect(screen.getByText("Choose a tile to discard.")).toBeInTheDocument();
+    expect(filledStatus()).toHaveTextContent("Correct");
+    expect(screen.getByText("Six tiles, five sockets. Choose a tile to discard.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Confirm Discard" })).not.toBeInTheDocument();
 
     // A forced single-tile excess collapses to one tap: marking an old
     // (non-reward) tile completes the discard immediately, no Confirm needed.
-    await user.click(screen.getByRole("button", { name: "Digit 6" }));
+    await user.click(screen.getByRole("button", { name: "Discard 6" }));
 
     // No Confirm is ever rendered, so its absence proves nothing; check the
     // overflow instruction itself is gone: that only happens once the marking
     // TOGGLE_DISCARD has actually advanced the phase past "overflow".
-    expect(screen.queryByText("Choose a tile to discard.")).not.toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent("Correct");
-    expect(screen.getAllByRole("button", { name: "Digit 4, New tile" })).toHaveLength(2);
+    expect(screen.queryByText("Six tiles, five sockets. Choose a tile to discard.")).not.toBeInTheDocument();
+    expect(filledStatus()).toHaveTextContent("Correct");
+    expect(screen.getAllByRole("button", { name: "Digit 4, new tile" })).toHaveLength(2);
 
     // No Next Round after a discard (§1.7): the round advances once the
     // departing tile has played.
@@ -296,7 +280,7 @@ describe("App", () => {
     finishDeparture();
 
     expect(screen.getByText("4 × 1 =")).toBeInTheDocument();
-    expect(hudField("Round")).toBe("5");
+    expect(hudField("Row")).toBe("5/8");
     expect(screen.getAllByRole("button", { name: /^Digit \d$/ })).toHaveLength(5);
 
     // §1.16 / AGENTS.md: no game field ever enters storage, even after a full round.
@@ -315,17 +299,16 @@ describe("App", () => {
     // Row 3: "3 x 3 = 9"; deliberately submit "8" instead.
     await press(user, [8]);
 
-    expect(screen.getByRole("status")).toHaveTextContent("Incorrect");
-    expect(screen.getByText("Your answer: 8")).toBeInTheDocument();
-    expect(screen.getByText("Correct answer: 9")).toBeInTheDocument();
+    expect(filledStatus()).toHaveTextContent("Missed · 3 × 3 = 9");
+    expect(filledStatus()).toHaveTextContent("You played 8");
     expect(hudField("Score")).toBe("1"); // unchanged: no reward for an incorrect answer
     expect(hudField("Streak")).toBe("0"); // reset
-    expect(hudField("Round")).toBe("3"); // feedback: round === totalRounds
+    expect(hudField("Row")).toBe("3/8"); // feedback: round === totalRounds
 
     await user.click(screen.getByRole("button", { name: "Next Round" }));
 
     expect(screen.getByText("1 × 7 =")).toBeInTheDocument();
-    expect(hudField("Round")).toBe("4");
+    expect(hudField("Row")).toBe("4/8");
   });
 
   it("reaches game over when the next equation exceeds the surviving inventory, with no equation drawn", async () => {
@@ -352,7 +335,7 @@ describe("App", () => {
 
     expect(dependencies.dealPuzzle).toHaveBeenCalledTimes(2);
     expect(screen.getByText("3 × 5 =")).toBeInTheDocument();
-    expect(hudField("Round")).toBe("1");
+    expect(hudField("Row")).toBe("1/8");
     expect(hudField("Score")).toBe("0");
     expect(hudField("Streak")).toBe("0");
     expect(screen.getAllByRole("button", { name: /^Digit \d$/ })).toHaveLength(5);
@@ -374,7 +357,7 @@ describe("App", () => {
 
     expect(dependencies.dealPuzzle).toHaveBeenCalledTimes(2);
     expect(screen.getByText("3 × 5 =")).toBeInTheDocument();
-    expect(hudField("Round")).toBe("1");
+    expect(hudField("Row")).toBe("1/8");
     expect(shareDependencies.writeClipboard).not.toHaveBeenCalled();
   });
 
@@ -389,7 +372,7 @@ describe("App", () => {
     fireEvent.keyDown(window, { key: "ㄱ", code: "KeyR" });
 
     expect(screen.getByText("3 × 5 =")).toBeInTheDocument();
-    expect(hudField("Round")).toBe("1");
+    expect(hudField("Row")).toBe("1/8");
   });
 
   it("does not restart on Enter on the game over screen; a focused button keeps its own behavior", async () => {
@@ -449,7 +432,7 @@ describe("App", () => {
 
     // Copy switches live; the run itself (equation, HUD, selection) is untouched.
     expect(screen.getByText("3 × 5 =")).toBeInTheDocument();
-    expect(hudField("라운드")).toBe("1");
+    expect(hudField("줄")).toBe("1/8");
     const submitButtonKo = screen.getByRole("button", { name: "제출" });
     expect(submitButtonKo).toBe(submitButtonEn); // same node: not remounted
     expect(submitButtonKo).toBeEnabled(); // selection survived: still ready to submit
@@ -546,7 +529,7 @@ async function openDaily(user: ReturnType<typeof userEvent.setup>, label = "Dail
 // Row 2 of the par line, after row 1's sacrifice left 1 4 9.
 function expectRowTwo() {
   expect(screen.getByText("7 × 2 =")).toBeInTheDocument();
-  expect(hudField("Round")).toBe("2");
+  expect(hudField("Row")).toBe("2/8");
   expect(screen.getAllByRole("button", { name: /^Digit \d$/ }).map((tile) => tile.textContent)).toEqual(["1", "4", "9"]);
 }
 
@@ -556,7 +539,7 @@ describe("Daily", () => {
     const { storage } = renderDaily();
     await openDaily(user);
     expect(screen.getByText("3 × 5 =")).toBeInTheDocument();
-    expect(hudField("Round")).toBe("1");
+    expect(hudField("Row")).toBe("1/8");
     expect(storedDaily(storage)).toEqual(dailyRecordOf([]));
   });
 
@@ -586,7 +569,7 @@ describe("Daily", () => {
     // Review Focus 1: a replay that restarted its own ids would pay row 2 with
     // an id the hand's 9 already holds, and the reducer would refuse it.
     await press(user, [1, 4]);
-    expect(screen.getByRole("status")).toHaveTextContent("Correct");
+    expect(filledStatus()).toHaveTextContent("Correct");
     expect(hudField("Score")).toBe("1");
   });
 
@@ -601,7 +584,7 @@ describe("Daily", () => {
     }
     await user.keyboard("7");
     await user.keyboard("{Enter}");
-    expect(screen.getByText("Choose a tile to discard.")).toBeInTheDocument();
+    expect(screen.getByText("Six tiles, five sockets. Choose a tile to discard.")).toBeInTheDocument();
     await user.keyboard("6"); // the discard, by digit
     expect(storedDaily(storage)).toEqual(dailyRecordOf(PUZZLE_SAMPLE_PAR_LINE.slice(0, 4)));
   });
@@ -616,9 +599,9 @@ describe("Daily", () => {
 
     renderDaily({ storage: first.storage });
     await openDaily(user);
-    expect(screen.getByText("Choose a tile to discard.")).toBeInTheDocument();
-    expect(hudField("Round")).toBe("4");
-    await user.click(screen.getByRole("button", { name: "Digit 6" }));
+    expect(screen.getByText("Six tiles, five sockets. Choose a tile to discard.")).toBeInTheDocument();
+    expect(hudField("Row")).toBe("4/8");
+    await user.click(screen.getByRole("button", { name: "Discard 6" }));
     finishDeparture();
     expect(screen.getByText("4 × 1 =")).toBeInTheDocument();
     expect(storedDaily(first.storage)).toEqual(dailyRecordOf(PUZZLE_SAMPLE_PAR_LINE.slice(0, 4)));
@@ -702,7 +685,7 @@ describe("Daily", () => {
     renderDaily({ storage, dailyTables: [PUZZLE_SAMPLE, PUZZLE_SAMPLE], now: dayAfterLaunch(1) });
     await openDaily(user, "Daily #2");
     expect(screen.getByText("3 × 5 =")).toBeInTheDocument();
-    expect(hudField("Round")).toBe("1");
+    expect(hudField("Row")).toBe("1/8");
     expect(storedDaily(storage)).toEqual({ ...dailyRecordOf([]), number: 2 });
   });
 
@@ -743,7 +726,7 @@ describe("Daily", () => {
     await openDaily(user);
     expectRowTwo();
     await press(user, [1, 4]);
-    expect(screen.getByRole("status")).toHaveTextContent("Correct");
+    expect(filledStatus()).toHaveTextContent("Correct");
     expect(hudField("Score")).toBe("1");
   });
 
@@ -783,7 +766,7 @@ describe("Daily", () => {
     await user.click(screen.getByRole("button", { name: "Back" }));
     await openDaily(user);
     expect(screen.getByText("3 × 3 =")).toBeInTheDocument();
-    expect(hudField("Round")).toBe("3");
+    expect(hudField("Row")).toBe("3/8");
     expect(screen.getAllByRole("button", { name: /^Digit \d$/ }).map((tile) => tile.textContent)).toEqual(["1", "6", "8", "9"]);
   });
 

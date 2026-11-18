@@ -1,12 +1,21 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
 import type { Tile as TileModel } from "../../game/types";
 import { useI18n } from "../../i18n/I18nContext";
 import { Tile } from "../Tile/Tile";
 import { tileLabel } from "../Tile/tileFace";
 import styles from "./TileInventory.module.css";
 
-/** Columns in the rack's grid (`--rack-columns` in spacing.css): up to this many sockets fit one row. */
-const RACK_COLUMNS = 5;
+/** Where an element sits in the page by layout alone: offsets, which transforms do not move. */
+function layoutPosition(element: HTMLElement): { x: number; y: number } {
+  let x = 0;
+  let y = 0;
+  for (let node: HTMLElement | null = element; node !== null; node = node.offsetParent as HTMLElement | null) {
+    x += node.offsetLeft;
+    y += node.offsetTop;
+  }
+  return { x, y };
+}
 
 /** A discard the rack is still drawing (8c): the hand as it stood before the
  * discard, and the ids whose exit has not yet played. */
@@ -30,6 +39,9 @@ export interface TileInventoryProps {
   liftedIds: readonly string[];
   /** Live capacity: the tiles seated, and the index past which tiles perch. */
   capacity: number;
+  /** Where the rail renders: the overflow band's right cell, which the screen
+   * owns. Null until it mounts, and the rail waits for it. */
+  railHost: HTMLElement | null;
   onTile(tileId: string): void;
   /** Called once a discard's departing tiles have all finished leaving. */
   onSettled?(): void;
@@ -42,6 +54,7 @@ export function TileInventory({
   pendingDiscards,
   liftedIds,
   capacity,
+  railHost,
   onTile,
   onSettled,
 }: TileInventoryProps) {
@@ -97,15 +110,21 @@ export function TileInventory({
   //
   // When the exits end, each surviving rail tile's seat is still on screen —
   // the departing tile it replaces holds it — so the fall 8a·2 draws is
-  // measured then, from layout offsets, which transforms do not move.
+  // measured then, from layout positions, which transforms do not move. The
+  // rail lives in the screen's band, not in the rack, so both ends are read
+  // against the page.
   const measureDrops = (): Departure["drops"] => {
     const rack = rackRef.current;
-    if (rack === null || departure === null) return {};
+    if (rack === null || railHost === null || departure === null) return {};
     const drops: Record<string, { dx: number; dy: number }> = {};
     for (const id of departure.seating) {
-      const from = rack.querySelector<HTMLElement>(`[data-rail="${id}"]`);
+      const from = railHost.querySelector<HTMLElement>(`[data-rail="${id}"]`);
       const to = rack.querySelector<HTMLElement>(`[data-cell="${tiles.findIndex((tile) => tile.id === id)}"]`);
-      if (from && to) drops[id] = { dx: from.offsetLeft - to.offsetLeft, dy: from.offsetTop - to.offsetTop };
+      if (from && to) {
+        const fromAt = layoutPosition(from);
+        const toAt = layoutPosition(to);
+        drops[id] = { dx: fromAt.x - toAt.x, dy: fromAt.y - toAt.y };
+      }
     }
     return drops;
   };
@@ -142,7 +161,7 @@ export function TileInventory({
   useEffect(() => {
     if (discarding) rackRef.current?.scrollIntoView({ block: "nearest", behavior: "instant" });
   }, [discarding]);
-  // The native cancel listener below is bound once; these carry it the
+  // The native cancel listener below is bound once per host; these carry it the
   // current render's handlers, whose measurement reads the current hand.
   const retireRef = useRef(retire);
   const landRef = useRef(land);
@@ -154,9 +173,8 @@ export function TileInventory({
     // React has no onAnimationCancel, so the rack listens for it natively.
     const rack = rackRef.current;
     if (rack === null) return;
-    // Swapping a cell's animation-name cancels the animation it replaces — a
-    // reward tile discarded inside its 9i fire cancels oz-fire as its exit
-    // starts — so only a cancel of the exit the cell is running retires it.
+    // Swapping a cell's animation-name cancels the animation it replaces, so
+    // only a cancel of the exit the cell is running retires it.
     const onCancel = (event: Event) => {
       const cell = (event.target as Element).closest("[data-departing], [data-seating]");
       if (!cell) return;
@@ -167,13 +185,17 @@ export function TileInventory({
       if (departing) retireRef.current(departing);
       if (seating) landRef.current(seating);
     };
-    rack.addEventListener("animationcancel", onCancel);
-    return () => rack.removeEventListener("animationcancel", onCancel);
-  }, []);
+    // The rail's cells render outside the rack, in the screen's band.
+    const hosts = railHost === null ? [rack] : [rack, railHost];
+    for (const host of hosts) host.addEventListener("animationcancel", onCancel);
+    return () => {
+      for (const host of hosts) host.removeEventListener("animationcancel", onCancel);
+    };
+  }, [railHost]);
 
   // §1.12: the live capacity's sockets always render — the empty sockets are
   // the score. Tiles past the live capacity never add a row; they perch on the
-  // rail above.
+  // rail.
   const perched = rackTiles.slice(capacity);
 
   const renderTile = (tile: TileModel, cell: number | null) => {
@@ -205,16 +227,20 @@ export function TileInventory({
       // A lifted cell is a socket, not a styled Tile: the tile it holds
       // is already named in the answer slots, so this cell must carry
       // no button role and no accessible name of its own.
-      return <div key={tile.id} className={`${styles.socket} ${styles.socketLifted}`} {...place} />;
+      return (
+        <div key={tile.id} className={`${styles.socket} ${styles.socketHeld}`} {...place} data-state="held">
+          <span aria-hidden="true">{tile.digit}</span>
+        </div>
+      );
     }
 
     const isMarkedForDiscard = mode === "discard" && pendingDiscards.includes(tile.id);
-    const labelParts = [tileLabel(tile, t)];
+    const labelParts = [mode === "discard" ? t("tile.discard", { digit: tile.digit }) : tileLabel(tile, t)];
     if (tile.isNew) labelParts.push(t("tile.newLabel"));
     if (isMarkedForDiscard) labelParts.push(t("tile.discardLabel"));
 
     // 8a and 9i collide on the cells past capacity, which hold the newest
-    // arrivals — reward tiles, almost every time (§1.5 step 7). Those are
+    // arrivals — new tiles, almost every time (§1.5 step 7). Those are
     // the arrivals that did not land, so they rim-reject instead of firing.
     // One that later drops into a freed seat is still new until the round
     // changes, and firing then would start it from nothing in its seat.
@@ -238,7 +264,7 @@ export function TileInventory({
           data-seating={tile.id}
           onAnimationEnd={() => land(tile.id)}
         >
-          <Tile value={tile} state="disabled" label={labelParts.join(", ")} />
+          <Tile value={tile} state="inert" label={labelParts.join(", ")} />
         </div>
       );
     }
@@ -248,33 +274,33 @@ export function TileInventory({
         <Tile
           value={tile}
           state={
-            isMarkedForDiscard
-              ? "marked"
-              : mode === "readOnly"
-                ? "disabled"
-                : tile.isNew
-                  ? "reward"
-                  : "resting"
+            isMarkedForDiscard ? "marked" : mode === "readOnly" ? "inert" : mode === "discard" ? "discard" : "resting"
           }
           label={labelParts.join(", ")}
           pressed={mode === "discard" ? isMarkedForDiscard : undefined}
           onClick={() => onTile(tile.id)}
         />
+        {tile.isNew && (
+          <span className={styles.badge} aria-hidden="true">
+            +
+          </span>
+        )}
       </div>
     );
   };
 
   return (
-    <div ref={rackRef} className={styles.rack} data-size={capacity <= RACK_COLUMNS ? "row" : undefined}>
-      {/* The rail is in flow above the tray, and 8a·2's offsets were measured
-          with it there. It stays, empty and one tile high, until the last
-          dropping tile lands: gone with the fall, it would lift every seat by
-          its height mid-drop and start the tile that far above its perch. */}
-      {(perched.length > 0 || dropping.size > 0) && (
-        <div className={styles.rail}>
-          {perched.map((tile) => renderTile(tile, null))}
-        </div>
-      )}
+    <div ref={rackRef} className={styles.rack}>
+      {railHost !== null &&
+        perched.length > 0 &&
+        createPortal(
+          <div className={styles.rail}>
+            <p className={styles.railLabel}>{t("rail.arriving")}</p>
+            {perched.map((tile) => renderTile(tile, null))}
+          </div>,
+          railHost,
+        )}
+      <p className={styles.handLabel}>{t("rack.hand", { count: Math.min(rackTiles.length, capacity) })}</p>
       <div className={styles.inventory}>
         {Array.from({ length: capacity }, (_, index) => {
           const tile = rackTiles[index];

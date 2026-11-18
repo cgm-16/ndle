@@ -6,24 +6,19 @@
   border: none;
   background: var(--surface-tile);
   color: var(--text-on-tile);
-
-  /* The engraved digit: a light top edge under dark ink reads as cut into the
-     chalk rather than printed on it. */
-  text-shadow: 0 1px 0 rgb(255 255 255 / 85%);
   box-shadow: var(--tile-edge);
 
   /* Each state names how far it raises and tilts the tile instead of setting
      transform itself, so a press adds its offset to whatever the state already
-     does. A press that set transform directly would replace the state's — a
-     marked tile would snap flat and un-rotate the moment it was touched. */
+     does. A press that set transform directly would replace the state's. */
   --tile-lift: 0px;
   --tile-tilt: 0deg;
   --tile-press: 0px;
 
   transform: translateY(calc(var(--tile-press) - var(--tile-lift))) rotate(var(--tile-tilt));
   transition:
-    transform var(--dur-select) var(--ease-settle),
-    box-shadow var(--dur-select) var(--ease-settle);
+    transform var(--dur-select) var(--ease-out),
+    box-shadow var(--dur-select) var(--ease-out);
 }
 
 /* A tile without onClick renders as a roleless element, so the pointer cursor
@@ -41,29 +36,29 @@ button.tile:not(:disabled):active {
 }
 
 /* Only lg clears the 44x44 target minimum (§1.12): sm is 30x38, so it is for
-   non-interactive tiles only. */
+   non-interactive tiles only. The rack's cells stretch it to their track. */
 .lg {
   --tile-edge-size: var(--shadow-tile);
 
-  width: var(--tile-w);
-  height: var(--tile-h);
+  width: var(--tile-width);
+  height: var(--tile-height);
   border-radius: var(--radius-sm);
-  font: var(--weight-bold) var(--size-tile) / var(--leading-tight) var(--font-ui);
+  font: var(--weight-bold) var(--type-tile) / var(--leading-tight) var(--font-ui);
 }
 
 .sm {
   --tile-edge-size: var(--shadow-tile-sm);
 
-  width: var(--tile-w-sm);
-  height: var(--tile-h-sm);
+  width: 30px;
+  height: 38px;
   border-radius: var(--radius-xs);
   font: var(--weight-bold) var(--size-tile-sm) / var(--leading-tight) var(--font-ui);
 }
 
-/* Every state names its own edge in --tile-edge instead of setting box-shadow,
-   so the focus rule below can compose the bezel onto whatever edge the state
-   draws rather than replace it (src/styles/tokens/elevation.css:21-39). */
-.resting {
+/* Every state names its own edge in --tile-edge instead of setting box-shadow. */
+.resting,
+.reward,
+.inert {
   --tile-edge: var(--tile-edge-size);
 }
 
@@ -72,28 +67,16 @@ button.tile:not(:disabled):active {
   --tile-lift: var(--lift-offset);
 }
 
-/* Selected as .tile.reward, not .reward, and given its own focus rule below:
-   this outline outranks the global :focus-visible rule and would replace the
-   ring on a focused tile. */
-.tile.reward {
-  outline: 1px solid var(--accent);
-  outline-offset: -1px;
-}
-
+/* A discard choice: a dashed pink border in place of the bottom edge. */
+.discard,
 .marked {
-  --tile-edge: var(--shadow-tile-lifted), 0 0 0 2px var(--state-discard);
-  --tile-lift: var(--lift-offset);
-  --tile-tilt: 6deg;
+  --tile-edge: none;
+
+  border: 2px dashed var(--state-discard);
 }
 
 .disabled {
   --tile-edge: none;
 
   opacity: 0.45;
-}
-
-/* A focused reward tile keeps the global ring, which its own outline outranks. */
-.tile.reward:focus-visible {
-  outline: 3px solid var(--focus-ring);
-  outline-offset: 3px;
 }

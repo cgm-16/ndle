@@ -2,5 +2,4 @@
   --radius-xs: 4px;    /* pay tiles, game-over marks */
   --radius-sm: 6px;    /* tiles, slots, rows, cards */
   --radius-md: 8px;    /* buttons, toggle, Back */
-  --radius-lg: 12px;   /* panel */
 }

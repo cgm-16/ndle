@@ -1,5 +1,6 @@
-import { readFileSync } from "node:fs";
 import { test, expect, type Page } from "@playwright/test";
+import { STATE_COUNT } from "./gallery.js";
+import { START_LABEL } from "./labels.js";
 
 /* The fit sweep: every gallery state, in both languages, at two phone widths,
    in a window 660 tall, with the top bar counted. Each state is measured on
@@ -19,49 +20,6 @@ const RING_REACH = 6;
 const CHALK = "rgb(238, 240, 234)";
 const DUST = "rgb(170, 179, 191)";
 
-/* States known to miss, keyed "<id> <lang> <width>", then " ring" when the
-   miss is the focus-ring reach, then " webkit" when only WebKit misses (a key
-   without " webkit" is asserted in both engines). Measured with the bar
-   counted; Chromium and Playwright's WebKit missed the same keys, by the same
-   scrollHeights. A listed key must still
-   miss: fixing a state fails the sweep until its key is removed here. */
-const KNOWN_MISSES = new Set<string>([
-  "feedback-correct en 393", // scrollHeight 824 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-correct en 375", // scrollHeight 824 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-correct ko 393", // scrollHeight 827 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-correct ko 375", // scrollHeight 827 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-incorrect en 393", // scrollHeight 766 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-incorrect en 375", // scrollHeight 766 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-incorrect ko 393", // scrollHeight 769 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-incorrect ko 375", // scrollHeight 769 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-after-discard en 393", // scrollHeight 764 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-after-discard en 375", // scrollHeight 764 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-after-discard ko 393", // scrollHeight 767 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-after-discard ko 375", // scrollHeight 767 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-streak-5 en 393", // scrollHeight 764 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-streak-5 en 375", // scrollHeight 764 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-streak-5 ko 393", // scrollHeight 767 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-streak-5 ko 375", // scrollHeight 767 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-streak-8 en 393", // scrollHeight 764 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-streak-8 en 375", // scrollHeight 764 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-streak-8 ko 393", // scrollHeight 767 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "feedback-streak-8 ko 375", // scrollHeight 767 of 660: the feedback band stacks the answer row, the verdict comparison, rewards and Next Round under the table (T115)
-  "overflow-required-1 en 393", // scrollHeight 853 of 660: the rail row and the discard instruction sit between the actions and the rack (T114)
-  "overflow-required-1 en 375", // scrollHeight 853 of 660: the rail row and the discard instruction sit between the actions and the rack (T114)
-  "overflow-required-1 ko 393", // scrollHeight 857 of 660: the rail row and the discard instruction sit between the actions and the rack (T114)
-  "overflow-required-1 ko 375", // scrollHeight 857 of 660: the rail row and the discard instruction sit between the actions and the rack (T114)
-  "overflow-required-1 en 393 ring", // the perched rail tile sits under 6px from the rack tiles and their faces (T114)
-  "overflow-required-1 en 375 ring", // the perched rail tile sits under 6px from the rack tiles and their faces (T114)
-  "overflow-required-1 ko 393 ring", // the perched rail tile sits under 6px from the rack tiles and their faces (T114)
-  "overflow-required-1 ko 375 ring", // the perched rail tile sits under 6px from the rack tiles and their faces (T114)
-]);
-
-/* The gallery's state count, as viewport.spec.ts counts it. Read from that
-   file so there is one number to change. */
-const STATE_COUNT = Number(
-  /const STATE_COUNT = (\d+);/.exec(readFileSync("e2e/viewport.spec.ts", "utf8"))?.[1],
-);
-
 interface Reading {
   barHeight: number;
   scrollHeight: number;
@@ -69,8 +27,8 @@ interface Reading {
   innerHeight: number;
   innerWidth: number;
   ringFailures: string[];
-  /** How far the screen's content box is from the bar's in width; null without a `main`. */
-  contentWidthGap: number | null;
+  /** How far the screen's `main` is from the frame's width, the bar's; null without a `main`. */
+  frameWidthGap: number | null;
   /** How far the bar's centre label is from the bar's midpoint; null without a label. */
   centreOffset: number | null;
 }
@@ -90,6 +48,7 @@ async function openState(page: Page, id: string, language: string, width: number
   await page.setViewportSize({ width, height });
   await page.goto(`/gallery.html?state=${id}`);
   await expect(page.locator("header")).toHaveCount(1);
+  await expect(page.locator("header ~ *")).not.toHaveCount(0);
   await page.waitForFunction(
     (lang) => {
       const loaded = new Set(
@@ -100,6 +59,8 @@ async function openState(page: Page, id: string, language: string, width: number
     language,
   );
   await page.evaluate(() => document.fonts.ready);
+  // Two frames flush the effects that reach a state on mount (a pressed Copy).
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   // Entry motion is a transform, which counts toward scrollable overflow.
   await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished)));
 }
@@ -148,22 +109,18 @@ async function read(page: Page): Promise<Reading> {
           if (near(box, b.getBoundingClientRect())) ringFailures.push(`${name(a)} / ${name(b)}`);
         }
         for (const el of document.body.querySelectorAll<HTMLElement>("*")) {
-          if (a.contains(el) || el.contains(a)) continue;
+          if (a.contains(el)) continue;
           const bg = getComputedStyle(el).backgroundColor;
           if (bg !== chalk && bg !== dust) continue;
           const other = edgeOf(el);
           if (other.width > 0 && near(box, other)) ringFailures.push(`${name(a)} / ${name(el)} (${bg})`);
         }
       });
-      const contentWidth = (el: Element) => {
-        const style = getComputedStyle(el);
-        return el.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
-      };
       const main = document.querySelector("main");
       const bar = document.querySelector("header")!.getBoundingClientRect();
       const centre = document.querySelector("header p")?.getBoundingClientRect();
       return {
-        contentWidthGap: main ? Math.abs(contentWidth(main) - contentWidth(document.querySelector("header")!)) : null,
+        frameWidthGap: main ? Math.abs(main.getBoundingClientRect().width - bar.width) : null,
         centreOffset: centre ? Math.abs(centre.left + centre.width / 2 - (bar.left + bar.width / 2)) : null,
         barHeight: document.querySelector("header")!.getBoundingClientRect().height,
         scrollHeight: de.scrollHeight,
@@ -184,7 +141,7 @@ async function measure(page: Page, id: string, language: string, width: number, 
   return read(page);
 }
 
-/** The title and game over fill the frame: `main`'s content box is the bar's. */
+/** The title and game over fill the frame: `main` is as wide as the bar. */
 const FILLS_FRAME = /^(title|game-over)/;
 
 const overflows = (r: Reading) => r.scrollHeight > r.innerHeight || r.scrollWidth > r.innerWidth;
@@ -197,15 +154,11 @@ test("the sweep covers every gallery state", async ({ page }) => {
 
 for (const language of LANGUAGES) {
   for (const width of WIDTHS) {
-    test(`every state fits ${width} x ${HEIGHT} in ${language}, bar counted`, async ({ page }, testInfo) => {
+    test(`every state fits ${width} x ${HEIGHT} in ${language}, bar counted`, async ({ page }) => {
       test.setTimeout(120_000);
-      const webkit = testInfo.project.name === "webkit";
       const ids = await stateIds(page);
       expect(ids.length, "gallery state ids").toBe(STATE_COUNT);
       const problems: string[] = [];
-      // A miss listed without " webkit" holds in both engines. One listed with
-      // it holds only in WebKit, and Chromium must fit.
-      const listed = (key: string) => (webkit ? KNOWN_MISSES.has(key) || KNOWN_MISSES.has(`${key} webkit`) : KNOWN_MISSES.has(key));
 
       for (const id of ids) {
         const reading = await measure(page, id, language, width, HEIGHT);
@@ -215,41 +168,22 @@ for (const language of LANGUAGES) {
         // Back and the toggle differ in width, so only equal side columns keep the label centred.
         if (reading.centreOffset !== null) expect(reading.centreOffset, `${id}: label offset from the bar's midpoint`).toBeLessThanOrEqual(2);
         if (FILLS_FRAME.test(id)) {
-          expect(reading.contentWidthGap, `${id}: has a main`).not.toBeNull();
-          expect(reading.contentWidthGap, `${id}: main's content width against the bar's`).toBeLessThanOrEqual(1);
+          expect(reading.frameWidthGap, `${id}: has a main`).not.toBeNull();
+          expect(reading.frameWidthGap, `${id}: main's width against the frame's`).toBeLessThanOrEqual(1);
         }
         expect(await gaeguLoadedWhereUsed(page), `${id}: Gaegu loaded where used`).toBe(true);
 
         const key = `${id} ${language} ${width}`;
-        const checks: Array<[string, boolean, string]> = [
-          [key, overflows(reading), `scrollHeight ${reading.scrollHeight} of ${reading.innerHeight}, scrollWidth ${reading.scrollWidth} of ${reading.innerWidth}`],
-          [`${key} ring`, reading.ringFailures.length > 0, reading.ringFailures.join("; ")],
-        ];
-        for (const [checkKey, missedHere, detail] of checks) {
-          if (missedHere !== listed(checkKey)) {
-            problems.push(`${checkKey}: ${missedHere ? "misses, not listed" : "fits, but listed as a miss"} (${detail})`);
-          }
+        if (overflows(reading)) {
+          problems.push(`${key}: scrollHeight ${reading.scrollHeight} of ${reading.innerHeight}, scrollWidth ${reading.scrollWidth} of ${reading.innerWidth}`);
         }
+        if (reading.ringFailures.length > 0) problems.push(`${key} ring: ${reading.ringFailures.join("; ")}`);
       }
 
-      expect(problems, "states against KNOWN_MISSES").toEqual([]);
+      expect(problems, "states that overflow or crowd a focus ring").toEqual([]);
     });
   }
 }
-
-test("every KNOWN_MISSES key names a state, language, width and engine the sweep visits", async ({ page }) => {
-  const visited = new Set<string>();
-  for (const id of await stateIds(page)) {
-    for (const language of LANGUAGES) {
-      for (const width of WIDTHS) {
-        for (const check of ["", " ring"]) {
-          for (const engine of ["", " webkit"]) visited.add(`${id} ${language} ${width}${check}${engine}`);
-        }
-      }
-    }
-  }
-  expect([...KNOWN_MISSES].filter((key) => !visited.has(key)), "keys the sweep never asserts").toEqual([]);
-});
 
 test("the sweep reports an overflow in a window too short for the screen", async ({ page }) => {
   const reading = await measure(page, "answering-empty", "en", 393, 400);
@@ -293,4 +227,157 @@ test("the ring-reach check counts a tile's solid shadow edge", async ({ page }) 
   // 8px below the tile's border box is 5px below its shadow edge: under the reach.
   expect((await readInjected(page, tile + button(12))).ringFailures, "12px below the border box").toEqual([]);
   expect((await readInjected(page, tile + button(8))).ringFailures.length, "8px below the border box").toBeGreaterThan(0);
+});
+
+for (const language of LANGUAGES) {
+  test(`the title's buttons and note sit at the frame's foot at 393 x ${HEIGHT} in ${language}`, async ({ page }) => {
+    await openState(page, "title", language, 393, HEIGHT);
+    const foot = await page.evaluate(
+      ({ practice }) => {
+        const main = document.querySelector("main")!;
+        const button = [...main.querySelectorAll("button")].find((b) => b.textContent === practice)!.getBoundingClientRect();
+        const note = main.querySelector("p:last-child")!.getBoundingClientRect();
+        return {
+          padding: parseFloat(getComputedStyle(main).paddingBottom),
+          noteBottomGap: window.innerHeight - note.bottom,
+          buttonBottomGap: window.innerHeight - button.bottom,
+          noteHeight: note.height,
+        };
+      },
+      { practice: START_LABEL[language] },
+    );
+    // Within a pixel of the frame's bottom padding, and not floating above it.
+    expect(foot.noteBottomGap, "note's distance from the viewport's bottom").toBeGreaterThanOrEqual(foot.padding - 1);
+    expect(foot.noteBottomGap, "note's distance from the viewport's bottom").toBeLessThanOrEqual(foot.padding + 1);
+    expect(foot.buttonBottomGap, "Practice's distance from the viewport's bottom").toBeLessThanOrEqual(foot.padding + foot.noteHeight + 16);
+  });
+}
+
+for (const language of LANGUAGES) {
+  for (const id of ["game-over-daily-par", "game-over-daily-short", "game-over-practice"]) {
+    test(`the row marks span the content box like the cards above them, in ${id} at 393 x ${HEIGHT} in ${language}`, async ({ page }) => {
+      await openState(page, id, language, 393, HEIGHT);
+      const edges = await page.evaluate(() => {
+        // The list's own box includes its padding; the marks are what shows.
+        const items = document.querySelectorAll("main ol > li");
+        const first = items[0]!.getBoundingClientRect();
+        const last = items[items.length - 1]!.getBoundingClientRect();
+        const cards = document.querySelector<HTMLElement>("main dl")!.getBoundingClientRect();
+        return { marks: [first.left, last.right], cards: [cards.left, cards.right] };
+      });
+      expect(edges.marks[0], "marks' left edge").toBeCloseTo(edges.cards[0]!, 0);
+      expect(edges.marks[1], "marks' right edge").toBeCloseTo(edges.cards[1]!, 0);
+    });
+  }
+}
+
+/* After a discard the verdict line keeps to the left of the band's rail cell,
+   which still draws the leaving tile. Its widest form lists three digits
+   received. The line is a centred flex row whose detail wraps whole, so a
+   line too wide for its box even so spills past both edges, and `scrollWidth`
+   counts only the right one. A flex item can also shrink below what it draws, so the line is read
+   as the Mark's box and the words' own text, against the panel's content box. */
+async function verdictLine(page: Page) {
+  return page.evaluate(() => {
+    const panel = document.querySelector<HTMLElement>('[role="status"][class*="beforeRail"]')!;
+    const style = getComputedStyle(panel);
+    const box = panel.getBoundingClientRect();
+    const [mark, words] = [...panel.children];
+    const markBox = mark!.getBoundingClientRect();
+    const range = document.createRange();
+    range.selectNodeContents(words!);
+    const text = range.getBoundingClientRect();
+    return {
+      text: panel.textContent ?? "",
+      markWidth: markBox.width,
+      fontSize: parseFloat(style.fontSize),
+      contentLeft: box.left + parseFloat(style.paddingLeft),
+      contentRight: box.right - parseFloat(style.paddingRight),
+      lineLeft: Math.min(markBox.left, text.left),
+      lineRight: Math.max(markBox.right, text.right),
+      railLeft: document.querySelector('[class*="railCell"]')!.getBoundingClientRect().left,
+    };
+  });
+}
+
+/* The word, the space after it and the detail, measured: `gap` is the distance
+   from the word's text to the detail's "·" (a rendered space, not ~0), and
+   `wrapped` is the detail sitting below the word's line. */
+async function verdictWords(page: Page) {
+  return page.evaluate(() => {
+    const words = document.querySelector<HTMLElement>('[role="status"][class*="beforeRail"]')!.children[1]!;
+    const word = document.createRange();
+    word.selectNodeContents(words.firstChild!);
+    const detail = words.querySelector('[class*="detail"]')!.getBoundingClientRect();
+    return {
+      gap: detail.left - word.getBoundingClientRect().right,
+      wrapped: detail.top >= word.getBoundingClientRect().bottom,
+    };
+  });
+}
+
+type VerdictLine = Awaited<ReturnType<typeof verdictLine>>;
+
+const lineEscapes = (line: VerdictLine) =>
+  line.lineLeft < line.contentLeft - 0.5 || line.lineRight > line.contentRight + 0.5 || line.lineRight > line.railLeft;
+
+for (const language of LANGUAGES) {
+  test(`three digits received after a discard stay on one line, clear of the rail cell, at 375 x ${HEIGHT} in ${language}`, async ({ page }) => {
+    await openState(page, "feedback-after-discard-three", language, 375, HEIGHT);
+    const line = await verdictLine(page);
+    expect(line.text, "the line lists three digits").toMatch(/0 7 7$/);
+    const words = await verdictWords(page);
+    expect(words.wrapped, "one line, the detail beside the word").toBe(false);
+    expect(words.gap, "the space before the dot").toBeGreaterThan(2);
+    // The Mark is 1em square; a line short of room squeezes it first.
+    expect(line.markWidth, "the Mark's width").toBeCloseTo(line.fontSize, 0);
+    expect(lineEscapes(line), `line ${line.lineLeft}–${line.lineRight} in ${line.contentLeft}–${line.contentRight}, rail at ${line.railLeft}`).toBe(false);
+  });
+}
+
+/* Below 375 the detail wraps to a second line inside the band, keeping the Mark
+   whole and clear of the rail cell. 305 is the 320px gate less a layout-taking
+   scrollbar's 15px. */
+for (const language of LANGUAGES) {
+  for (const width of [320, 305]) {
+    test(`three digits received after a discard wrap clear of the rail cell, in the band, at ${width} x ${HEIGHT} in ${language}`, async ({ page }) => {
+      await openState(page, "feedback-after-discard-three", language, width, HEIGHT);
+      const line = await verdictLine(page);
+      const band = await page.evaluate(() => document.querySelector('[class*="band"]')!.getBoundingClientRect().height);
+      expect(line.markWidth, "the Mark's width").toBeCloseTo(line.fontSize, 0);
+      expect(lineEscapes(line), `line ${line.lineLeft}–${line.lineRight} in ${line.contentLeft}–${line.contentRight}, rail at ${line.railLeft}`).toBe(false);
+      const edges = await page.evaluate(() => {
+        const panel = document.querySelector<HTMLElement>('[role="status"][class*="beforeRail"]')!;
+        const [mark, words] = [...panel.children];
+        const range = document.createRange();
+        range.selectNodeContents(words!.firstChild!);
+        return {
+          gap: range.getBoundingClientRect().left - mark!.getBoundingClientRect().right,
+          expectedGap: parseFloat(getComputedStyle(panel).columnGap),
+          wordLeft: range.getBoundingClientRect().left,
+          detailLeft: words!.querySelector('[class*="detail"]')!.getBoundingClientRect().left,
+        };
+      });
+      // A space at a line break is the break itself, so only an unwrapped line has a gap.
+      const words = await verdictWords(page);
+      if (!words.wrapped) expect(words.gap, "the space before the dot").toBeGreaterThan(2);
+      expect(edges.gap, "Mark to word, as on one line").toBeCloseTo(edges.expectedGap, 0);
+      expect(edges.detailLeft, "the detail starts under the word").toBeCloseTo(edges.wordLeft, 0);
+      expect(band, "the band's height").toBe(150);
+      const { scrollWidth, scrollHeight, innerWidth, innerHeight } = await page.evaluate(() => ({
+        scrollWidth: document.documentElement.scrollWidth,
+        scrollHeight: document.documentElement.scrollHeight,
+        innerWidth: window.innerWidth,
+        innerHeight: window.innerHeight,
+      }));
+      expect(scrollWidth, "sideways scroll").toBeLessThanOrEqual(innerWidth);
+      expect(scrollHeight, "page growth").toBeLessThanOrEqual(innerHeight);
+    });
+  }
+}
+
+test("the verdict line check reports a line wider than its box", async ({ page }) => {
+  await openState(page, "feedback-after-discard-three", "en", 375, HEIGHT);
+  await page.addStyleTag({ content: '[class*="beforeRail"] { padding-right: 260px !important; }' });
+  expect(lineEscapes(await verdictLine(page)), "a 260px reserve leaves 83px for the line").toBe(true);
 });
