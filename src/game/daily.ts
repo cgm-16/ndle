@@ -4,11 +4,11 @@ export interface LocalDate {
   day: number;
 }
 
-/** Table #1's date. Ori sets it once at release (M16); changing it after launch renumbers every table. */
-export const DAILY_LAUNCH_DATE: LocalDate = { year: 2026, month: 11, day: 9 };
+/** Table #1's date. Set once; changing it renumbers every table and breaks saved and shared numbers. */
+export const DAILY_LAUNCH_DATE: LocalDate = { year: 2026, month: 11, day: 23 };
 
-/** Only the generator's freeze reads this (nothing freezes while false); previews number from the placeholder date. M16 sets the real DAILY_LAUNCH_DATE and flips this. */
-export const DAILY_LAUNCHED = false;
+/** The generator freezes slots through today + 2. */
+export const DAILY_LAUNCHED = true;
 
 const MS_PER_DAY = 86_400_000;
 

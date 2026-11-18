@@ -23,6 +23,11 @@ describe("daily table number", () => {
     expect(dailyNumberOn(dateOfDaily(0))).toBe(0);
   });
 
+  it("launches on 2026-11-23, a literal so a later change shows in review", () => {
+    expect(DAILY_LAUNCH_DATE).toEqual({ year: 2026, month: 11, day: 23 });
+    expect(dailyNumberOn({ year: 2026, month: 11, day: 23 })).toBe(1);
+  });
+
   it("gives one number to the whole local day", () => {
     expect(numberOn(new Date(2027, 2, 14, 0, 0, 1))).toBe(
       numberOn(new Date(2027, 2, 14, 23, 59, 59)),

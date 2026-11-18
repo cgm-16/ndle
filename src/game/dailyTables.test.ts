@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { DAILY_LAUNCH_DATE, dateOfDaily } from "./daily";
-import { isDailyCandidate } from "./dailyPicker";
+import { DAILY_LAUNCHED, DAILY_LAUNCH_DATE, dateOfDaily } from "./daily";
+import { describeDaily, frozenThroughOn, isDailyCandidate } from "./dailyPicker";
 import { DAILY_TABLES, dailyTable, todaysDaily } from "./dailyTables";
 import { solvePuzzle } from "./puzzle";
+import review from "../../scripts/daily/review.md?raw";
 import { getAnswerLength, getRewardCount } from "./selectors";
 
 const noonOn = ({ year, month, day }: { year: number; month: number; day: number }) =>
@@ -41,5 +42,15 @@ describe("dailyTables", () => {
     expect(todaysDaily(noonOn(dateOfDaily(0)))).toBeNull();
     expect(todaysDaily(noonOn(dateOfDaily(366)))).toBeNull();
     expect(todaysDaily(noonOn(dateOfDaily(365)))?.number).toBe(365);
+  });
+
+  it("ships a review file that matches the list, dated from the launch", () => {
+    expect(review).toBe(
+      DAILY_TABLES.map((t, i) => describeDaily(i + 1, dateOfDaily(i + 1), t)).join("\n"),
+    );
+  });
+
+  it("freezes launch day and the two after it", () => {
+    expect(frozenThroughOn(dateOfDaily(1), DAILY_TABLES.length, DAILY_LAUNCHED)).toBe(3);
   });
 });
