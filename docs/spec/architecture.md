@@ -265,7 +265,7 @@ export function dealPuzzle(random: RandomSource, attempts?: number): PuzzleTable
 export interface LocalDate { year: number; month: number; day: number } // month 1–12
 /** Table #1's date. Set once at release; changing it after launch renumbers every table. */
 export const DAILY_LAUNCH_DATE: LocalDate;
-/** Only the generator's freeze reads it (nothing freezes while false). M16 flips it. */
+/** Only the generator's freeze reads it: slots freeze through today + 2 while true, and nothing freezes while false. */
 export const DAILY_LAUNCHED: boolean;
 export function localDateOf(now: Date): LocalDate;                 // getFullYear, getMonth() + 1, getDate()
 export function daysFrom(from: LocalDate, to: LocalDate): number;  // via Date.UTC, so no DST hour leaks in
@@ -285,7 +285,7 @@ export interface FillOptions {
 }
 export function fillDailySlots(existing: readonly PuzzleTable[], options: FillOptions): PuzzleTable[];
 export function frozenThroughOn(today: LocalDate, existingLength: number, launched: boolean): number;
-// launched ? min(existingLength, max(0, dailyNumberOn(today) + 2)) : 0 — a slot freezes two days before its date; nothing freezes before launch
+// launched ? min(existingLength, max(0, dailyNumberOn(today) + 2)) : 0 — a slot freezes two days before its date; nothing freezes while unlaunched
 export function describeDaily(number: number, date: LocalDate, table: PuzzleTable): string; // one review-file block
 
 // game/dailyFormat.ts (T103) — the shape of dailyTables.json; the generator writes it and dailyTables.ts reads it
@@ -334,7 +334,7 @@ The offline generator is run with
 It reads `src/game/dailyTables.json` (a missing file means `[]`) and
 `scripts/daily/vetoes.json`, shaped `{ "pending": [{ "number": 12, "reason": "…" }], "done": [] }`.
 It sets `frozenThrough` to
-`frozenThroughOn(localDateOf(new Date()), existing.length, DAILY_LAUNCHED)`, so a slot freezes two days before its date arrives and nothing freezes before launch. It uses
+`frozenThroughOn(localDateOf(new Date()), existing.length, DAILY_LAUNCHED)`, so a slot freezes two days before its date arrives and nothing freezes until `DAILY_LAUNCHED` is set. It uses
 `Math.random`, and writes `dailyTables.json`, the committed review file
 `scripts/daily/review.md` (one `describeDaily` block per table), and
 `vetoes.json`, moving the pending vetoes it handled into `done`. The review file

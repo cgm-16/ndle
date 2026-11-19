@@ -33,7 +33,7 @@ It has two modes: **Daily**, one shared table a day, and **Practice**, a table d
 - Daily tables are numbered from launch day, which is #1. The player's local date picks the number.
 - Each table is in the same band as a Practice deal and has `sacrificeRequired`.
 - The list is chosen offline by `scripts/daily/generate.ts`. The generator's review file, `scripts/daily/review.md`, is committed.
-- **Freeze rule.** A slot freezes two days before its date arrives, so no time zone and no day of release lag can see it change. Before launch nothing is frozen, so every slot can be vetoed. A **veto** touches only unfrozen slots, and the generator refills the vetoed slot.
+- **Freeze rule.** A slot freezes two days before its date arrives, so no time zone and no day of release lag can see it change. Until the launch date is set, nothing is frozen, so every slot can be vetoed. Once it is set the rule holds from then on, so table #1 freezes two days before the launch day. A **veto** touches only unfrozen slots, and the generator refills the vetoed slot.
 - **Launch-date rule.** The launch date is set once and never changed after launch.
 - More tables are generated before the list runs out. Before launch, or past the list's end, there is no Daily that day.
 - **Known limit** (Ori, 2026-11-09): the shipped bundle holds every future table, and the solver ships with Practice, so anyone can read ahead and solve. The committed review file adds convenience, not information. Seeding would not change this, because the generator would ship too. Only a server releasing each day's table would hide it, and the game is client-only.
