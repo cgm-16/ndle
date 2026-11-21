@@ -4,29 +4,25 @@ import { useI18n } from "../../i18n/I18nContext";
 import { Tile } from "../Tile/Tile";
 import styles from "./AnswerSlots.module.css";
 
-/* The streak ladder accumulates, never swaps: streak 3 adds the jade ring, 5 a
-   second ring in gold plus a gold rim on the answer tiles, 8 a third ring, the
-   brightest rim and the six-chip burst. Nothing above 8 escalates, and streaks
-   1–2 bloom with nothing added — the bloom is the floor, not the ring. A rung
-   that fires from the first correct answer changes nothing when it is reached. */
-const RING_TIERS = [
-  { at: 3, ring: styles.ringJade, rim: "" },
-  { at: 5, ring: styles.ringGold, rim: styles.rim },
-  { at: 8, ring: styles.ringBright, rim: styles.rimBright },
-];
+/* The streak ladder accumulates, never swaps: streak 3 draws one chalk ring, 5
+   a second, 8 a third and the six-fleck fan. Nothing above 8 escalates, and
+   streaks 1–2 bloom with nothing added — the bloom is the floor, not the ring.
+   A rung that fires from the first correct answer changes nothing when it is
+   reached. */
+const RING_STREAKS = [3, 5, 8];
 
 const BURST_AT = 8;
 
-/* 2d — the locked six. Ceramic shards off the tile's own bottom edge, each
-   carrying the trajectory oz-fan interpolates. The design staggers them
-   40 + index × 12 ms. */
+/* 2d — the locked six: chalk flecks that start above the tiles' top edge and
+   fan out 12px over the upper half circle, so they travel over the field and
+   never over a face. Each carries the offset nd-fan interpolates to. */
 const CHIPS = [
-  { dx: "-46px", peak: "-36px", land: "34px", rot: "-140deg" },
-  { dx: "-26px", peak: "-54px", land: "28px", rot: "96deg" },
-  { dx: "-8px", peak: "-62px", land: "36px", rot: "-62deg" },
-  { dx: "13px", peak: "-58px", land: "30px", rot: "124deg" },
-  { dx: "31px", peak: "-47px", land: "33px", rot: "-104deg" },
-  { dx: "51px", peak: "-31px", land: "26px", rot: "162deg" },
+  { dx: "-11.8px", dy: "-2.1px" },
+  { dx: "-8.9px", dy: "-8px" },
+  { dx: "-3.3px", dy: "-11.5px" },
+  { dx: "3.3px", dy: "-11.5px" },
+  { dx: "8.9px", dy: "-8px" },
+  { dx: "11.8px", dy: "-2.1px" },
 ];
 
 export interface AnswerSlotsProps {
@@ -43,7 +39,9 @@ export interface AnswerSlotsProps {
   /**
    * How the round judged the tiles in these slots, once it has judged them.
    * Omitted while the player is still answering: unjudged is a third state,
-   * not a default of either verdict, and the tiles are neither yet.
+   * not a default of either verdict, and the tiles are neither yet. Omitted
+   * in overflow too, where the verdict's moment waits for the discard: the
+   * tiles keep the arrival they already played, and nothing settles.
    */
   verdict?: RoundResult["kind"];
   /**
@@ -76,19 +74,16 @@ export function AnswerSlots({
   // Nothing on the ladder plays on an incorrect answer, and nothing plays
   // while the round is still unjudged.
   const rewarded = verdict === "correct";
-  const rings = rewarded ? RING_TIERS.filter((tier) => streak >= tier.at) : [];
+  const rings = rewarded ? RING_STREAKS.filter((at) => streak >= at) : [];
   const burst = rewarded && streak >= BURST_AT;
-  // The rings accumulate; the rim escalates. One element carries one outline,
-  // so the highest tier reached supplies it and the tier below is replaced,
-  // not stacked with.
-  const rim = rings[rings.length - 1]?.rim ?? "";
 
   // Every element that plays part of the verdict carries data-moment, and the
   // group has settled when each of them has ended once. Counted by element
   // rather than by event, so a bubbling animationend from anything else — or
   // the same element reported twice — cannot settle it early. Under
   // prefers-reduced-motion every frame still runs, for 0.01ms, so the count
-  // is still reached.
+  // is still reached. A correct tile's own span is a moment; a wrong one's
+  // are the stroke and the dust.
   const filledCount = selectedTiles.slice(0, slotCount).length;
   const momentsPerTile =
     1 + (verdict === "incorrect" ? 1 : 0) + rings.length + (burst ? CHIPS.length : 0);
@@ -117,7 +112,7 @@ export function AnswerSlots({
         const tile = selectedTiles[index];
         const position = index + 1;
 
-        // An empty slot is a socket, not a tile: no ceramic anywhere. It keeps
+        // An empty slot is a socket, not a tile: no tile face. It keeps
         // its own rule in this component's stylesheet.
         if (tile === undefined) {
           // Read-only, the socket is not a control, and a roleless element has
@@ -149,11 +144,7 @@ export function AnswerSlots({
         // being judged, and two animations on one element would leave only the
         // last of them anyway.
         const moment =
-          verdict === "correct"
-            ? styles.bloom
-            : verdict === "incorrect"
-              ? styles.crack
-              : styles.arriving;
+          verdict === "correct" ? styles.bloom : verdict === "incorrect" ? undefined : styles.arriving;
 
         return (
           // Keyed by the tile rather than the slot, which is what makes the
@@ -163,21 +154,18 @@ export function AnswerSlots({
           // reused and 9b, the most frequent motion in the app, would never
           // play again after the first selection.
           <span key={tile.id} className={styles.filled}>
-            {verdict === "incorrect" && <span className={styles.dust} aria-hidden="true" data-moment="" />}
             {/* The ladder is decoration on a moment the tile already carries:
                 nothing here is reachable, and nothing here is named. */}
-            {rings.map((tier) => (
+            {rings.map((at, ringIndex) => (
               <span
-                key={tier.at}
-                className={`${styles.ring} ${tier.ring}`}
+                key={at}
+                className={styles.ring}
                 aria-hidden="true"
                 data-moment=""
+                style={{ "--ring-order": ringIndex } as CSSProperties}
               />
             ))}
-            <span
-              className={rim === "" ? moment : `${moment} ${rim}`}
-              data-moment={verdict === undefined ? undefined : ""}
-            >
+            <span className={moment} data-moment={verdict === "correct" ? "" : undefined}>
               <Tile
                 value={tile}
                 state={disabled ? "disabled" : "resting"}
@@ -188,20 +176,19 @@ export function AnswerSlots({
                 onClick={onReturn && (() => onReturn(tile.id))}
               />
             </span>
+            {verdict === "incorrect" && <span className={styles.dust} aria-hidden="true" data-moment="" />}
+            {verdict === "incorrect" && <span className={styles.stroke} aria-hidden="true" data-moment="" />}
             {burst &&
-              CHIPS.map((chip, chipIndex) => (
+              CHIPS.map((chip) => (
                 <span
-                  key={chip.rot}
+                  key={chip.dx}
                   className={styles.chip}
                   aria-hidden="true"
                   data-moment=""
                   style={
                     {
                       "--dx": chip.dx,
-                      "--peak": chip.peak,
-                      "--land": chip.land,
-                      "--rot": chip.rot,
-                      animationDelay: `${40 + chipIndex * 12}ms`,
+                      "--dy": chip.dy,
                     } as CSSProperties
                   }
                 />

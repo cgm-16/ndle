@@ -3,85 +3,39 @@
   padding: 0 var(--space-8);
   border: none;
   border-radius: var(--radius-md);
-  font: var(--weight-bold) var(--size-label) / var(--leading-tight) var(--font-ui);
-  letter-spacing: var(--track-label);
-  text-transform: uppercase;
+  font: var(--weight-bold) var(--size-body) / var(--leading-tight) var(--font-ui);
   cursor: pointer;
-  box-shadow: var(--btn-edge-depth) var(--btn-edge);
   transform: translateY(0);
   transition:
-    transform var(--dur-press) var(--ease-settle),
-    box-shadow var(--dur-press) var(--ease-settle),
-    background var(--dur-state) var(--ease-standard);
+    transform var(--dur-press) var(--ease-out),
+    background var(--dur-state) var(--ease-out);
 }
 
 .primary {
-  --btn-edge: var(--verm-800);
-
-  background: var(--state-incorrect);
-  color: var(--ink-000);
+  background: var(--accent);
+  color: var(--text-on-accent);
 }
 
 .secondary {
-  --btn-edge: var(--felt-800);
-
-  background: var(--surface-raised);
-  color: var(--text-primary);
-}
-
-/* Ghost's edge colour is transparent rather than unset: box-shadow can
-   compose a transparent shadow into a list, but not the keyword `none`, and
-   the :focus-visible rule below composes --btn-edge onto the ring for every
-   variant alike. Declared after .button so its hairline border beats
-   .button's `border: none` at the equal (0,1,0) specificity the two share. */
-.ghost {
-  --btn-edge: transparent;
-
   background: transparent;
-  color: var(--text-body);
-  border: 1px solid var(--border-hairline);
+  color: var(--text-primary);
+  border: 1.5px solid var(--text-meta);
 }
 
-.button:not(:disabled):active {
-  transform: translateY(var(--press-offset));
-  box-shadow: var(--btn-edge-depth-pressed) var(--btn-edge);
+/* Declared after .button so its border beats .button's `border: none` at the
+   equal (0,1,0) specificity the two share. */
+.ghost {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1.5px solid var(--border-hairline);
 }
 
-/* Declared after :active: the two rules tie at (0,3,0), and a keyboard press
-   that also carries focus-visible should keep the ring, not the press depth. */
-.button:not(:disabled):focus-visible {
-  box-shadow: var(--btn-edge-depth) var(--btn-edge), var(--ring-focus);
-  outline: none;
-}
-
-/* A keyboard press carries focus-visible as well as :active, and each of
-   those rules alone would drop the other's half: the ring without the
-   pressed depth reads as the whole button sliding down rather than
-   compressing into the felt. */
-.button:not(:disabled):focus-visible:active {
-  box-shadow: var(--btn-edge-depth-pressed) var(--btn-edge), var(--ring-focus);
-}
-
-/* A disabled button is FLAT: no shadow, hairline outline instead of the
-   variant's own fill. "Not yet" reads as "not raised". (0,2,0) beats every
-   variant rule above regardless of source order. */
-/* stylelint-disable-next-line no-descending-specificity --
-   the rule it names, .button:not(:disabled):active, cannot match the same
-   element as this one; source order between them decides nothing. */
 .button:disabled {
   cursor: default;
-  background: transparent;
-  color: var(--text-disabled);
-  box-shadow: none;
-  outline: 1px solid var(--border-hairline);
+  opacity: 0.45;
+}
 
-  /* 11d — an action that becomes available rises to meet the hand. Rest low
-     while disabled and the enable is the rise, carried by .button's existing
-     transform transition, which is not gated on :not(:disabled) and so is in
-     force through the flip. No JavaScript and no edge detection: the button
-     persists across the enable, so this is a value change on a live element.
-     4px is oz-rise-ready's own travel; that keyframe is the same shape said
-     the other way and stays part of the vocabulary, unused. Literal rather
-     than a token because motion.css names no resting offset for it. */
-  transform: translateY(4px);
+/* The press is the shared offset, 1px; reduced motion zeroes it. */
+.button:not(:disabled):active {
+  transform: translateY(var(--press-offset));
 }

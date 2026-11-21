@@ -33,7 +33,7 @@ It has two modes: **Daily**, one shared table a day, and **Practice**, a table d
 - Daily tables are numbered from launch day, which is #1. The player's local date picks the number.
 - Each table is in the same band as a Practice deal and has `sacrificeRequired`.
 - The list is chosen offline by `scripts/daily/generate.ts`. The generator's review file, `scripts/daily/review.md`, is committed.
-- **Freeze rule.** A slot freezes two days before its date arrives, so no time zone and no day of release lag can see it change. Before launch nothing is frozen, so every slot can be vetoed. A **veto** touches only unfrozen slots, and the generator refills the vetoed slot.
+- **Freeze rule.** A slot freezes two days before its date arrives, so no time zone and no day of release lag can see it change. Until the launch date is set, nothing is frozen, so every slot can be vetoed. Once it is set the rule holds from then on, so table #1 freezes two days before the launch day. A **veto** touches only unfrozen slots, and the generator refills the vetoed slot.
 - **Launch-date rule.** The launch date is set once and never changed after launch.
 - More tables are generated before the list runs out. Before launch, or past the list's end, there is no Daily that day.
 - **Known limit** (Ori, 2026-11-09): the shipped bundle holds every future table, and the solver ships with Practice, so anyone can read ahead and solve. The committed review file adds convenience, not information. Seeding would not change this, because the generator would ship too. Only a server releasing each day's table would hide it, and the game is client-only.
@@ -141,7 +141,7 @@ The loss check compares tile count with the answer-slot count only:
 inventory.length < getAnswerLength(equation)
 ```
 
-**Par** is the solver's best score for the table, shown before the first move. **Made par** is a game over with a score equal to par. The terminal row remains visible to explain an early end. It is not counted as a submitted round.
+**Par** is the solver's best score for the table, shown before the first move. **Made par** is a game over with a score equal to par. `gameOver.reason` explains an early end, and the row marks show where the run stopped; no terminal row is drawn, and it is not counted as a submitted round.
 
 ### 1.9 Statistics semantics
 
@@ -159,9 +159,9 @@ inventory.length < getAnswerLength(equation)
 - The game screen has the HUD (round, score, streak, par), the ledger, the slots, the actions and the rack.
 - Two game-over variants follow, one for Daily and one for Practice; their content is in `ui-i18n.md` §1.12.
 - A Daily resumes when opened again that day, and once finished it shows its result until the next table.
-- Every game and game-over screen has **Back** at the top, which returns to the title (Ori, 2026-11-09). Back is not a move: a Daily keeps its record and resumes, and a Practice run is dropped.
+- Every game and game-over screen has **Back** at the top, in the app's top bar rather than inside the screen, which returns to the title (Ori, 2026-11-09). Back is not a move: a Daily keeps its record and resumes, and a Practice run is dropped.
 - Round, score, streak and par are never shown by colour alone.
-- `gameOver` is the only phase that prints the product; during play the board shows `left × right = ?`, so the answer is never given away.
+- No phase prints the product: the board shows `left × right = ?` throughout, so the answer is never given away.
 - Clear is disabled while no tile is selected.
 - A lifted tile's socket is on loan: it stays held for that tile, visibly distinct from a socket emptied by a spent tile, and the rack does not re-sort until the round resolves.
 

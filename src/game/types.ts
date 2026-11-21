@@ -52,7 +52,8 @@ export type GameAction =
   | { type: "SUBMIT_INCORRECT" }
   | { type: "TOGGLE_DISCARD"; tileId: string }
   | { type: "NEXT_ROUND" } // the reducer reads table.rows[round]
-  | { type: "CLEAR_SELECTION" };
+  | { type: "CLEAR_SELECTION" }
+  | { type: "RETURN_TO_TITLE" }; // any phase but title
 
 export interface PuzzleRow {
   equation: Equation;
@@ -64,6 +65,12 @@ export interface PuzzleTable {
   hand: Digit[];
   rows: PuzzleRow[];
   par: number;
+}
+
+/** One row's play: the tiles spent, in slot order, and the overflow discard. */
+export interface PuzzleMove {
+  spend: Digit[];
+  discard?: Digit;
 }
 
 /** A table before the solver has priced it. */

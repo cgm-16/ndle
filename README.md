@@ -16,7 +16,7 @@ a score equal to par is Made par.
 ## Daily
 
 One table a day, the same for everyone. "Today" is the player's local date, and
-tables are numbered from the launch day, which is #1. The tables are chosen
+tables are numbered from the launch day, 2026-11-23, which is #1. The tables are chosen
 ahead of time by a solver, so that every day's table needs a sacrifice, and
 they ship with the game as a numbered list. There is one attempt a day. Each
 move is saved as it is made, so reopening the game that day resumes the table,

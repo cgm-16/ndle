@@ -9,9 +9,19 @@ type MessageShape<T> = T extends string
 const en = {
   title: {
     name: "9dle",
-    summary:
-      "A daily multiplication puzzle. Spell each row's answer with tiles from your hand. A correct answer pays the digits printed on its row, and your hand holds five. Par is the best score the table allows.",
+    tagline: "A daily multiplication puzzle",
+    how1: "Spell each row's answer with tiles from your hand.",
+    how2: "A right answer pays the tiles printed on its row. Your hand holds five.",
+    how3: "Par is the best score this table allows. Sometimes the way there is a miss.",
+    note: "One Daily a day. Practice deals a new table every time.",
     more: "More",
+    daily: "Daily #{number}",
+    dailyPlayed: "Today's result #{number}",
+    dailyNone: "No table today",
+    practice: "Practice",
+  },
+  bar: {
+    daily: "#{number}",
   },
   language: {
     groupLabel: "Language",
@@ -21,19 +31,17 @@ const en = {
       "Click or tap an inventory tile to place it in the next empty answer slot. Click a filled slot to return that tile to your inventory.",
     slots:
       "Answer slots fill in the order you select tiles: the first tile you choose fills the leftmost slot, so selection order determines the number you submit.",
-    correct: "A correct answer spends its tiles and pays the digits printed on its row.",
     incorrect:
       "An incorrect answer removes the tiles you spent and grants no reward.",
-    capacity: "Your hand holds at most five tiles.",
     overflow:
       "If a pay would push your hand past five tiles, choose one tile to discard before play continues.",
     progress:
-      "Round shows which row of the table is current, score counts correct answers, and streak counts consecutive correct answers. The table ends after row 8, or sooner once you hold fewer tiles than the next answer needs.",
+      "Row shows which row of the table is current, score counts correct answers, and streak counts consecutive correct answers. The table ends after row 8, or sooner once you hold fewer tiles than the next answer needs.",
     keyboard:
-      "Press a digit key to select a matching tile or, during a discard, to mark it and complete the discard, Backspace to return the most recently selected tile, Escape to clear your selection, Enter to submit or continue, and R to play again once the run ends.",
+      "Press a digit key to select a matching tile or, during a discard, to mark it and complete the discard, Backspace to return the most recently selected tile, Escape to clear your selection, Enter to submit or continue, and R to deal a new table after a Practice run ends.",
   },
   action: {
-    start: "Start Run",
+    back: "Back",
     submit: "Submit",
     clear: "Clear",
     next: "Next Round",
@@ -44,7 +52,7 @@ const en = {
   hud: {
     score: "Score",
     streak: "Streak",
-    round: "Round",
+    round: "Row",
     par: "Par",
   },
   // Puzzle's table. Each row is one accessible string; the pay is joined by
@@ -54,29 +62,45 @@ const en = {
     row: "Row {row}, {left} × {right}, pays {pay}",
     answered: "answered",
     missed: "missed",
+    now: "Now",
+    pays: "pays",
   },
   result: {
     correct: "Correct",
-    incorrect: "Incorrect",
-    submitted: "Your answer: {value}",
-    answer: "Correct answer: {value}",
-    rewards: "Received {count} tiles",
+    incorrect: "Missed",
+    rewards: "Received {digits}",
+    played: "You played {value}",
+    handFull: "hand full",
   },
   overflow: {
-    instructionOne: "Choose a tile to discard.",
+    instructionOne: "Six tiles, five sockets. Choose a tile to discard.",
+  },
+  rack: {
+    hand: "Hand · {count} of 5",
+  },
+  rail: {
+    arriving: "Arriving",
   },
   gameOver: {
     reason: "Not enough tiles left to answer.",
     longestStreak: "Longest streak",
     restartHint: "Press R to play again",
+    dailyNumber: "Table #{number}",
+    nextTable: "The next table opens at midnight.",
     parTitle: "Made par",
     shortTitle: "{short} short of par",
     tableReason: "All eight rows played.",
+    rowsLabel: "Rows",
+    rowMark: "Row {row}: {result}",
+    unplayed: "not played",
+    shareText: "Share text",
   },
   share: {
     copied: "Result copied.",
     failed: "Could not share or copy the result.",
     puzzleAsk: "Can you make par?",
+    // Lower case inside the share text, where `hud.par` would read "Par".
+    par: "par",
   },
   answerSlot: {
     filled: "Answer slot {position}: {digit}",
@@ -84,7 +108,8 @@ const en = {
   },
   tile: {
     digitLabel: "Digit {digit}",
-    newLabel: "New tile",
+    discard: "Discard {digit}",
+    newLabel: "new tile",
     discardLabel: "Marked for discard",
   },
 } as const;
@@ -92,9 +117,19 @@ const en = {
 const ko = {
   title: {
     name: "구들",
-    summary:
-      "매일 한 판, 곱셈 퍼즐. 손에 든 숫자 타일로 각 줄의 답을 만드세요. 정답이면 그 줄에 적힌 숫자 타일을 받고, 손에는 다섯 개까지 들 수 있습니다. 목표는 이 판에서 낼 수 있는 최고 점수입니다.",
+    tagline: "매일 한 판, 곱셈 퍼즐",
+    how1: "손에 든 숫자 타일로 각 줄의 답을 만드세요.",
+    how2: "맞히면 그 줄에 적힌 타일을 받습니다. 손에는 다섯 개까지 들 수 있습니다.",
+    how3: "목표는 이 판에서 낼 수 있는 최고 점수입니다. 때로는 일부러 틀려야 닿습니다.",
+    note: "오늘의 판은 하루 한 번. 연습은 매번 새 판을 냅니다.",
     more: "더 보기",
+    daily: "오늘의 판 #{number}",
+    dailyPlayed: "오늘의 결과 #{number}",
+    dailyNone: "오늘은 판이 없습니다",
+    practice: "연습",
+  },
+  bar: {
+    daily: "#{number}",
   },
   language: {
     groupLabel: "언어",
@@ -104,17 +139,15 @@ const ko = {
       "인벤토리 타일을 클릭하거나 탭하면 다음 빈 정답 칸에 놓입니다. 채워진 칸을 클릭하면 타일이 인벤토리로 돌아갑니다.",
     slots:
       "정답 칸은 선택한 순서대로 채워집니다. 먼저 선택한 타일이 맨 왼쪽 칸에 들어가므로 선택 순서가 제출할 숫자를 결정합니다.",
-    correct: "정답이면 사용한 타일이 빠지고 그 줄에 적힌 숫자 타일을 받습니다.",
     incorrect: "오답이면 사용한 타일이 보상 없이 사라집니다.",
-    capacity: "손에는 타일을 최대 다섯 개까지 들 수 있습니다.",
     overflow: "받은 타일로 손이 다섯 개를 넘으면, 계속하기 전에 버릴 타일 1개를 선택해야 합니다.",
     progress:
-      "라운드는 지금 풀고 있는 판의 줄을, 점수는 정답 횟수를, 연속 정답은 이어지는 정답 횟수를 나타냅니다. 판은 8번째 줄을 풀면 끝나고, 다음 답에 필요한 타일보다 보유한 타일이 적어지면 더 일찍 끝납니다.",
+      "줄은 지금 풀고 있는 판의 줄을, 점수는 정답 횟수를, 연속 정답은 이어지는 정답 횟수를 나타냅니다. 판은 8번째 줄을 풀면 끝나고, 다음 답에 필요한 타일보다 보유한 타일이 적어지면 더 일찍 끝납니다.",
     keyboard:
-      "숫자 키를 누르면 일치하는 타일을 선택하거나, 버리기 중에는 타일을 표시해 바로 버리기를 완료하며, Backspace 키로 가장 최근에 선택한 타일을 되돌리고, Escape 키로 선택을 지우며, Enter 키로 제출하거나 다음으로 진행하고, 게임이 끝나면 R 키로 다시 시작합니다.",
+      "숫자 키를 누르면 일치하는 타일을 선택하거나, 버리기 중에는 타일을 표시해 바로 버리기를 완료하며, Backspace 키로 가장 최근에 선택한 타일을 되돌리고, Escape 키로 선택을 지우며, Enter 키로 제출하거나 다음으로 진행하고, 연습 게임이 끝나면 R 키로 새 판을 시작합니다.",
   },
   action: {
-    start: "게임 시작",
+    back: "뒤로",
     submit: "제출",
     clear: "지우기",
     next: "다음 라운드",
@@ -125,7 +158,7 @@ const ko = {
   hud: {
     score: "점수",
     streak: "연속 정답",
-    round: "라운드",
+    round: "줄",
     par: "목표",
   },
   ledger: {
@@ -133,29 +166,44 @@ const ko = {
     row: "{row}번째 줄, {left} × {right}, 보상 {pay}",
     answered: "정답",
     missed: "오답",
+    now: "지금",
+    pays: "보상",
   },
   result: {
     correct: "정답",
     incorrect: "오답",
-    submitted: "제출한 답: {value}",
-    answer: "정답: {value}",
-    rewards: "타일 {count}개 획득",
+    rewards: "받은 타일 {digits}",
+    played: "제출한 답 {value}",
+    handFull: "손이 가득 참",
   },
   overflow: {
-    instructionOne: "버릴 타일 1개를 선택하세요.",
+    instructionOne: "타일 여섯 개, 칸 다섯 개. 버릴 타일 1개를 선택하세요.",
+  },
+  rack: {
+    hand: "손 · 5칸 중 {count}개",
+  },
+  rail: {
+    arriving: "들어오는 타일",
   },
   gameOver: {
     reason: "답을 만들 타일이 부족합니다.",
     longestStreak: "최장 연속 정답",
     restartHint: "R 키를 눌러 다시 하기",
+    dailyNumber: "{number}번째 판",
+    nextTable: "다음 판은 자정에 열립니다.",
     parTitle: "목표 달성",
     shortTitle: "목표까지 {short}점 부족",
     tableReason: "여덟 줄을 모두 풀었습니다.",
+    rowsLabel: "줄별 결과",
+    rowMark: "{row}번째 줄: {result}",
+    unplayed: "풀지 않음",
+    shareText: "공유 문구",
   },
   share: {
     copied: "결과를 복사했습니다.",
     failed: "결과를 공유하거나 복사하지 못했습니다.",
     puzzleAsk: "목표를 달성할 수 있나요?",
+    par: "목표",
   },
   answerSlot: {
     filled: "정답 칸 {position}: {digit}",
@@ -163,6 +211,7 @@ const ko = {
   },
   tile: {
     digitLabel: "숫자 {digit}",
+    discard: "{digit} 버리기",
     newLabel: "새 타일",
     discardLabel: "버릴 타일로 표시됨",
   },

@@ -75,12 +75,17 @@ describe("Tile", () => {
   // test failure (https://github.com/cgm-16/ndle/blob/3ccd37b/docs/journal/journal-2026-08-09.md), so every state and size
   // is asserted to resolve to a real class.
   describe("state and size classes", () => {
-    const states: TileState[] = ["resting", "lifted", "reward", "marked", "disabled"];
+    const states: TileState[] = ["resting", "lifted", "reward", "marked", "discard", "inert", "disabled"];
 
     it.each(states)("resolves a class for the %s state", (state) => {
       expect(styles[state]).toBeTruthy();
       renderTile({ onClick: vi.fn(), state });
       expect(screen.getByRole("button")).toHaveClass(styles.tile, styles[state]);
+    });
+
+    it("renders an inert tile as a disabled button at full strength", () => {
+      renderTile({ onClick: vi.fn(), state: "inert" });
+      expect(screen.getByRole("button")).toBeDisabled();
     });
 
     const sizes: TileSize[] = ["lg", "sm"];

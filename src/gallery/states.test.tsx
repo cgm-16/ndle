@@ -39,7 +39,7 @@ describe("gallery catalogue", () => {
   // A state that renders its sibling cannot be assessed against a visual bar,
   // and the gallery has carried that defect once already: two game-over
   // entries passed byte-identical arguments and differed in name alone
-  // (#105). Compared as markup rather than eyeballed, because the defect
+  // Compared as markup rather than eyeballed, because the defect
   // recurs and the eye is what missed it.
   it("renders no two entries with the same markup", async () => {
     const seen = new Map<string, string>();
@@ -66,7 +66,7 @@ describe("gallery catalogue", () => {
 
   // The rack empties as a run goes on and §1.12 makes the empty sockets the
   // score, so a nearly-spent rack is a state in its own right — and it is the
-  // one no fixture reached, which is how #84 survived a measurement pass.
+  // one no fixture reached, which is how an overflow survived a measurement pass.
   it("renders a rack holding fewer tiles than it has sockets", () => {
     render(
       <I18nProvider initialLanguage="en">{entryById("answering-depleted").render()}</I18nProvider>,
@@ -92,7 +92,7 @@ describe("gallery catalogue", () => {
       }
 
       render(<I18nProvider initialLanguage="en">{entry.render()}</I18nProvider>);
-      const badgedTiles = screen.getAllByRole("button", { name: /New tile$/ });
+      const badgedTiles = screen.getAllByRole("button", { name: /new tile$/ });
       expect(badgedTiles, `expected ${expectedCount} New-badged tray tiles for ${entry.id}`).toHaveLength(
         expectedCount,
       );
@@ -112,23 +112,17 @@ describe("gallery catalogue", () => {
     expect(container.querySelectorAll(`.${slotStyles.dust}`)).toHaveLength(2);
   });
 
-  // The rings accumulate and the rim escalates (AnswerSlots), so streak 8
-  // draws every ring but only the brightest rim: 7b's gold rim exists at
-  // streak 5 and nowhere else, which is why the ladder needs two states
-  // rather than one at the top.
-  it("draws the gold rim at streak 5 and the bright rim, three rings and the burst at streak 8", async () => {
+  // The rings accumulate, so streak 8 draws every ring and the burst: the
+  // ladder needs two states rather than one at the top.
+  it("draws two rings at streak 5, and three rings and the burst at streak 8", async () => {
     const streakFive = await renderEntry(entryById("feedback-streak-5"));
     expect(streakFive.container.querySelectorAll(`.${slotStyles.ring}`)).toHaveLength(4);
     expect(streakFive.container.querySelectorAll(`.${slotStyles.chip}`)).toHaveLength(0);
-    expect(streakFive.container.querySelectorAll(`.${slotStyles.rim}`)).toHaveLength(2);
-    expect(streakFive.container.querySelectorAll(`.${slotStyles.rimBright}`)).toHaveLength(0);
     cleanup();
 
     const streakEight = await renderEntry(entryById("feedback-streak-8"));
     expect(streakEight.container.querySelectorAll(`.${slotStyles.ring}`)).toHaveLength(6);
     expect(streakEight.container.querySelectorAll(`.${slotStyles.chip}`)).toHaveLength(12);
-    expect(streakEight.container.querySelectorAll(`.${slotStyles.rimBright}`)).toHaveLength(2);
-    expect(streakEight.container.querySelectorAll(`.${slotStyles.rim}`)).toHaveLength(0);
   });
 
   // The status is GameOverScreen's own local state, reached only by pressing
@@ -143,10 +137,18 @@ describe("gallery catalogue", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Could not share or copy the result.");
   });
 
-  // Four rules in the system draw a focus ring, and LanguageToggle's is the
-  // one no other board carries. Mounting it on the focus-visible board is
-  // also what makes that board differ from the hover board in what it
-  // renders rather than in what its note says about it.
+  // The line behind game-over-daily-short is literal in the gallery, so this
+  // is what holds it to a table's real 6 against par 7.
+  it("shows the Daily's number, and a real line scoring 6 against par 7, on game-over-daily-short", async () => {
+    await renderEntry(entryById("game-over-daily-short"));
+    expect(screen.getByRole("heading", { name: "Table #12 1 short of par" })).toBeInTheDocument();
+    expect(screen.getByText("6 / 8")).toBeInTheDocument();
+  });
+
+  // One global rule draws the focus ring, plus the reward tile's. Mounting
+  // LanguageToggle, which no other board carries, on the focus-visible board
+  // is what makes that board differ from the hover board in what it renders
+  // rather than in what its note says about it.
   it("mounts the language toggle on the focus-visible board and on no other", async () => {
     await renderEntry(entryById("interaction-focus-visible"));
     expect(screen.getByRole("group", { name: "Language" })).toBeInTheDocument();

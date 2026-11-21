@@ -1,201 +1,159 @@
-/* The rack and its rail. It takes the arena's full content width. */
+/* The rack: the hand label over five equal columns of the arena. */
 .rack {
-  /* The offset parent the perch drop (8a·2) measures rail and seat against. */
+  /* The offset parent the perch drop (8a·2) measures its seat against. */
   position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   width: 100%;
+  text-align: start;
 }
 
-/* Tiles past capacity perch here, above the rack, never in a new row of it
-   (§1.12): the newest arrivals, right-aligned, at the rack's tile size. Its
-   one row is a tile high whether or not a tile is in it, so the rail left
-   empty while a perch drops (8a·2) holds the tray where it was measured.
-
-   8a leaves the perched tile turned 11 degrees on its lower-left edge and
-   nudged 3px right, so its top-right corner reaches past its own cell by
-   3px + h·sin 11° − w·(1 − cos 11°) — about 14px at 52 x 64. Right-aligned
-   against the rack's edge, that reach took the page past a 305px content
-   box, so the rail keeps it as inline-end padding: the perch lands inside
-   the rack at every size. */
-.rail {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: var(--tile-w);
-  justify-content: end;
-  gap: var(--rack-gap);
-  width: 100%;
-  max-width: var(--rack-width);
-  grid-template-rows: var(--tile-h);
-  margin-bottom: var(--space-2);
-  padding-top: var(--space-2);
-  border-top: 1px solid var(--border-accent);
-  padding-right: calc(3px + var(--tile-h) * sin(11deg) - var(--tile-w) * (1 - cos(11deg)));
+.handLabel {
+  height: 22px;
+  margin-bottom: 6px;
+  font: var(--weight-regular) var(--type-secondary) / 22px var(--font-ui);
+  color: var(--text-meta);
 }
 
-/* Columns and rows come from --rack-columns and --rack-rows: the one row
-   five sockets take, or 5 x 2 for a larger capacity. Tiles past capacity go to the rail, so no row is ever added.
-
-   The tracks are `minmax(0, --tile-w)` rather than a flat `--tile-w`, and that
-   is what fixes #85. Fixed tracks gave the rack a min-content width the arena
-   could not go below: `main.screen` is a flex item whose `margin: 0 auto`
-   suppresses the stretch that would size it to its container, leaving it
-   fit-content — and fit-content is floored by min-content by definition, so no
-   `min-width` reached it. A media query cannot see a scrollbar, so at a 320px
-   window with a layout-taking scrollbar a size switch fired against a 305px
-   content box and the arena stood 11px wider than the page, which scrolled.
-
-   `minmax(0, ...)` lets a track fall below the tier size when the container is
-   narrower than the rack's natural width; `width: 100%` makes the grid take
-   the arena's real content width, which excludes the scrollbar where a media
-   query's figure does not; and `max-width` pins the natural width so every
-   viewport that already fit is unchanged to the pixel.
-
-   §1.12's tier figures are maxima for exactly this reason, and --target-min is
-   the floor the track minimum spells out: a tile is a control, so it may not
-   shrink below the 44px target minimum to make a layout fit. At the 320px gate
-   with a 15px scrollbar the tracks land near 50px and the floor is slack.
-
-   It binds below a 276px content box — 5 tiles at 44 plus 4 gaps at 8 is 252,
-   plus the arena's 24px of padding — and there the rack stops shrinking and
-   the page scrolls instead. That is the intended trade, not a gap: §8.5 asks
-   for no horizontal scroll at 320px and says nothing below it, while the
-   target minimum has no lower bound at all. Browser zoom is the realistic way
-   to get there, and a reader at 400% is exactly who needs the 44px kept. */
+/* Five columns share the arena's content width, never narrower than the 44px
+   target minimum. Below a 284px viewport the floor wins and the page scrolls
+   instead (§1.12): a reader at 400% zoom is the one who needs the 44px kept.
+   Tiles past capacity go to the rail, so no row is ever added. */
 .inventory {
   display: grid;
-  grid-template-columns: repeat(var(--rack-columns), minmax(var(--target-min), var(--tile-w)));
-  grid-template-rows: repeat(var(--rack-rows), var(--tile-h));
-  grid-auto-rows: var(--tile-h);
-  gap: var(--rack-gap);
+  grid-template-columns: repeat(5, minmax(var(--target-min), 1fr));
+  grid-auto-rows: var(--tile-height);
+  gap: var(--space-2);
+  width: 100%;
+}
+
+/* The rail renders into the overflow band's right cell (GameScreen), a column
+   88px wide. The perched tile is left-aligned in it. */
+.rail {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+}
+
+.railLabel {
+  font: var(--weight-regular) var(--type-small) / 1.2 var(--font-ui);
+  color: var(--text-meta);
+}
+
+/* An empty socket is its own grid item, sized like a tile, with no wrapper of
+   its own. It fills its track, so a track that shrank carries the socket down
+   with it. */
+.socket {
+  display: flex;
+  align-items: center;
   justify-content: center;
   width: 100%;
-  max-width: var(--rack-width);
+  height: var(--tile-height);
+  border: 1.5px dashed var(--border-slot-empty);
+  border-radius: var(--radius-sm);
 }
 
-/* An empty or lifted socket is its own grid item, sized like a tile, with no
-   wrapper of its own. It fills its track rather than restating --tile-w, so a
-   track that shrank carries the socket down with it. */
-.socket {
-  width: 100%;
-  height: var(--tile-h);
-  border-radius: var(--radius-md);
-  background: var(--surface-socket);
-  box-shadow: var(--shadow-socket), var(--rim-socket);
+/* A socket whose tile is out in the answer slots — on loan, not lost. It
+   shows the digit it is owed, which is what tells it from an empty socket. */
+.socketHeld {
+  font: var(--weight-regular) var(--type-body) / 1 var(--font-ui);
+  color: var(--text-meta);
 }
 
-/* A socket whose tile is out in the answer slots — owed back, not lost. */
-.socketLifted {
-  outline: var(--outline-socket-lifted);
-  outline-offset: var(--outline-socket-lifted-offset);
-}
+/* The tile is the Tile primitive's own chalk face; the cell is only sized to
+   it, so every cell occupies the same footprint whether or not its tile is new.
 
-/* The tile is the Tile primitive's own ceramic face; the cell is only sized
-   to it, matching the fixed --tile-w x --tile-h grid track: every cell
-   occupies the same footprint whether or not the tile inside it is a
-   reward.
-
-   position: relative has no positioned child left to hold, but it still makes
-   the cell paint above its unpositioned siblings — which is what a cell
-   animating out of its own track needs. Whether the rack still reads right
-   without it is a browser question, not one a test can settle, so it stays
-   until something measures it. */
+   position: relative makes the cell paint above its unpositioned siblings,
+   which a cell animating out of its own track needs, and holds the "+" badge. */
 .cell {
   position: relative;
   width: 100%;
-  height: var(--tile-h);
+  height: var(--tile-height);
 }
 
-/* The Tile inside the cell, which is the primitive's own `.lg` and carries a
-   flat --tile-w. It fills the cell instead, so a shrunken track reaches the
-   ceramic face and not just the box around it.
+/* The Tile inside the cell fills it, so a shrunken track reaches the chalk
+   face and not just the box around it.
 
    Scoped here rather than changed on `.lg` itself: AnswerSlots wraps its
    filled tiles in an inline-flex `.filled`, and a percentage width inside a
-   shrink-to-fit parent has no definite width to resolve against. The rack is
-   the only place a tile has a track telling it how wide to be. */
-.cell > * {
+   shrink-to-fit parent has no definite width to resolve against. */
+.cell > :first-child {
   width: 100%;
 }
 
-/* The three rack moments, all mounted on the cell rather than on the Tile
-   inside it.
+/* The rail's tile is as wide as a rack column at the full 361px content. */
+.rail > .cell {
+  width: 66px;
+}
+
+/* The mark of a tile that arrived this row. */
+.badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--text-on-accent);
+  font: var(--weight-bold) var(--type-secondary) / 1 var(--font-ui);
+  pointer-events: none;
+}
+
+/* The rack moments: three on the cell rather than on the Tile inside it, and
+   the paid badge's fade-in on the badge.
 
    Two shapes below are not stylistic and must survive a tidy-up:
 
    - `global()`. CSS Modules scopes an animation name exactly as it scopes a
-     class, so a bare `animation-name: oz-fire` here ships as `_oz-fire_1a2b3`,
+     class, so a bare `animation-name: nd-fire` here ships as `_nd-fire_1a2b3`,
      matches no keyframe, and does nothing — with no error (global.css:3-5).
    - longhands rather than the `animation` shorthand. Only the longhands are
      legible to getComputedStyle under jsdom, and which element carries which
      moment is the one motion fact the suite can hold. */
 
-/* 9i — a reward tile fires where it sits: it is already in its sorted
-   position and never travels. The class depends on nothing but the tile's own
-   isNew, so it survives a discard toggle and the phase change into feedback
-   unchanged, and an animation-name that does not change starts no second
-   animation. That, plus the tile id as the cell's key, is what makes 9i play
-   once on arrival rather than on every render that follows it. */
-.cellNew {
-  animation-name: global(oz-fire);
+/* 9i — a new tile's "+" badge fades in from above; the tile is already in its
+   sorted position and does not move. The class depends on nothing but the
+   tile's own isNew, so it survives a discard toggle and the phase change into
+   feedback unchanged, and an animation-name that does not change starts no
+   second animation. That, plus the tile id as the cell's key, is what makes 9i
+   play once on arrival rather than on every render that follows it. */
+.cellNew .badge {
+  animation-name: global(nd-fire);
   animation-duration: var(--dur-reward);
-  animation-timing-function: var(--ease-snap);
+  animation-timing-function: var(--ease-out);
+  animation-fill-mode: both;
 }
 
-/* 8a — a tile past capacity, which exists only while the rack overflows: the
-   tile is refused entry, drops onto the rail and stays perched there. The
-   frame's last keyframe is that perch, not a rest, so without a fill mode the
-   tile snaps back into the grid the instant it lands.
-
-   transform-origin carries the shape's pivot, which lives on the element in
-   the storyboard rather than in the frame: the rotation reads as a tile
-   catching on its lower-left edge, and around the default centre it reads as
-   a swivel instead. */
+/* 8a — a tile past capacity, which exists only while the rack overflows: it
+   fades in on the rail and stays there. forwards keeps its last frame, so the
+   tile does not vanish the instant it lands. */
 .cellRimReject {
-  animation-name: global(oz-rim-reject);
-  animation-duration: var(--dur-select);
+  animation-name: global(nd-rim-reject);
+  animation-duration: var(--dur-reject);
+  animation-timing-function: var(--ease-out);
   animation-fill-mode: forwards;
-  transform-origin: 0 100%;
 }
 
-/* 8c — a confirmed discard tips off the end of the rack. forwards for the
+/* 8c — a confirmed discard slides the tile down and out. forwards for the
    mirror of 8a's reason: the frame ends at opacity 0 and the element outlives
    it by however long React takes to commit the removal, so without it the tile
    flashes back into its cell for a frame on the way out. */
 .cellDeparting {
-  /* 8c: the tile tips off its edge and gravity takes it (oz-slide-off). The
-     frame is distance-agnostic; the discard's own distances are these. */
-  --dx: 46px;
-  --drop: 88px;
-  --rot: 18deg;
-
-  animation-name: global(oz-slide-off);
+  animation-name: global(nd-slide-off);
   animation-duration: var(--dur-discard);
-  animation-timing-function: var(--ease-fall);
+  animation-timing-function: var(--ease-in);
   animation-fill-mode: forwards;
 }
 
 /* 8a·2 — the perched tile takes the seat a discard freed. Mounted in the seat,
-   it falls from the rail: --dx / --dy are the rail position less the seat's,
+   it drops from the rail: --dx / --dy are the rail position less the seat's,
    measured by TileInventory, and the frame starts exactly where 8a's perch
-   left it, pivoting on the same lower-left edge. */
+   left it. */
 .cellPerchDrop {
-  animation-name: global(oz-perch-drop);
+  animation-name: global(nd-perch-drop);
   animation-duration: var(--dur-perch);
-  animation-timing-function: var(--ease-fall);
-  transform-origin: 0 100%;
-}
-
-/* The tracks' natural width, shared by the grid and the rail. */
-.rail,
-.inventory {
-  --rack-width: calc(var(--rack-columns) * var(--tile-w) + (var(--rack-columns) - 1) * var(--rack-gap));
-}
-
-/* Five sockets take one row: the default `5 x 2` would leave them an empty
-   second row. */
-.rack[data-size="row"] > .rail,
-.rack[data-size="row"] > .inventory {
-  --rack-rows: 1;
+  animation-timing-function: var(--ease-out);
 }

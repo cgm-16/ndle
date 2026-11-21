@@ -23,7 +23,7 @@ describe("EquationBoard", () => {
 describe("EquationBoard motion", () => {
   it("carries the round rise", () => {
     render(<EquationBoard equation={equation(2, 3)} />);
-    expect(getComputedStyle(screen.getByText("2 × 3 =")).animationName).toBe("oz-round-rise");
+    expect(getComputedStyle(screen.getByText("2 × 3 =")).animationName).toBe("nd-round-rise");
   });
 
   it("replaces its node when the round's equation changes, so the rise plays again", () => {

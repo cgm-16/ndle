@@ -43,8 +43,8 @@
   text-align: left;
   cursor: pointer;
   transition:
-    border-color var(--dur-state) var(--ease-standard),
-    transform var(--dur-press) var(--ease-standard);
+    border-color var(--dur-state) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
 }
 
 .entryButton:active {
@@ -84,6 +84,8 @@
 }
 
 .boardRow {
+  /* Clears the ring's reach below the slots above, whose tiles are transformed. */
+  margin-top: var(--space-2);
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -108,7 +110,7 @@
 
     /* The stage gets the page's full width, as the app's arena does: the
        gallery's own inset would read every state 32px narrower than the
-       screen it stands in for (#130), below the rack's 44px floor. */
+       screen it stands in for, which is below the rack's 44px floor. */
     padding-inline: 0;
   }
 

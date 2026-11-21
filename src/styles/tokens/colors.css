@@ -1,76 +1,42 @@
-/* Neutral placeholder palette: a dark grey field, a light grey tile face, one
-   blue accent and one orange for wrong. Every ramp name below is kept so the
-   components that reference it need no change; the values are placeholders
-   until the identity replaces them. Ratios are WCAG 2 relative-luminance
-   contrasts, computed by script. */
+/* The Chalkboard palette: eight colours, chalk on slate. Ratios are WCAG 2
+   relative-luminance contrasts, pinned by contrast.test.ts. */
 :root {
   color-scheme: dark;
 
-  /* ---- Field (base) -----------------------------------------------------
-     Four steps of dark grey, from the deepest surround to the raised step. */
-  --felt-900: #0e0e0e;   /* surround; ink-000 18.50:1 */
-  --felt-800: #141414;   /* panel, modal, rail; ink-000 17.65:1 */
-  --felt-700: #1a1a1a;   /* the default canvas; ink-000 16.67:1 */
-  --felt-600: #242424;   /* raised step, hover; ink-000 14.87:1 */
-  --well-900: #101010;   /* recessed socket interior */
-
-  /* ---- Tile face (light grey) ------------------------------------------- */
-  --clay-050: #f5f5f5;   /* tile face highlight; clay-900 on it 16.60:1 */
-  --clay-100: #e8e8e8;   /* light field / paper */
-  --clay-200: #d4d4d4;   /* tile face shadow; clay-900 on it 12.21:1 */
-  --clay-400: #8a8a8a;   /* tile edge, the 'thickness' colour */
-  --clay-900: #161616;   /* digit on a tile face; 9.97:1 against the focus ring */
-
-  /* ---- Accent (blue: focus, the current row, reward) ------------------- */
-  --gold-700: #2a5db0;
-  --gold-500: #5b9bff;   /* the accent; 6.28:1 on felt-700, 5.60:1 on felt-600 */
-  --gold-300: #9cc2ff;   /* hover and the focus ring; ring 9.59:1 on felt-700, 8.56:1 on felt-600 */
-
-  /* ---- Correct ---------------------------------------------------------- */
-  --jade-500: #5b9bff;   /* shares the accent; 6.28:1 on felt-700 */
-
-  /* ---- Wrong (orange: incorrect, discard) ------------------------------- */
-  --verm-800: #6e2e00;   /* primary button edge */
-  --verm-600: #bf5100;   /* ink-000 on it 4.58:1; 3.64:1 on felt-700, 3.25:1 on felt-600 */
-  --verm-400: #ff9a4d;   /* text on the field; 8.27:1 on felt-700, 9.18:1 on felt-900 */
-
-  /* ---- Ink on the dark field ------------------------------------------- */
-  --ink-000: #fafafa;
-  --ink-100: rgb(250 250 250 / 72%);   /* 9.07:1 on felt-700 */
-  --ink-200: rgb(250 250 250 / 55%);   /* 5.81:1 on felt-700 */
-  --ink-300: rgb(250 250 250 / 40%);   /* disabled, exempt; 3.72:1 on felt-700 */
-  --hair-100: rgb(250 250 250 / 10%);
-  --hair-200: rgb(250 250 250 / 7%);
+  /* ---- Primitives ------------------------------------------------------- */
+  --slate: #1d2530;      /* the field, and ink on chalk and blue */
+  --raised: #283241;     /* the current row, cards, the share preview */
+  --chalk: #eef0ea;      /* text, the tile face */
+  --dust: #aab3bf;       /* secondary text, the tile's bottom edge, outlined buttons */
+  --socket: #7d8896;     /* the empty socket's and unplayed mark's dash */
+  --hairline: #3a4656;   /* row rules, and the borders of Back and the toggle */
+  --blue: #8ccff2;       /* focus, the current row, actions, the "+" badge */
+  --pink: #f2a7b6;       /* wrong, and a tile leaving */
 
   /* ---- Semantic aliases ------------------------------------------------
-     Components reference THESE, not the ramps above. */
-  --surface-table: var(--felt-700);
-  --surface-panel: var(--felt-800);
-  --surface-surround: var(--felt-900);
-  --surface-raised: var(--felt-600);
-  --surface-socket: var(--well-900);
-  --surface-tile: linear-gradient(160deg, var(--clay-050), var(--clay-200));
-  --surface-tile-edge: var(--clay-400);
+     Components reference THESE, not the primitives above. */
+  --surface-surround: var(--slate);
+  --surface-panel: var(--raised);
+  --surface-raised: var(--raised);
+  --surface-tile: var(--chalk);
 
-  --text-primary: var(--ink-000);
-  --text-body: var(--ink-100);
-  --text-meta: var(--ink-200);
-  --text-disabled: var(--ink-300);
-  --text-on-tile: var(--clay-900);
+  --text-primary: var(--chalk);
+  --text-body: var(--chalk);
+  --text-meta: var(--dust);
+  --text-on-tile: var(--slate);
+  --text-on-accent: var(--slate);
 
-  --accent: var(--gold-500);
-  --accent-hover: var(--gold-300);
-  --accent-pressed: var(--gold-700);
+  /* Blue is the one hue for focus, the current row and actions. */
+  --accent: var(--blue);
 
-  --state-correct: var(--jade-500);
-  --state-incorrect: var(--verm-600);
-  --state-discard: var(--verm-600);
-  --state-reward: var(--gold-500);
+  /* Correct has no hue: its mark and its word carry it. */
+  --state-correct: var(--chalk);
+  --state-incorrect: var(--pink);
+  --state-discard: var(--pink);
 
-  --border-hairline: var(--hair-100);
-  --border-accent: rgb(91 155 255 / 45%);
-  --border-danger: rgb(191 81 0 / 45%);
-  --border-slot-empty: rgb(91 155 255 / 75%); /* dashed, the awaiting-input rim */
+  --border-hairline: var(--hairline);
+  --border-accent: var(--blue);
+  --border-slot-empty: var(--socket);   /* dashed, the awaiting-input rim */
 
-  --focus-ring: var(--gold-300);   /* 3:1 or better on every felt step and against the bezel line */
+  --focus-ring: var(--blue);
 }

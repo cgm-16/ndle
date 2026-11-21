@@ -12,7 +12,11 @@ export default defineConfig({
   use: {
     baseURL: "http://localhost:5173",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+    // Every iPhone browser is WebKit, so every spec runs in it too.
+    { name: "webkit", use: { ...devices["iPhone 15"] } },
+  ],
   webServer: {
     command: "npm run dev",
     url: "http://localhost:5173/gallery.html",

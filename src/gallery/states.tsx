@@ -4,9 +4,8 @@ import { GameScreen } from "../components/GameScreen/GameScreen";
 import { LanguageToggle } from "../components/LanguageToggle/LanguageToggle";
 import { TitleScreen } from "../components/TitleScreen/TitleScreen";
 import { gameReducer } from "../game/gameReducer";
-import { isRunComplete } from "../game/selectors";
-import type { GamePhase, GameState } from "../game/types";
-import { getShareStats, type ShareDependencies } from "../services/sharing";
+import type { Digit, GamePhase, GameState } from "../game/types";
+import { getShareStats, type PlayVariant, type ShareDependencies } from "../services/sharing";
 import {
   makeAnsweringState,
   makeFeedbackState,
@@ -29,6 +28,8 @@ export interface GalleryEntry {
   id: string;
   /** Picker label. English only — the gallery is a dev tool, not a screen. */
   label: string;
+  /** The Daily number the bar shows; a screen without one is a Practice screen. */
+  dailyNumber?: number;
   render: () => ReactNode;
 }
 
@@ -41,17 +42,24 @@ function renderGameScreen(state: GameState): ReactNode {
   return <GameScreen state={state} dispatch={noop} onSubmit={noop} onNextRound={noop} />;
 }
 
-// GameOverScreen takes flat equation/stats props rather than a GameState;
-// this adapts a `makeGameOverState` fixture to that shape, as App does: a table
-// played to its end stopped on no equation.
-function renderGameOverScreen(state: GameState, dependencies: ShareDependencies): ReactNode {
+const DAILY_NUMBER = 12;
+const DAILY: PlayVariant = { kind: "daily", number: DAILY_NUMBER };
+
+// GameOverScreen takes flat rowResults/stats props rather than a GameState;
+// this adapts a `makeGameOverState` fixture to that shape, as App does.
+function renderGameOverScreen(
+  state: GameState,
+  dependencies: ShareDependencies,
+  variant: PlayVariant = { kind: "practice" },
+): ReactNode {
   return (
     <GameOverScreen
-      equation={isRunComplete(state) ? null : state.equation}
-      stats={getShareStats(state)}
+      rowResults={state.rowResults}
+      stats={getShareStats(state, variant)}
       url="https://example.test/"
       dependencies={dependencies}
       onPlayAgain={noop}
+      onPractice={noop}
     />
   );
 }
@@ -84,11 +92,10 @@ function rowJudged(row: number): GameState {
 const FEEDBACK_CORRECT_STATE = rowJudged(2);
 
 // 7b and 7c, the ladder above streak 3. The rings accumulate, so the streak 8
-// state draws jade, gold and bright together — but one element carries one
-// outline, so the rim escalates instead: at 8 the rim is the bright one, and
-// the gold rim of the 5 tier is on screen at 5 and nowhere else
-// (AnswerSlots). That exclusivity is why the ladder needs two states and not
-// one at the top.
+// state draws all three chalk rings and the top tier's fan of flecks, while
+// streak 5 draws two rings and no fan. The fan is on screen at the top tier
+// and nowhere else (AnswerSlots). That exclusivity is why the ladder needs two
+// states and not one at the top.
 //
 // Two-digit products, because a ring's peak extent is 213x213 around a 64x80
 // tile, and two adjacent rings overlapping is the case §8.5 has never been
@@ -122,8 +129,16 @@ const FEEDBACK_AFTER_DISCARD_STATE = gameReducer(OVERFLOW_REQUIRED_1_STATE, {
   tileId: tileWith(OVERFLOW_REQUIRED_1_STATE, 6).id,
 });
 
-// The sample's par line played to its end with par made, so the heading is
-// gold and no equation is shown.
+// The widest verdict line after a discard: row 6 pays 0 7 7, and discarding the
+// old 1 rather than the par line's 0 keeps all three, so "Received" lists three
+// digits beside the rail cell.
+const FEEDBACK_AFTER_DISCARD_THREE_STATE = (() => {
+  const ids = sequentialIds();
+  return playRow(parLineAt(6, ids), { spend: [2, 4], discard: 1 }, ids);
+})();
+
+// The sample's par line played to its end with par made, so the heading
+// says par was made and no equation is shown.
 const GAME_OVER_STATE = makeGameOverState();
 
 // A table that ends early: three misses drain the hand to none, and row 4, 1 x 7,
@@ -131,6 +146,15 @@ const GAME_OVER_STATE = makeGameOverState();
 const SHORT_GAME_OVER_STATE = (() => {
   const ids = sequentialIds();
   return play(puzzleStart(PUZZLE_SAMPLE, ids), [{ spend: [5, 7] }, { spend: [9, 1] }, { spend: [4] }], ids);
+})();
+
+// The par line with row 8's 12 answered as 21: a real line scoring 6 against
+// par 7, found by changing the last answer of the par line, so the gallery
+// does not search at load. states.test.tsx asserts the score.
+const DAILY_SHORT_GAME_OVER_STATE = (() => {
+  const ids = sequentialIds();
+  const line = [...PUZZLE_SAMPLE_PAR_LINE.slice(0, 7), { spend: [2, 1] satisfies Digit[] }];
+  return play(puzzleStart(PUZZLE_SAMPLE, ids), line, ids);
 })();
 
 const RESOLVING_SHARE_DEPENDENCIES: ShareDependencies = {
@@ -150,10 +174,10 @@ const HOVER_NOTE =
   "Move a real pointer over each control: matches(':hover') is as unreadable in an automated probe as matches(':active') is. No component declares a :hover rule, so a hover reading equal to the resting reading is the system as built, not a failed probe.";
 
 const FOCUS_VISIBLE_NOTE =
-  "Tab to each control; never click it. :focus-visible survives a click on an already-focused element, so a click-driven reading shows a ring the spec withholds. Four rules draw a ring — the button's, the tile's two, and the language toggle's own — so the toggle is on this board and on no other.";
+  "Tab to each control; never click it. :focus-visible survives a click on an already-focused element, so a click-driven reading shows a ring the spec withholds. One global rule draws the ring on every focused control, and the reward tile has one of its own. The language toggle is mounted on this board, and on no other board, so a ring is read on a control that is not a button or a tile.";
 
 const DISABLED_NOTE =
-  "Every control here is disabled: flat, hairline outline, and resting 4px low so that becoming available reads as a rise (11d). It is a comparison against the enabled board, not a reading on its own.";
+  "Every control here is disabled: flat at 45% opacity, with no offset and no outline of its own. It is a comparison against the enabled board, not a reading on its own.";
 
 const REDUCED_MOTION_NOTE =
   "Read every element below under prefers-reduced-motion: reduce AND under normal. global.css neutralises animation and transition durations with !important, so the reduce reading alone cannot tell a wired animation from an unwired one — only the pair can. Animations: the ladder's top tier and the crack that takes its dust with it. Transitions: the button and the tile beneath them.";
@@ -166,7 +190,11 @@ const REDUCED_MOTION_NOTE =
 // disabled and reduced motion are conditions any screen can be in rather than
 // moments the reducer can reach, and M5.5g's gate names all four.
 export const GALLERY_STATES: Record<GamePhase | "interaction", GalleryEntry[]> = {
-  title: [{ id: "title", label: "Title", render: () => <TitleScreen onStart={noop} /> }],
+  title: [
+    { id: "title", label: "Title", render: () => <TitleScreen daily={{ status: "open", number: 1 }} onDaily={noop} onPractice={noop} /> },
+    { id: "title-played", label: "Title — Daily played", render: () => <TitleScreen daily={{ status: "played", number: 1 }} onDaily={noop} onPractice={noop} /> },
+    { id: "title-none", label: "Title — no table today", render: () => <TitleScreen daily={{ status: "none" }} onDaily={noop} onPractice={noop} /> },
+  ],
   answering: [
     {
       id: "answering-empty",
@@ -211,8 +239,13 @@ export const GALLERY_STATES: Record<GamePhase | "interaction", GalleryEntry[]> =
       render: () => renderGameScreen(FEEDBACK_AFTER_DISCARD_STATE),
     },
     {
+      id: "feedback-after-discard-three",
+      label: "Feedback — after a discard, three digits received",
+      render: () => renderGameScreen(FEEDBACK_AFTER_DISCARD_THREE_STATE),
+    },
+    {
       id: "feedback-streak-5",
-      label: "Feedback — correct at streak 5 (second ring, gold rim)",
+      label: "Feedback — correct at streak 5 (second ring)",
       render: () => renderGameScreen(FEEDBACK_STREAK_5_STATE),
     },
     {
@@ -230,9 +263,23 @@ export const GALLERY_STATES: Record<GamePhase | "interaction", GalleryEntry[]> =
   ],
   gameOver: [
     {
-      id: "game-over-idle",
-      label: "Game over — idle",
+      id: "game-over-practice",
+      label: "Game over — Practice, par made",
       render: () => renderGameOverScreen(GAME_OVER_STATE, RESOLVING_SHARE_DEPENDENCIES),
+    },
+    {
+      id: "game-over-daily-par",
+      dailyNumber: DAILY_NUMBER,
+      label: "Game over — Daily, par made",
+      render: () =>
+        renderGameOverScreen(GAME_OVER_STATE, RESOLVING_SHARE_DEPENDENCIES, DAILY),
+    },
+    {
+      id: "game-over-daily-short",
+      dailyNumber: DAILY_NUMBER,
+      label: "Game over — Daily, 1 short of par",
+      render: () =>
+        renderGameOverScreen(DAILY_SHORT_GAME_OVER_STATE, RESOLVING_SHARE_DEPENDENCIES, DAILY),
     },
     {
       id: "game-over-short",

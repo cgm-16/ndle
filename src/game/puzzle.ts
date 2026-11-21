@@ -17,7 +17,7 @@ import {
   sampleBinIndex,
 } from "./generators";
 import { getAnswerLength, getRewardCount } from "./selectors";
-import type { Digit, PuzzleDeal, PuzzleRow, PuzzleTable, RandomSource } from "./types";
+import type { Digit, PuzzleDeal, PuzzleMove, PuzzleRow, PuzzleTable, RandomSource } from "./types";
 
 export interface PuzzleSolution {
   par: number;
@@ -25,6 +25,8 @@ export interface PuzzleSolution {
   onlyMoves: number;
   /** True when every line that scores par misses a row it could have answered. */
   sacrificeRequired: boolean;
+  /** The canonical par line: the first optimal option at every decision. */
+  parLine: PuzzleMove[];
 }
 
 // A bound, not a dial: at the shipped band about one plant in seven is
@@ -153,13 +155,14 @@ function createSearch(deal: PuzzleDeal) {
 }
 
 export function solvePuzzle(deal: PuzzleDeal): PuzzleSolution {
-  const { options, bestScore, bestScoreWithoutSacrifice, root } = createSearch(deal);
+  const { rows, options, bestScore, bestScoreWithoutSacrifice, root } = createSearch(deal);
   const par = bestScore(0, root.counts, root.size);
 
   // Walk the canonical par line: the first optimal option at every decision.
   let { counts, size } = root;
   let needed = par;
   let onlyMoves = 0;
+  const parLine: PuzzleMove[] = [];
   for (let k = 0; ; k++) {
     const available = options(k, counts, size);
     if (available.length === 0) break;
@@ -170,13 +173,34 @@ export function solvePuzzle(deal: PuzzleDeal): PuzzleSolution {
     const [pick] = keepsPar;
     needed -= scored(pick);
     ({ counts, size } = pick);
+    parLine.push(moveOf(pick, rows[k].product, rows[k].digits));
   }
 
   return {
     par,
     onlyMoves,
     sacrificeRequired: bestScoreWithoutSacrifice(0, root.counts, root.size) < par,
+    parLine,
   };
+}
+
+// The tiles an option spends, in slot order. A miss enumerated as a <= b that
+// spells the product is the product's own pair, so it is spent reversed.
+function moveOf(option: Option, product: number, digits: readonly Digit[]): PuzzleMove {
+  if (isCorrect(option)) {
+    return option.discard === null ? { spend: [...digits] } : { spend: [...digits], discard: option.discard };
+  }
+  const [a, b] = option.spend;
+  return { spend: b !== undefined && a * 10 + b === product ? [b, a] : [...option.spend] };
+}
+
+/** The band shared by Practice and the daily list. */
+export function isInBand(deal: PuzzleDeal, solution: PuzzleSolution): boolean {
+  return (
+    solution.par >= PUZZLE_MIN_PAR &&
+    solution.onlyMoves >= PUZZLE_MIN_ONLY_MOVES &&
+    playMyopic(deal) < solution.par
+  );
 }
 
 // The digit held in most copies among those allowed; ties go to the higher digit.
@@ -280,9 +304,7 @@ export function plantTable(random: RandomSource): PuzzleDeal {
 export function dealPuzzle(random: RandomSource, attempts = PUZZLE_DEAL_ATTEMPTS): PuzzleTable {
   for (let attempt = 1; ; attempt++) {
     const deal = plantTable(random);
-    const { par, onlyMoves } = solvePuzzle(deal);
-    const inBand =
-      par >= PUZZLE_MIN_PAR && onlyMoves >= PUZZLE_MIN_ONLY_MOVES && playMyopic(deal) < par;
-    if (inBand || attempt >= attempts) return { ...deal, par };
+    const solution = solvePuzzle(deal);
+    if (isInBand(deal, solution) || attempt >= attempts) return { ...deal, par: solution.par };
   }
 }

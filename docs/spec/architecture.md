@@ -60,6 +60,8 @@ task is built by that task.
 │   │   ├── balance.ts
 │   │   ├── constants.ts
 │   │   ├── daily.ts          # (T101) calendar arithmetic, pure
+│   │   ├── dailyFormat.ts    # (T103) the compact shipped shape: pack and unpack
+│   │   ├── dailyFormat.test.ts
 │   │   ├── dailyPicker.ts    # (T102) offline selection of daily tables
 │   │   ├── dailyTables.json  # (T103) the shipped list, generated
 │   │   ├── dailyTables.ts    # (T103) typed access and today's lookup
@@ -104,6 +106,7 @@ task is built by that task.
 ├── tsconfig.app.json
 ├── tsconfig.json
 ├── tsconfig.node.json
+├── tsconfig.scripts.json
 ├── vercel.json
 └── vite.config.ts
 ```
@@ -262,6 +265,8 @@ export function dealPuzzle(random: RandomSource, attempts?: number): PuzzleTable
 export interface LocalDate { year: number; month: number; day: number } // month 1–12
 /** Table #1's date. Set once at release; changing it after launch renumbers every table. */
 export const DAILY_LAUNCH_DATE: LocalDate;
+/** Only the generator's freeze reads it: slots freeze through today + 2 while true, and nothing freezes while false. */
+export const DAILY_LAUNCHED: boolean;
 export function localDateOf(now: Date): LocalDate;                 // getFullYear, getMonth() + 1, getDate()
 export function daysFrom(from: LocalDate, to: LocalDate): number;  // via Date.UTC, so no DST hour leaks in
 export function dailyNumberOn(date: LocalDate, launch?: LocalDate): number; // daysFrom(launch, date) + 1; ≤ 0 before launch
@@ -276,11 +281,17 @@ export interface FillOptions {
   vetoed: ReadonlySet<number>;
   random: RandomSource;
   attemptsPerSlot: number;
+  onPlant?: () => void; // called once per plant tried
 }
 export function fillDailySlots(existing: readonly PuzzleTable[], options: FillOptions): PuzzleTable[];
 export function frozenThroughOn(today: LocalDate, existingLength: number, launched: boolean): number;
-// launched ? min(existingLength, max(0, dailyNumberOn(today) + 2)) : 0 — a slot freezes two days before its date; nothing freezes before launch
+// launched ? min(existingLength, max(0, dailyNumberOn(today) + 2)) : 0 — a slot freezes two days before its date; nothing freezes while unlaunched
 export function describeDaily(number: number, date: LocalDate, table: PuzzleTable): string; // one review-file block
+
+// game/dailyFormat.ts (T103) — the shape of dailyTables.json; the generator writes it and dailyTables.ts reads it
+export interface CompactTable { hand: Digit[]; rows: { left: number; right: number; pay: Digit[] }[]; par: number }
+export function packTables(tables: readonly PuzzleTable[]): CompactTable[];
+export function unpackTables(compact: readonly CompactTable[]): PuzzleTable[]; // product = left × right
 
 // game/dailyTables.ts (T103) — dailyTables.json is compact; table #n is index n − 1; product = left × right
 export const DAILY_TABLES: readonly PuzzleTable[];
@@ -290,6 +301,8 @@ export function todaysDaily(now: Date, tables?: readonly PuzzleTable[]): // defa
 
 // game/replay.ts (T104)
 export interface Replay { state: GameState; actions: GameAction[] }
+export function applyMove(replay: Replay, move: PuzzleMove,
+  nextTileId: TileIdFactory): boolean; // one move, stopping before the advance; mutates replay
 export function replayMoves(table: PuzzleTable, moves: readonly PuzzleMove[],
   nextTileId: TileIdFactory): Replay | null;
 ```
@@ -321,7 +334,7 @@ The offline generator is run with
 It reads `src/game/dailyTables.json` (a missing file means `[]`) and
 `scripts/daily/vetoes.json`, shaped `{ "pending": [{ "number": 12, "reason": "…" }], "done": [] }`.
 It sets `frozenThrough` to
-`frozenThroughOn(localDateOf(new Date()), existing.length, DAILY_LAUNCHED)`, so a slot freezes two days before its date arrives and nothing freezes before launch. It uses
+`frozenThroughOn(localDateOf(new Date()), existing.length, DAILY_LAUNCHED)`, so a slot freezes two days before its date arrives and nothing freezes until `DAILY_LAUNCHED` is set. It uses
 `Math.random`, and writes `dailyTables.json`, the committed review file
 `scripts/daily/review.md` (one `describeDaily` block per table), and
 `vetoes.json`, moving the pending vetoes it handled into `done`. The review file
@@ -362,7 +375,7 @@ export interface AppDependencies {
   nextTileId: TileIdFactory;
   gameUrl: string;
   dealPuzzle(): PuzzleTable;   // Practice only
-  now(): Date;                 // read in event handlers and on title render, never in the reducer
+  now(): Date;                 // read on mount, on Back and in event handlers, never in the reducer
   dailyStore: DailyStore;
   dailyTables: readonly PuzzleTable[];   // DAILY_TABLES in main.tsx; tests inject their own
 }

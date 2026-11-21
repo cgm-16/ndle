@@ -1,21 +1,11 @@
-/* Puzzle's table: all eight rows on screen with the HUD, slots, actions and
-   rack, at a 660px-high phone (e2e/puzzle-fit.spec.ts). The rows are as wide
-   as the rack below them, from the same tokens the rack's tracks use.
-
-   The pay tiles are the compact tile drawn smaller. At its own 30 x 38, seven
-   rows of pays alone would be 266px, past the 264px the ledger has at 660px,
-   so the ledger scales the compact tokens to two thirds. They are not
-   controls, so the 44px target minimum does not bind them. */
+/* Puzzle's table: all eight rows on screen with the HUD, answer row, actions
+   and rack, at a 660px-high phone (e2e/fit.spec.ts). The rows span the
+   arena's full content width. A current row is 52px, every other row 30px. */
 .ledger {
-  --tile-w-sm: 20px;
-  --tile-h-sm: 25px;
-  --size-tile-sm: 15px;
-
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: 2px;
   width: 100%;
-  max-width: calc(var(--rack-columns) * var(--tile-w) + (var(--rack-columns) - 1) * var(--rack-gap));
   padding: 0;
   list-style: none;
 }
@@ -31,52 +21,108 @@
   white-space: nowrap;
 }
 
-/* Number, equation, then the pay or the mark at the end of the row. Every row
-   is at least a pay tile high, so a marked row keeps its height. The space-1
-   gap between rows holds the tile's 3px bottom edge. */
+.row {
+  height: 30px;
+  color: var(--text-meta);
+}
+
+/* Number (or Now), equation, then the pays or the outcome at the end. */
 .visual {
   display: grid;
-  grid-template-columns: var(--space-4) auto 1fr;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
   column-gap: var(--space-2);
   align-items: center;
-  min-height: var(--tile-h-sm);
-  padding-inline: var(--space-2);
+  height: 100%;
+  padding: 0 10px;
+  text-align: left;
 }
 
 .number {
-  font: var(--weight-medium) var(--size-label) / var(--leading-tight) var(--font-ui);
+  font-size: var(--type-secondary);
   color: var(--text-meta);
 }
 
 .equation {
-  font: var(--weight-semibold) var(--size-title) / var(--leading-tight) var(--font-numeral);
-  color: var(--text-body);
+  font-size: var(--type-row);
 }
 
 .pay {
   display: flex;
+  align-items: center;
   gap: var(--space-1);
   justify-self: end;
 }
 
-.mark {
+/* An unplayed row's pays are outlined boxes: the tiles are not yours yet. */
+.payTile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1.5px solid var(--text-meta);
+  border-radius: var(--radius-xs);
+  font-size: var(--type-secondary);
+}
+
+.outcome {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
   justify-self: end;
-  font: var(--weight-semibold) var(--size-title) / var(--leading-tight) var(--font-ui);
+  font-size: var(--type-hud);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+}
+
+/* The mark is 1em square, so this sets it to 18px. */
+.outcome svg {
+  font-size: 18px;
+}
+
+.missed .outcome {
+  color: var(--state-incorrect);
+}
+
+/* A played row is history: a rule under it, and its equation in chalk. */
+.played {
+  border-bottom: 1px solid var(--border-hairline);
+  color: var(--text-body);
+}
+
+/* You are here. A raised card with a blue rim; the larger equation and the
+   Now label are the other cues, so the row does not rely on blue alone. */
+.current {
+  height: 52px;
+  border: 2px solid var(--border-accent);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  color: var(--text-body);
+}
+
+.now {
+  font-size: var(--type-label);
+  font-weight: var(--weight-bold);
+  color: var(--accent);
+}
+
+.current .equation {
+  font-size: var(--type-row-current);
+  font-weight: var(--weight-bold);
+}
+
+.paysLabel {
+  margin-inline-end: var(--space-1);
+  font-size: var(--type-small);
   color: var(--text-meta);
 }
 
-.played .equation {
-  color: var(--text-meta);
-}
-
-/* You are here. A rim rather than a fill, drawn inset as the socket's rim is,
-   so it takes no layout; the larger equation is the second cue, so the row
-   does not rely on the gold alone (§1.12). EquationBoard sets its size from
-   --size-equation, scaled here to the display size. */
-.current .visual {
-  --size-equation: var(--size-display);
-
-  padding-block: var(--space-1);
-  border-radius: var(--radius-md);
-  box-shadow: inset 0 0 0 1px var(--border-accent);
+.current .payTile {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: var(--surface-tile);
+  color: var(--text-on-tile);
+  font-size: var(--type-body);
+  font-weight: var(--weight-bold);
 }

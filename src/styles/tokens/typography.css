@@ -1,47 +1,44 @@
 :root {
-  /* Gothic A1 leads so Korean text uses the self-hosted Hangul face; its Korean
-     subset covers no Latin, so Latin and digits fall through to the system
-     stack. Until the lazy subset arrives, Hangul falls to the same stack. */
-  --font-ui: "Gothic A1", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-display: var(--font-ui);
-  --font-mono: var(--font-ui);
+  /* Atkinson Hyperlegible sets Latin and every digit; its Latin subset has no
+     Hangul, so Gothic A1 (loaded on Korean) supplies it, and the system stack
+     catches whatever neither covers. Gaegu is the display face: both wordmarks
+     and the title's step numerals. */
+  --font-ui: "Atkinson Hyperlegible", "Gothic A1", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Gaegu", "Gothic A1", sans-serif;
 
-  /* Numerals — equations, tile faces, HUD values. */
-  --font-numeral: var(--font-ui);
-
-  --size-wordmark: 52px;
-  --size-equation: 68px;   /* the round's equation, the largest type in the app */
-  --size-tile: 34px;       /* engraved digit on a 64x80 tile */
   --size-tile-sm: 19px;    /* engraved digit on a 30x38 compact tile */
-  --size-display: 34px;
-  --size-title: 24px;
   --size-body: 16px;
   --size-body-sm: 13.5px;
-  --size-label: 11px;      /* mono, uppercase, tracked */
 
   --leading-tight: 1;
   --leading-snug: 1.4;
-  --leading-body: 1.65;
-
-  --track-label: 0.2em;    /* mono uppercase labels */
-  --track-label-tight: 0.14em;
-  --track-wordmark: 0.02em;
 
   --weight-regular: 400;
-  --weight-medium: 500;
-  --weight-semibold: 600;
   --weight-bold: 700;
+
+  /* B's type scale, in px. 12 is the smallest text. */
+  --type-wordmark: 104px;
+  --type-wordmark-ko: 64px;
+  --type-score: 52px;
+  --type-prompt: 30px;
+  --type-bar-wordmark: 28px;
+  --type-tile: 28px;
+  --type-row-current: 24px;
+  --type-verdict: 22px;
+  --type-numeral: 22px;
+  --type-lead: 20px;
+  --type-value: 20px;
+  --type-row: 17px;
+  --type-body: 16px;
+  --type-hud: 15px;
+  --type-secondary: 14px;
+  --type-label: 13px;
+  --type-small: 12px;
 }
 
-/* Hangul is not Latin at the same nominal size, and tracking pulls
-   already-square syllable blocks apart into loose separate characters — 라운드
-   stops being one word. So in the ko locale: tracking off, one pixel back.
-   Nothing else changes; uppercase transforms stay and are harmless, Hangul
-   having no case. */
+/* Hangul is not Latin at the same nominal size, so in the ko locale the body
+   sizes are one pixel larger. Nothing else changes. */
 :root:lang(ko), [lang="ko"] {
-  --track-label: normal;
-  --track-label-tight: normal;
   --size-body: 17px;
   --size-body-sm: 14.5px;
-  --size-label: 12px;
 }
