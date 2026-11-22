@@ -2,23 +2,34 @@
 
 ## 3. Requirements Traceability Matrix
 
-| Requirement | Owning task(s) | Required evidence |
-|---|---|---|
-| R-01 M8's rules: five distinct opening digits, eight rows, a pay of 2 or 3, capacity 5, a legal wrong answer | T99 | `gameReducer.test.ts` |
-| R-02 the end rule: the run ends after row 8, or when the hand holds fewer tiles than the next answer needs | T99 | `gameReducer.test.ts` |
-| R-03 Practice band: `dealPuzzle` tables meet `PUZZLE_MIN_PAR` and `PUZZLE_MIN_ONLY_MOVES` | T102 | `puzzle.test.ts` |
-| R-04 the daily list is in band and every table needs a sacrifice | T103 | `dailyTables.test.ts` |
-| R-05 the same date gives the same number | T101 | `daily.test.ts` |
-| R-06 a daily slot freezes two days before its date arrives, nothing freezes before launch, and a veto touches only unfrozen slots | T102 | `dailyPicker.test.ts` |
-| R-07 replay rebuilds the state | T104 | replay tests: the par line replays to Made par 7 / 8, and a record cut after a submit lands in overflow |
-| R-08 storage holds only its contract: the language and today's daily | T105 | storage tests: a corrupt record is ignored without a crash; T107's `App.test.tsx` test "stores only the language and today's daily" |
-| R-09 a Daily is one attempt and resumes | T107 | app tests: a reload mid-Daily resumes, and no input restarts a Daily |
-| R-10 the share text hides the rows | T108 | exact-match share tests in en and ko |
-| R-11 both game-over variants | T108 | component tests for the Daily and Practice game-over screens |
-| R-12 the bilingual copy | T106–T108 | typed dictionary has an `en` and a `ko` entry for every string; component tests in both locales |
-| R-13 the fit at 393 × 660 and 375 wide, in en and ko | T110–T117 | `e2e/fit.spec.ts`, over every gallery state at `393 × 660` and `375 × 660` in en and ko, with `e2e/viewport.spec.ts`, `e2e/puzzle-fit.spec.ts` and `e2e/accessibility.spec.ts` |
-| R-14 zero non-origin requests | T100, T109 | a full run in en and ko makes no request to another origin, rechecked with B's faces |
-| R-15 Back returns to the title and is not a move | T106, T107 | `gameReducer.test.ts`, `App.test.tsx` |
-| R-16 contrast: text at least 4.5:1, the focus ring and non-text marks at least 3:1 | T109 | `src/styles/tokens/contrast.test.ts`; the ring checks in `e2e/accessibility.spec.ts` and `e2e/fit.spec.ts` |
-| R-17 correct and wrong marks by shape as well as colour: ✓ in English, ○ in Korean, ✗ in both | T112, T113 | `Mark.test.tsx`; the ledger and game-over tests |
-| R-18 the launch date is set once, and the review file matches it | T118 | `daily.test.ts`, `dailyTables.test.ts` |
+**Recorded evidence** was read at the production commit `b942054`, whose
+tree is identical to `5ee2703`'s, so line numbers refer to that tree.
+
+- **CI run 44961879301** (push to `prod`) passed every cited file: 534 unit
+  tests, and 114 browser tests across Chromium and WebKit.
+- **The cited unit tests also ran locally on 2026-11-23,** with
+  `npx vitest run <18 files> --reporter=verbose` under Node 24: 18 files,
+  325 tests, all passing.
+- **Production smoke steps** are in `docs/journal/journal-2026-11-22.md`
+  (the release) and `journal-2026-11-23.md` (the launch).
+
+| Requirement | Owning task(s) | Required evidence | Recorded evidence |
+|---|---|---|---|
+| R-01 M8's rules: five distinct opening digits, eight rows, a pay of 2 or 3, capacity 5, a legal wrong answer | T99 | `gameReducer.test.ts` | `gameReducer.test.ts`: pay `:843`, `:263`; capacity 5 `:859`, `:214`; legal wrong answer `:337`, `:283`; eight rows `:869`. Five distinct digits is not asserted there, because the reducer loads only the sample hand. It is asserted in `puzzle.test.ts:87` "deals five distinct digits and eight rows, each paying its reward count" and `dailyTables.test.ts:17`, which covers all 365 tables |
+| R-02 the end rule: the run ends after row 8, or when the hand holds fewer tiles than the next answer needs | T99 | `gameReducer.test.ts` | `gameReducer.test.ts:571` "ends after the last row without reading past the table"; `:495`, one tile against a two-digit product; boundaries `:484` and `:515` |
+| R-03 Practice band: `dealPuzzle` tables meet `PUZZLE_MIN_PAR` and `PUZZLE_MIN_ONLY_MOVES` | T102 | `puzzle.test.ts` | `puzzle.test.ts:103` "deals a table inside the band, with its par", on one seeded deal. **Gap:** at the 200-attempt bound, `dealPuzzle` returns its last deal unbanded (`puzzle.ts:308`, pinned by `puzzle.test.ts:112`) |
+| R-04 the daily list is in band and every table needs a sacrifice | T103 | `dailyTables.test.ts` | `dailyTables.test.ts:17` "every table is a daily candidate at its stored par", over all 365 tables (a candidate needs a sacrifice and the band); `:13`, `:29`. **Gap:** no must-fail case for the sacrifice clause |
+| R-05 the same date gives the same number | T101 | `daily.test.ts` | `daily.test.ts:31` "gives one number to the whole local day"; `:20`; `:37` across DST; `:51`; `:60`. Production on 2026-11-23: Seoul and UTC+14 read Daily #1, and Los Angeles, still on 11-22, read none |
+| R-06 a daily slot freezes two days before its date arrives, nothing freezes before launch, and a veto touches only unfrozen slots | T102 | `dailyPicker.test.ts` | `dailyPicker.test.ts:95` "freezes through two days past today while launched"; `:90` "freezes nothing while unlaunched"; vetoes `:51`, `:58`, `:70`, `:74`; `dailyTables.test.ts:53`, on the shipped list |
+| R-07 replay rebuilds the state | T104 | replay tests: the par line replays to Made par 7 / 8, and a record cut after a submit lands in overflow | `replay.test.ts:17` "replays the sample's par line to Made par 7 / 8"; `:31` "stops in overflow when the last move has no discard"; `:79`; `App.test.tsx:592` |
+| R-08 storage holds only its contract: the language and today's daily | T105 | storage tests: a corrupt record is ignored without a crash; T107's `App.test.tsx` test "stores only the language and today's daily" | `App.test.tsx:807` "stores only the language and today's daily"; corrupt records `dailyStorage.test.ts:39` (18 cases), `:72`, `App.test.tsx:669`. Production on 2026-11-23: storage held `ndle.daily` and `ndle.language` only |
+| R-09 a Daily is one attempt and resumes | T107 | app tests: a reload mid-Daily resumes, and no input restarts a Daily | `App.test.tsx:558` "resumes mid-table after a remount"; `:592`; `:631` "cannot restart a Daily"; `:610`; `:715`; `:735`. Production on 2026-11-23, in Chromium and WebKit: a reload in row 3 resumed at row 3, and a finished Daily showed its result after a reload |
+| R-10 the share text hides the rows | T108 | exact-match share tests in en and ko | `sharing.test.ts`: exact Daily texts in en and ko `:39`, `:43`, `:47`, `:51`; `:65` "never puts a row in the daily text"; `App.test.tsx:820`. Production on 2026-11-23: `9dle #1 — 6 short of par — 1/8 · par 7` and the URL, in en and ko |
+| R-11 both game-over variants | T108 | component tests for the Daily and Practice game-over screens | `GameOverScreen.test.tsx:246` (Daily) and `:260` (Practice), each in en and ko; `:274`; `:302` |
+| R-12 the bilingual copy | T106–T108 | typed dictionary has an `en` and a `ko` entry for every string; component tests in both locales | The dictionary is checked by type, not by a test: `messages.ts:218` `satisfies MessageShape<typeof en>`, enforced by CI's typecheck. Component tests in ko: TitleScreen `:16`, `:59`, `:80`, `:103`; TopBar `:31`; FeedbackPanel `:48`, `:58`, `:71`; TileInventory `:141`, `:182`; PuzzleLedger `:69`, `:88`; GameOverScreen `:246`, `:260`, `:274`, `:307`; `App.test.tsx:420`. **Gap:** AnswerSlots, GameHud and GameScreen have English-only component tests |
+| R-13 the fit at 393 × 660 and 375 wide, in en and ko | T110–T117 | `e2e/fit.spec.ts`, over every gallery state at `393 × 660` and `375 × 660` in en and ko, with `e2e/viewport.spec.ts`, `e2e/puzzle-fit.spec.ts` and `e2e/accessibility.spec.ts` | `fit.spec.ts:157` "every state fits {393, 375} x 660 in {en, ko}, bar counted", 25 states each, with must-fail cases at `:188` and `:194`; `puzzle-fit.spec.ts:46`; `viewport.spec.ts:114`, `:209`; `accessibility.spec.ts:286`. All run in Chromium and WebKit |
+| R-14 zero non-origin requests | T100, T109 | a full run in en and ko makes no request to another origin, rechecked with B's faces | No automated test. A smoke step in production on `b942054`, with B's faces: six Practice runs to game over, in en and ko, made 0 non-origin requests, and their fonts were same-origin. The instrument caught a deliberate foreign request (`journal-2026-11-22.md`). Daily #1 made 0 of 25 (`journal-2026-11-23.md`). Earlier readings: `journal-2026-11-10.md` (T100) and `journal-2026-11-11.md` (T109) |
+| R-15 Back returns to the title and is not a move | T106, T107 | `gameReducer.test.ts`, `App.test.tsx` | `gameReducer.test.ts:914` "returns to the title from %s"; `:923`; `App.test.tsx:168`; `:715`, where the record is unchanged by Back; `:773`; `:782` |
+| R-16 contrast: text at least 4.5:1, the focus ring and non-text marks at least 3:1 | T109 | `src/styles/tokens/contrast.test.ts`; the ring checks in `e2e/accessibility.spec.ts` and `e2e/fit.spec.ts` | `contrast.test.ts:59` text ≥ 4.5; `:71` ring and non-text ≥ 3; must-fail `:53`. `accessibility.spec.ts:146` "every focused control wears a 3px blue outline at a 3px offset". The ring sweep in `fit.spec.ts:157`, with must-fail cases at `:220` and `:225` |
+| R-17 correct and wrong marks by shape as well as colour: ✓ in English, ○ in Korean, ✗ in both | T112, T113 | `Mark.test.tsx`; the ledger and game-over tests | `Mark.test.tsx:19`, all four cases; `PuzzleLedger.test.tsx:69`, `:81`; `GameOverScreen.test.tsx:274` |
+| R-18 the launch date is set once, and the review file matches it | T118 | `daily.test.ts`, `dailyTables.test.ts` | `daily.test.ts:26` "launches on 2026-11-23, a literal so a later change shows in review"; `dailyTables.test.ts:47` "ships a review file that matches the list, dated from the launch". "Set once" rests on a grep: `DAILY_LAUNCH_DATE` is defined only at `daily.ts:8`. Production on 2026-11-23: Daily #1 is `review.md`'s #1 |

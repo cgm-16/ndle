@@ -2,21 +2,21 @@
 
 ### 8.6 Release acceptance
 
-- [ ] GitHub milestones and labels exist.
-- [ ] Every implementation issue includes metadata and dependency IDs.
+- [x] GitHub milestones and labels exist.
+- [x] Every implementation issue includes metadata and dependency IDs.
 - [ ] CI is required and green.
-- [ ] Exact release commit is deployed.
-- [ ] Production URL opens the title screen, offering Daily and Practice.
+- [x] Exact release commit is deployed.
+- [x] Production URL opens the title screen, offering Daily and Practice.
 - [x] The launch date is set once and matches the shipped daily list.
-- [ ] A refreshed daily list ships within a day of being generated, or is regenerated first.
-- [ ] A reload mid-Daily resumes at the same row, and a finished Daily shows
+- [x] A refreshed daily list ships within a day of being generated, or is regenerated first.
+- [x] A reload mid-Daily resumes at the same row, and a finished Daily shows
       its result until the next table.
-- [ ] The daily share text gives the table number, the score against par and
+- [x] The daily share text gives the table number, the score against par and
       the production URL, and never the rows.
 - [x] Storage holds only the language and today's daily.
-- [ ] Production gameplay makes zero non-origin requests and needs no runtime
+- [x] Production gameplay makes zero non-origin requests and needs no runtime
       backend call.
-- [ ] README matches the shipped behavior.
+- [x] README matches the shipped behavior.
 
 ## 9. Definition of Done
 
